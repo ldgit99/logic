@@ -1,6 +1,6 @@
-// ─── Cloudflare Worker — OpenAI API 프록시 ───
-// 배포: wrangler deploy
-// 환경변수: OPENAI_API_KEY (wrangler secret put OPENAI_API_KEY)
+﻿// ??? Cloudflare Worker ??OpenAI API ?꾨줉?????
+// 諛고룷: wrangler deploy
+// ?섍꼍蹂?? OPENAI_API_KEY (wrangler secret put OPENAI_API_KEY)
 
 const ALLOWED_ORIGINS = [
   'https://ldgit99.github.io',
@@ -10,7 +10,7 @@ const ALLOWED_ORIGINS = [
 ];
 
 function corsHeaders(origin) {
-  const allowed = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  const allowed = ALLOWED_ORIGINS.includes(origin) ? origin : '*';
   return {
     'Access-Control-Allow-Origin': allowed,
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
@@ -39,7 +39,7 @@ export default {
       return new Response('Bad Request: invalid JSON', { status: 400 });
     }
 
-    // 허용된 모델만 통과
+    // ?덉슜??紐⑤뜽留??듦낵
     const allowedModels = ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo'];
     if (!allowedModels.includes(body.model)) {
       return new Response('Bad Request: model not allowed', { status: 400 });
@@ -54,7 +54,7 @@ export default {
       body: JSON.stringify(body),
     });
 
-    // 스트리밍 / 논-스트리밍 모두 패스스루
+    // ?ㅽ듃由щ컢 / ???ㅽ듃由щ컢 紐⑤몢 ?⑥뒪?ㅻ（
     const resHeaders = {
       ...corsHeaders(origin),
       'Content-Type': openaiRes.headers.get('Content-Type') || 'application/json',
@@ -66,3 +66,4 @@ export default {
     });
   },
 };
+
