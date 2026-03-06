@@ -140,9 +140,7 @@ async function loadChapter(id) {
   document.getElementById('content-area').scrollTop = 0;
 
   try {
-    const res = await fetch(`./chapters/${id}.json`);
-    if (!res.ok) throw new Error(`chapters/${id}.json not found`);
-    const chapterData = await res.json();
+    const chapterData = await fetchJsonWithTimeout(`./chapters/${id}.json`);
 
     document.getElementById('chapter-indicator').textContent = chapterData.title;
     updateTOCSections(id, chapterData);
@@ -198,9 +196,7 @@ function setupToggleHandlers() {
 // ??? ??珥덇린?????
 async function init() {
   try {
-    const res = await fetch('./chapters/index.json');
-    if (!res.ok) throw new Error('index.json not found');
-    const chapters = await res.json();
+    const chapters = await fetchJsonWithTimeout('./chapters/index.json');
 
     buildTOC(chapters);
     setupToggleHandlers();
@@ -218,4 +214,6 @@ async function init() {
 }
 
 document.addEventListener('DOMContentLoaded', init);
+
+
 
