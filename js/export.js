@@ -49,9 +49,27 @@ function normalizeFeedback(feedback, totalCount) {
   };
 }
 
-function buildReportHTML(studentName, studentId, chapterData, feedback) {
+function buildReportHTML(studentName, studentId, chapterData, messages, feedback) {
   const now = new Date();
-  const submittedAt = now.toLocaleString('ko-KR');
+  const createdAt = now.toLocaleString('ko-KR', { hour12: false });
+
+  const chatRows = messages.length
+    ? messages
+      .map((m) => {
+        let roleLabel = 'SYSTEM';
+        if (m.role === 'user') roleLabel = '학생';
+        if (m.role === 'assistant') roleLabel = 'AI 튜터';
+
+        return `
+          <div style="border:1px solid #dbe4f0;border-radius:10px;padding:10px 12px;margin-bottom:10px;">
+            <div style="font-weight:700;color:#1e3a8a;margin-bottom:6px;">${roleLabel}</div>
+            <div style="white-space:pre-wrap;">${escapeHtml(m.content || '')}</div>
+          </div>
+        `;
+      })
+      .join('')
+    : '<p style="margin:0;">대화 로그가 없습니다.</p>';
+
   const weakConcepts = feedback.weakConcepts.length
     ? feedback.weakConcepts.map((item) => `<li>${escapeHtml(item)}</li>`).join('')
     : '<li>해당 없음</li>';
@@ -65,26 +83,31 @@ function buildReportHTML(studentName, studentId, chapterData, feedback) {
         <tr><td style="padding:6px 0;width:120px;font-weight:700;">이름</td><td>${escapeHtml(studentName)}</td></tr>
         <tr><td style="padding:6px 0;font-weight:700;">학번</td><td>${escapeHtml(studentId)}</td></tr>
         <tr><td style="padding:6px 0;font-weight:700;">챕터</td><td>${escapeHtml(chapterData.title)}</td></tr>
-        <tr><td style="padding:6px 0;font-weight:700;">점수</td><td>${feedback.score}점 (${feedback.correctCount}/${feedback.totalCount})</td></tr>
-        <tr><td style="padding:6px 0;font-weight:700;">제출 시각</td><td>${escapeHtml(submittedAt)}</td></tr>
+        <tr><td style="padding:6px 0;font-weight:700;">작성 시간</td><td>${escapeHtml(createdAt)}</td></tr>
       </table>
 
-      <h2 style="margin:20px 0 8px;font-size:22px;color:#1d4ed8;">Feed Up</h2>
+      <h2 style="margin:20px 0 8px;font-size:22px;color:#1d4ed8;">전체 대화 로그</h2>
+      ${chatRows}
+
+      <h2 style="margin:24px 0 8px;font-size:22px;color:#1d4ed8;">피드백</h2>
+      <p style="margin:0 0 10px;"><strong>점수:</strong> ${feedback.score}점 (${feedback.correctCount}/${feedback.totalCount})</p>
+
+      <h3 style="margin:14px 0 6px;font-size:18px;color:#1e40af;">Feed Up</h3>
       <p style="margin:0 0 12px;white-space:pre-wrap;">${escapeHtml(feedback.feedUp || '-')}</p>
 
-      <h2 style="margin:20px 0 8px;font-size:22px;color:#1d4ed8;">Feed Back</h2>
+      <h3 style="margin:14px 0 6px;font-size:18px;color:#1e40af;">Feed Back</h3>
       <p style="margin:0 0 12px;white-space:pre-wrap;">${escapeHtml(feedback.feedBack || '-')}</p>
 
-      <h2 style="margin:20px 0 8px;font-size:22px;color:#1d4ed8;">Feed Forward</h2>
+      <h3 style="margin:14px 0 6px;font-size:18px;color:#1e40af;">Feed Forward</h3>
       <p style="margin:0 0 12px;white-space:pre-wrap;">${escapeHtml(feedback.feedForward || '-')}</p>
 
-      <h2 style="margin:20px 0 8px;font-size:22px;color:#1d4ed8;">취약 개념</h2>
+      <h3 style="margin:14px 0 6px;font-size:18px;color:#1e40af;">취약 개념</h3>
       <ul style="margin:0 0 8px 22px;padding:0;">${weakConcepts}</ul>
     </div>
   `;
 }
 
-async function savePdf(studentName, studentId, chapterData, feedback) {
+async function savePdf(studentName, studentId, chapterData, messages, feedback) {
   const jspdfNs = window.jspdf;
   if (!jspdfNs || !jspdfNs.jsPDF) {
     throw new Error('jsPDF 라이브러리를 찾을 수 없습니다.');
@@ -93,7 +116,7 @@ async function savePdf(studentName, studentId, chapterData, feedback) {
     throw new Error('html2canvas 라이브러리를 찾을 수 없습니다.');
   }
 
-  const html = buildReportHTML(studentName, studentId, chapterData, feedback);
+  const html = buildReportHTML(studentName, studentId, chapterData, messages, feedback);
   const host = document.createElement('div');
   host.style.position = 'fixed';
   host.style.left = '-100000px';
@@ -130,9 +153,10 @@ async function savePdf(studentName, studentId, chapterData, feedback) {
       heightLeft -= pageHeight;
     }
 
-    const safeName = studentName.replace(/[^a-zA-Z0-9가-힣_-]/g, '_');
-    const safeId = studentId.replace(/[^a-zA-Z0-9_-]/g, '_');
-    doc.save(`logic-feedback-${safeName}-${safeId}.pdf`);
+    const safeName = studentName.replace(/[^a-zA-Z0-9가-힣]/g, '');
+    const safeId = studentId.replace(/[^a-zA-Z0-9]/g, '');
+    const fileName = `${safeId}${safeName}` || 'feedback';
+    doc.save(`${fileName}.pdf`);
   } finally {
     host.remove();
   }
@@ -162,7 +186,7 @@ async function handleConfirmSubmit() {
   try {
     const rawFeedback = await generateFeedback(chapterData, messages);
     const feedback = normalizeFeedback(rawFeedback, chapterData.formativeAssessment.totalQuestions);
-    await savePdf(studentName, studentId, chapterData, feedback);
+    await savePdf(studentName, studentId, chapterData, messages, feedback);
     showToast('PDF 생성이 완료되었습니다.', 'success');
   } catch (err) {
     console.error('PDF export error:', err);
