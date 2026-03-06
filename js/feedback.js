@@ -1,5 +1,5 @@
 ﻿// ??? Worker URL (chatbot.js? ?숈씪?섍쾶 ?좎?) ???
-const WORKER_URL = 'https://logic.dongkuklee99.workers.dev/';
+const WORKER_URL = 'https://logic-proxy.dongkuklee99.workers.dev/';
 
 // ??? ?쇰뱶諛?遺꾩꽍 ?꾨＼?꾪듃 ?앹꽦 ???
 function buildFeedbackPrompt(chapterData, messages) {
@@ -63,4 +63,5 @@ export async function generateFeedback(chapterData, messages) {
 
   return JSON.parse(content);
 }
+
 

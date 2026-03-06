@@ -3,7 +3,7 @@ import { generateFeedback } from './feedback.js';
 
 // ??? Worker URL ?ㅼ젙 ???
 // Cloudflare Worker 諛고룷 ???꾨옒 URL??蹂寃쏀븯?몄슂
-const WORKER_URL = 'https://logic.dongkuklee99.workers.dev/';
+const WORKER_URL = 'https://logic-proxy.dongkuklee99.workers.dev/';
 
 const COMPLETION_MARKER = '===?뺤꽦?됯??꾨즺===';
 
@@ -326,4 +326,5 @@ export function resetChatbot(chapterData) {
 export function initChatbot(chapterData) {
   resetChatbot(chapterData);
 }
+
 
