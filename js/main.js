@@ -1,7 +1,7 @@
-import { resetChatbot } from './chatbot.js';
+﻿import { resetChatbot } from './chatbot.js';
 import { initExport } from './export.js';
 
-// ??? 梨뺥꽣 紐⑤뱢 ?덉??ㅽ듃由?(?숈쟻 ?꾪룷?? ???
+// ?????? 筌?벤苑?筌뤴뫀諭??????쎈뱜??(??덉읅 ?袁る７?? ??????
 const CHAPTER_MODULES = {
   '01': () => import('./chapters/chapter01.js'),
   '02': () => import('./chapters/chapter02.js'),
@@ -9,10 +9,26 @@ const CHAPTER_MODULES = {
 
 let currentChapterId = null;
 let scrollObserver = null;
+
+async function fetchJsonWithTimeout(url, timeoutMs = 10000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, {
+      signal: controller.signal,
+      cache: 'no-store',
+      headers: { 'Cache-Control': 'no-cache' },
+    });
+    if (!res.ok) throw new Error(${url} HTTP );
+    return await res.json();
+  } finally {
+    clearTimeout(timer);
+  }
+}
 function showFatalLoadError(message) {
   const loading = document.getElementById('loading-screen');
   if (!loading) return;
-  loading.innerHTML = `<p style="color:var(--accent-red);text-align:center;padding:24px;white-space:pre-wrap;">콘텐츠 로딩 오류\n${message}</p>`;
+  loading.innerHTML = `<p style="color:var(--accent-red);text-align:center;padding:24px;white-space:pre-wrap;">肄섑뀗痢?濡쒕뵫 ?ㅻ쪟\n${message}</p>`;
 }
 
 window.addEventListener('error', (e) => {
@@ -26,7 +42,7 @@ window.addEventListener('unhandledrejection', (e) => {
   showFatalLoadError(msg);
 });
 
-// ??? ?좎뒪???뚮┝ ???
+// ?????? ?醫롫뮞?????뵝 ??????
 export function showToast(message, type = 'info') {
   let container = document.getElementById('toast-container');
   if (!container) {
@@ -41,7 +57,7 @@ export function showToast(message, type = 'info') {
   setTimeout(() => toast.remove(), 4000);
 }
 
-// ??? TOC ?꾩껜 鍮뚮뱶 (index.json 湲곕컲) ???
+// ?????? TOC ?袁⑷퍥 ??슢諭?(index.json 疫꿸퀡而? ??????
 function buildTOC(chapters) {
   const tocList = document.getElementById('toc-list');
   tocList.innerHTML = '';
@@ -69,7 +85,7 @@ function buildTOC(chapters) {
   });
 }
 
-// ??? ?쒖꽦 梨뺥꽣???뱀뀡 紐⑸줉 ?낅뜲?댄듃 ???
+// ?????? ??뽮쉐 筌?벤苑???諭??筌뤴뫖以???낅쑓??꾨뱜 ??????
 function updateTOCSections(chapterId, chapterData) {
   document.querySelectorAll('.toc-chapter').forEach(el => {
     el.classList.add('collapsed');
@@ -103,13 +119,13 @@ function updateTOCSections(chapterId, chapterData) {
   const footer = document.getElementById('sidebar-footer');
   if (footer && chapterData.objectives) {
     footer.innerHTML = `
-      <div class="objectives-title">?숈뒿紐⑺몴</div>
+      <div class="objectives-title">??덈뮸筌뤴뫚紐?/div>
       ${chapterData.objectives.map(o => `<div class="objective-item">${o}</div>`).join('')}
     `;
   }
 }
 
-// ??? ?ㅽ겕濡??ㅽ뙆?????
+// ?????? ??쎄쾿嚥???쎈솁????????
 function setupScrollSpy() {
   if (scrollObserver) scrollObserver.disconnect();
   const sections = document.querySelectorAll('.content-section');
@@ -130,13 +146,13 @@ function setupScrollSpy() {
   sections.forEach(el => scrollObserver.observe(el));
 }
 
-// ??? 梨뺥꽣 濡쒕뱶 ???
+// ?????? 筌?벤苑?嚥≪뮆諭???????
 async function loadChapter(id) {
   if (id === currentChapterId) return;
   currentChapterId = id;
 
   document.getElementById('content-inner').innerHTML =
-    '<div id="loading-screen"><div class="spinner"></div><p>肄섑뀗痢좊? 遺덈윭?ㅻ뒗 以?..</p></div>';
+    '<div id="loading-screen"><div class="spinner"></div><p>?꾩꼹?쀯㎘醫? ?븍뜄???삳뮉 餓?..</p></div>';
   document.getElementById('content-area').scrollTop = 0;
 
   try {
@@ -151,13 +167,13 @@ async function loadChapter(id) {
     resetChatbot(chapterData);
     setTimeout(setupScrollSpy, 150);
   } catch (err) {
-    console.error(`梨뺥꽣 ${id} 濡쒕뱶 ?ㅽ뙣:`, err);
+    console.error(`筌?벤苑?${id} 嚥≪뮆諭???쎈솭:`, err);
     document.getElementById('content-inner').innerHTML =
-      `<p style="color:var(--accent-red);padding:32px;">梨뺥꽣 ${id} 濡쒕뱶???ㅽ뙣?덉뒿?덈떎.</p>`;
+      `<p style="color:var(--accent-red);padding:32px;">筌?벤苑?${id} 嚥≪뮆諭????쎈솭??됰뮸??덈뼄.</p>`;
   }
 }
 
-// ??? ?ъ씠?쒕컮 / 梨쀫큸 ?좉? ???
+// ?????? ?????뺤뺍 / 筌?ロ겦 ?醫? ??????
 function setupToggleHandlers() {
   const appBody = document.getElementById('app-body');
   const sidebar = document.getElementById('sidebar');
@@ -193,7 +209,7 @@ function setupToggleHandlers() {
   });
 }
 
-// ??? ??珥덇린?????
+// ?????? ???λ뜃由????????
 async function init() {
   try {
     const chapters = await fetchJsonWithTimeout('./chapters/index.json');
@@ -204,16 +220,17 @@ async function init() {
 
     await loadChapter(chapters[0].id);
   } catch (err) {
-    console.error('??珥덇린???ㅽ뙣:', err);
+    console.error('???λ뜃由????쎈솭:', err);
     document.getElementById('loading-screen').innerHTML = `
       <p style="color:var(--accent-red);text-align:center;">
-        肄섑뀗痢?濡쒕뱶 ?ㅽ뙣.<br>
-        <small>濡쒖뺄?먯꽌 ?ㅽ뻾 ??<code>python -m http.server</code> ?먮뒗 Live Server瑜??ъ슜?섏꽭??</small>
+        ?꾩꼹?쀯㎘?嚥≪뮆諭???쎈솭.<br>
+        <small>嚥≪뮇類?癒?퐣 ??쎈뻬 ??<code>python -m http.server</code> ?癒?뮉 Live Server???????뤾쉭??</small>
       </p>`;
   }
 }
 
 document.addEventListener('DOMContentLoaded', init);
+
 
 
 
