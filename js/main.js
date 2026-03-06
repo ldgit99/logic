@@ -1,9 +1,9 @@
-import { resetChatbot } from './chatbot.js';
-import { initExport } from './export.js';
+import { resetChatbot } from './chatbot.js?v=20260307b';
+import { initExport } from './export.js?v=20260307b';
 
 const CHAPTER_MODULES = {
-  '01': () => import('./chapters/chapter01.js'),
-  '02': () => import('./chapters/chapter02.js'),
+  '01': () => import('./chapters/chapter01.js?v=20260307b'),
+  '02': () => import('./chapters/chapter02.js?v=20260307b'),
 };
 
 let currentChapterId = null;
@@ -36,7 +36,7 @@ function showFatalLoadError(message) {
 
   loading.innerHTML = `
     <p style="color:var(--accent-red);text-align:center;padding:24px;white-space:pre-wrap;">
-      콘텐츠 로딩 오류\n${message}
+      肄섑뀗痢?濡쒕뵫 ?ㅻ쪟\n${message}
     </p>
   `;
 }
@@ -82,7 +82,7 @@ function buildTOC(chapters) {
     label.innerHTML = `
       <span class="chapter-num">${ch.id}</span>
       <span class="chapter-title">${ch.title}</span>
-      <span class="toc-arrow">▾</span>
+      <span class="toc-arrow">??/span>
     `;
     label.addEventListener('click', () => loadChapter(ch.id));
 
@@ -131,7 +131,7 @@ function updateTOCSections(chapterId, chapterData) {
   const footer = document.getElementById('sidebar-footer');
   if (footer && chapterData.objectives) {
     footer.innerHTML = `
-      <div class="objectives-title">학습목표</div>
+      <div class="objectives-title">?숈뒿紐⑺몴</div>
       ${chapterData.objectives.map((o) => `<div class="objective-item">${o}</div>`).join('')}
     `;
   }
@@ -166,7 +166,7 @@ async function loadChapter(id) {
   document.getElementById('content-inner').innerHTML = `
     <div id="loading-screen">
       <div class="spinner"></div>
-      <p>콘텐츠를 불러오는 중...</p>
+      <p>肄섑뀗痢좊? 遺덈윭?ㅻ뒗 以?..</p>
     </div>
   `;
   document.getElementById('content-area').scrollTop = 0;
@@ -183,9 +183,9 @@ async function loadChapter(id) {
     resetChatbot(chapterData);
     setTimeout(setupScrollSpy, 150);
   } catch (err) {
-    console.error(`챕터 ${id} 로드 실패:`, err);
+    console.error(`梨뺥꽣 ${id} 濡쒕뱶 ?ㅽ뙣:`, err);
     document.getElementById('content-inner').innerHTML = `
-      <p style="color:var(--accent-red);padding:32px;">챕터 ${id} 로드에 실패했습니다.</p>
+      <p style="color:var(--accent-red);padding:32px;">梨뺥꽣 ${id} 濡쒕뱶???ㅽ뙣?덉뒿?덈떎.</p>
     `;
   }
 }
@@ -235,11 +235,11 @@ async function init() {
     initExport();
     await loadChapter(chapters[0].id);
   } catch (err) {
-    console.error('앱 초기화 실패:', err);
+    console.error('??珥덇린???ㅽ뙣:', err);
     document.getElementById('loading-screen').innerHTML = `
       <p style="color:var(--accent-red);text-align:center;">
-        콘텐츠 로드 실패.<br>
-        <small>잠시 후 다시 시도해주세요.</small>
+        肄섑뀗痢?濡쒕뱶 ?ㅽ뙣.<br>
+        <small>?좎떆 ???ㅼ떆 ?쒕룄?댁＜?몄슂.</small>
       </p>
     `;
   }
