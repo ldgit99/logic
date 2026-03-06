@@ -3,7 +3,8 @@ import { generateFeedback } from './feedback.js';
 
 // ??? Worker URL ?ㅼ젙 ???
 // Cloudflare Worker 諛고룷 ???꾨옒 URL??蹂寃쏀븯?몄슂
-const WORKER_URL = 'https://logic-proxy.dongkuklee99.workers.dev/';
+const WORKER_URLS = ['https://logic-proxy.dongkuklee99.workers.dev/', 'https://logic-proxy.ldgit99.workers.dev/'];
+let activeWorkerUrl = WORKER_URLS[0];
 
 const COMPLETION_MARKER = '===?뺤꽦?됯??꾨즺===';
 
@@ -90,29 +91,40 @@ function escapeHtml(str) {
 
 // ??? SSE ?ㅽ듃由щ컢 ???
 async function streamFromWorker(messages) {
-  if (WORKER_URL.includes('YOUR_WORKER')) {
-    showToast('Worker URL???ㅼ젙?댁＜?몄슂 (js/chatbot.js)', 'error');
+  if (activeWorkerUrl.includes('YOUR_WORKER')) {
+    showToast('Worker URL을 설정해주세요 (js/chatbot.js)', 'error');
     throw new Error('Worker URL not configured');
   }
 
-  const res = await fetch(WORKER_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: 'gpt-4o-mini',
-      messages,
-      stream: true,
-      temperature: 0.7,
-      max_tokens: 1000,
-    }),
-  });
+  let lastError = null;
 
-  if (!res.ok) {
-    const errText = await res.text();
-    throw new Error(`Worker error ${res.status}: ${errText}`);
+  for (const url of WORKER_URLS) {
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages,
+          stream: true,
+          temperature: 0.7,
+          max_tokens: 1000,
+        }),
+      });
+
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(`Worker error ${res.status}: ${errText}`);
+      }
+
+      activeWorkerUrl = url;
+      return res.body;
+    } catch (err) {
+      lastError = err;
+    }
   }
 
-  return res.body;
+  throw lastError || new Error('No worker endpoint available');
 }
 
 // ??? AI ?묐떟 ?ㅽ듃由щ컢 泥섎━ ???
@@ -326,6 +338,8 @@ export function resetChatbot(chapterData) {
 export function initChatbot(chapterData) {
   resetChatbot(chapterData);
 }
+
+
 
 
 

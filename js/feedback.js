@@ -1,5 +1,5 @@
 ﻿// ??? Worker URL (chatbot.js? ?숈씪?섍쾶 ?좎?) ???
-const WORKER_URL = 'https://logic-proxy.dongkuklee99.workers.dev/';
+const WORKER_URLS = ['https://logic-proxy.dongkuklee99.workers.dev/', 'https://logic-proxy.ldgit99.workers.dev/'];
 
 // ??? ?쇰뱶諛?遺꾩꽍 ?꾨＼?꾪듃 ?앹꽦 ???
 function buildFeedbackPrompt(chapterData, messages) {
@@ -32,14 +32,36 @@ ${chatLog}
 }`;
 }
 
+async function postToFeedbackWorker(payload) {
+  let lastError = null;
+
+  for (const url of WORKER_URLS) {
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(`Feedback API error ${res.status}: ${errText}`);
+      }
+
+      return res;
+    } catch (err) {
+      lastError = err;
+    }
+  }
+
+  throw lastError || new Error('No worker endpoint available');
+}
+
 // ??? AI ?쇰뱶諛??앹꽦 (non-streaming, JSON) ???
 export async function generateFeedback(chapterData, messages) {
   const prompt = buildFeedbackPrompt(chapterData, messages);
 
-  const res = await fetch(WORKER_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
+  const res = await postToFeedbackWorker({
       model: 'gpt-4o-mini',
       messages: [
         { role: 'system', content: '?뱀떊? 援먯쑁 ?됯? ?꾨Ц媛?낅땲?? ?붿껌??JSON ?뺤떇?쇰줈留??묐떟?⑸땲??' },
@@ -49,8 +71,7 @@ export async function generateFeedback(chapterData, messages) {
       temperature: 0.3,
       max_tokens: 1500,
       response_format: { type: 'json_object' },
-    }),
-  });
+    });
 
   if (!res.ok) {
     const errText = await res.text();
@@ -63,6 +84,8 @@ export async function generateFeedback(chapterData, messages) {
 
   return JSON.parse(content);
 }
+
+
 
 
 
