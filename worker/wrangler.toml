@@ -1,0 +1,7 @@
+name = "logic-proxy"
+main = "worker.js"
+compatibility_date = "2024-01-01"
+
+# API 키 설정 방법:
+# wrangler secret put OPENAI_API_KEY
+# (프롬프트에 키 값 입력)

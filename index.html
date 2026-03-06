@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>디지털 논리회로 인터랙티브 교재</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/layout.css" />
+  <link rel="stylesheet" href="css/sidebar.css" />
+  <link rel="stylesheet" href="css/content.css" />
+  <link rel="stylesheet" href="css/chatbot.css" />
+  <link rel="stylesheet" href="css/modal.css" />
+</head>
+<body>
+
+  <!-- ─── 헤더 ─── -->
+  <header id="app-header">
+    <button id="sidebar-toggle" aria-label="목차 열기/닫기">☰</button>
+    <div id="header-title">
+      <h1>디지털 논리회로</h1>
+      <span id="chapter-indicator">제01장. 들어가기</span>
+    </div>
+    <button id="chatbot-toggle" aria-label="챗봇 열기/닫기" title="AI 튜터">💬</button>
+  </header>
+
+  <!-- ─── 본문 3분할 ─── -->
+  <div id="app-body">
+
+    <!-- 패널 1: 목차 사이드바 -->
+    <nav id="sidebar">
+      <div id="sidebar-header">
+        <span>목차</span>
+      </div>
+      <ul id="toc-list">
+        <!-- JS에서 동적 생성 -->
+      </ul>
+    </nav>
+
+    <!-- 패널 2: 인터랙티브 콘텐츠 -->
+    <main id="content-area">
+      <div id="content-inner">
+        <!-- chapter01.js에서 동적 렌더링 -->
+        <div id="loading-screen">
+          <div class="spinner"></div>
+          <p>콘텐츠를 불러오는 중...</p>
+        </div>
+      </div>
+    </main>
+
+    <!-- 패널 3: AI 챗봇 -->
+    <aside id="chatbot-panel">
+      <div id="chatbot-header">
+        <span class="chatbot-icon">🤖</span>
+        <div>
+          <div id="chatbot-title">AI 튜터</div>
+          <div id="chatbot-subtitle">형성평가 진행 중</div>
+        </div>
+        <div id="assessment-badge" class="badge badge-pending">대기 중</div>
+      </div>
+
+      <div id="chat-messages" role="log" aria-live="polite">
+        <!-- 말풍선 -->
+      </div>
+
+      <div id="chat-input-area">
+        <textarea
+          id="chat-input"
+          placeholder="답변을 입력하세요... (Shift+Enter: 줄바꿈, Enter: 전송)"
+          rows="3"
+          aria-label="챗봇 입력"
+        ></textarea>
+        <button id="chat-send" aria-label="전송">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+          </svg>
+        </button>
+      </div>
+
+      <button id="btn-submit-pdf" disabled>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/>
+          <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/>
+        </svg>
+        형성평가 제출 (PDF)
+      </button>
+    </aside>
+  </div>
+
+  <!-- ─── 학생 정보 입력 모달 ─── -->
+  <div id="student-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-box">
+      <h2 id="modal-title">형성평가 제출</h2>
+      <p class="modal-desc">PDF 제출을 위해 정보를 입력해주세요.</p>
+      <div class="form-group">
+        <label for="input-name">이름</label>
+        <input type="text" id="input-name" placeholder="홍길동" autocomplete="name" />
+      </div>
+      <div class="form-group">
+        <label for="input-student-id">학번</label>
+        <input type="text" id="input-student-id" placeholder="2024XXXXXX" />
+      </div>
+      <div class="modal-actions">
+        <button id="modal-cancel" class="btn-secondary">취소</button>
+        <button id="modal-confirm" class="btn-primary">PDF 생성 시작</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── 로딩 오버레이 (AI 피드백 생성 중) ─── -->
+  <div id="loading-overlay" class="modal-overlay hidden">
+    <div class="modal-box loading-box">
+      <div class="spinner large"></div>
+      <p id="loading-message">AI가 피드백을 생성 중입니다...</p>
+      <p class="loading-sub">잠시만 기다려주세요 (10~20초 소요)</p>
+    </div>
+  </div>
+
+  <!-- ─── PDF 출력용 숨겨진 컨테이너 ─── -->
+  <div id="pdf-export-container" aria-hidden="true"></div>
+
+  <!-- ─── 외부 라이브러리 ─── -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+  <!-- ─── 앱 진입점 (ES Module) ─── -->
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
