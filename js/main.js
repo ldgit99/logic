@@ -1,10 +1,10 @@
-import { initChatbot } from './chatbot.js';
-import { initExport } from './export.js';
+import { initChatbot } from './chatbot.js?v=20260307c';
+import { initExport } from './export.js?v=20260307c';
 
 // ─── 챕터 모듈 레지스트리 (동적 임포트) ───
 const CHAPTER_MODULES = {
-  '01': () => import('./chapters/chapter01.js'),
-  '02': () => import('./chapters/chapter02.js'),
+  '01': () => import('./chapters/chapter01.js?v=20260307c'),
+  '02': () => import('./chapters/chapter02.js?v=20260307c'),
 };
 
 let currentChapterId = null;
