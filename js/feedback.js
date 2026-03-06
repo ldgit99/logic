@@ -40,7 +40,7 @@ export async function generateFeedback(chapterData, messages) {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model: 'gpt-4o',
+      model: 'gpt-4o-mini',
       messages: [
         { role: 'system', content: '?뱀떊? 援먯쑁 ?됯? ?꾨Ц媛?낅땲?? ?붿껌??JSON ?뺤떇?쇰줈留??묐떟?⑸땲??' },
         { role: 'user', content: prompt },
@@ -63,5 +63,6 @@ export async function generateFeedback(chapterData, messages) {
 
   return JSON.parse(content);
 }
+
 
 

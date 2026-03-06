@@ -99,7 +99,7 @@ async function streamFromWorker(messages) {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model: 'gpt-4o',
+      model: 'gpt-4o-mini',
       messages,
       stream: true,
       temperature: 0.7,
@@ -326,5 +326,6 @@ export function resetChatbot(chapterData) {
 export function initChatbot(chapterData) {
   resetChatbot(chapterData);
 }
+
 
 
