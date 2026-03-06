@@ -6,7 +6,7 @@ const WORKER_URLS = [
 ];
 let activeWorkerUrl = WORKER_URLS[0];
 
-const COMPLETION_MARKER = '===형성평가완료===';
+const COMPLETION_MARKER = '===?뺤꽦?됯??꾨즺===';
 
 let conversationMessages = [];
 let chapterRef = null;
@@ -20,31 +20,31 @@ function buildSystemPrompt(data) {
 
   const questionsText = formativeAssessment.questions
     .map((q, i) => {
-      const hints = (q.hints || []).map((h, j) => `  힌트${j + 1}: ${h}`).join('\n');
-      return `Q${i + 1} [Bloom: ${q.bloomLevel}] 개념: ${q.concept}\n  질문: ${q.question}\n  모범답안: ${q.keyAnswer}${hints ? `\n${hints}` : ''}`;
+      const hints = (q.hints || []).map((h, j) => `  ?뚰듃${j + 1}: ${h}`).join('\n');
+      return `Q${i + 1} [Bloom: ${q.bloomLevel}] 媛쒕뀗: ${q.concept}\n  吏덈Ц: ${q.question}\n  紐⑤쾾?듭븞: ${q.keyAnswer}${hints ? `\n${hints}` : ''}`;
     })
     .join('\n\n');
 
-  return `당신은 "디지털 논리회로" 과목의 AI 튜터입니다. 학생과의 문답으로 형성평가를 진행하세요.
+  return `?뱀떊? "?붿????쇰━?뚮줈" 怨쇰ぉ??AI ?쒗꽣?낅땲?? ?숈깮怨쇱쓽 臾몃떟?쇰줈 ?뺤꽦?됯?瑜?吏꾪뻾?섏꽭??
 
-[현재 챕터]
+[?꾩옱 梨뺥꽣]
 ${title}
 
-[학습목표]
+[?숈뒿紐⑺몴]
 ${objectives.map((o, i) => `${i + 1}. ${o}`).join('\n')}
 
-[핵심 개념]
+[?듭떖 媛쒕뀗]
 ${keyConcepts.join(', ')}
 
-[형성평가 문항]
+[?뺤꽦?됯? 臾명빆]
 ${questionsText}
 
-[진행 규칙]
-1. 학생이 "시작"이라고 입력하면 Q1부터 순서대로 진행합니다.
-2. 학생이 막히면 힌트를 단계적으로 제공합니다.
-3. 정답을 바로 말하지 말고 사고를 유도하세요.
-4. 모든 문항이 끝나면 결과를 요약하고 마지막 줄에 정확히 ${COMPLETION_MARKER} 를 출력하세요.
-5. 답변은 반드시 한국어로 작성하세요.`;
+[吏꾪뻾 洹쒖튃]
+1. ?숈깮??"?쒖옉"?대씪怨??낅젰?섎㈃ Q1遺???쒖꽌?濡?吏꾪뻾?⑸땲??
+2. ?숈깮??留됲엳硫??뚰듃瑜??④퀎?곸쑝濡??쒓났?⑸땲??
+3. ?뺣떟??諛붾줈 留먰븯吏 留먭퀬 ?ш퀬瑜??좊룄?섏꽭??
+4. 紐⑤뱺 臾명빆???앸굹硫?寃곌낵瑜??붿빟?섍퀬 留덉?留?以꾩뿉 ?뺥솗??${COMPLETION_MARKER} 瑜?異쒕젰?섏꽭??
+5. ?듬?? 諛섎뱶???쒓뎅?대줈 ?묒꽦?섏꽭??`;
 }
 
 function getEl(id) {
@@ -62,7 +62,7 @@ function appendBubble(role, text, isTyping = false) {
   if (role === 'system') {
     bubble.innerHTML = `<div class="bubble-text">${escapeHtml(text)}</div>`;
   } else {
-    const avatarText = role === 'ai' ? '🤖' : '👤';
+    const avatarText = role === 'ai' ? '?쨼' : '?뫀';
     const textEl = document.createElement('div');
     textEl.className = `bubble-text${isTyping ? ' typing-cursor' : ''}`;
     textEl.textContent = text;
@@ -92,10 +92,10 @@ function updateBadge() {
   if (!badge) return;
 
   if (assessmentComplete) {
-    badge.textContent = '완료';
+    badge.textContent = '?꾨즺';
     badge.className = 'badge badge-complete';
   } else {
-    badge.textContent = '진행 중';
+    badge.textContent = '吏꾪뻾 以?;
     badge.className = 'badge badge-active';
   }
 }
@@ -127,7 +127,7 @@ function loadSession() {
 
     const saved = JSON.parse(raw);
     if (saved.chapterId !== chapterRef?.id) return false;
-    if (Date.now() - Number(saved.savedAt || 0) > 86400000) return false;
+    if (Date.now() - Number(saved.savedAt || 0) > 2592000000) return false;
 
     conversationMessages = Array.isArray(saved.messages) ? saved.messages : [];
     assessmentComplete = Boolean(saved.assessmentComplete);
@@ -237,10 +237,10 @@ async function sendToAI(userText) {
   } catch (err) {
     console.error('Streaming error:', err);
     if (textEl) {
-      textEl.textContent = '오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
+      textEl.textContent = '?ㅻ쪟媛 諛쒖깮?덉뒿?덈떎. ?좎떆 ???ㅼ떆 ?쒕룄?댁＜?몄슂.';
       textEl.style.color = 'var(--accent-red)';
     }
-    showToast('챗봇 호출에 실패했습니다.', 'error');
+    showToast('梨쀫큸 ?몄텧???ㅽ뙣?덉뒿?덈떎.', 'error');
   } finally {
     if (textEl) textEl.classList.remove('typing-cursor');
     isStreaming = false;
@@ -267,7 +267,7 @@ function handleAssessmentComplete() {
   assessmentComplete = true;
   updateBadge();
   setSubmitEnabled(true);
-  appendBubble('system', '형성평가가 완료되었습니다. 아래 제출 버튼으로 PDF를 생성하세요.');
+  appendBubble('system', '?뺤꽦?됯?媛 ?꾨즺?섏뿀?듬땲?? ?꾨옒 ?쒖텧 踰꾪듉?쇰줈 PDF瑜??앹꽦?섏꽭??');
   saveSession();
 }
 
@@ -327,7 +327,7 @@ export function resetChatbot(chapterData) {
   const restored = loadSession();
   if (restored && conversationMessages.length > 0) {
     restoreUIFromSession();
-    appendBubble('system', '이전 세션이 복원되었습니다. 이어서 진행하세요.');
+    appendBubble('system', '?댁쟾 ?몄뀡??蹂듭썝?섏뿀?듬땲?? ?댁뼱??吏꾪뻾?섏꽭??');
     return;
   }
 
@@ -336,7 +336,7 @@ export function resetChatbot(chapterData) {
 
   conversationMessages = [{ role: 'system', content: buildSystemPrompt(chapterData) }];
 
-  const welcome = `안녕하세요! 저는 ${chapterData.title} AI 튜터입니다.\n\n준비가 되셨다면 "시작"이라고 입력해주세요.`;
+  const welcome = `?덈뀞?섏꽭?? ???${chapterData.title} AI ?쒗꽣?낅땲??\n\n以鍮꾧? ?섏뀲?ㅻ㈃ "?쒖옉"?대씪怨??낅젰?댁＜?몄슂.`;
   conversationMessages.push({ role: 'assistant', content: welcome });
   appendBubble('ai', welcome);
   saveSession();
