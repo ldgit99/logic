@@ -1,4 +1,4 @@
-﻿import { resetChatbot } from './chatbot.js';
+import { resetChatbot } from './chatbot.js';
 import { initExport } from './export.js';
 
 // ??? 梨뺥꽣 紐⑤뱢 ?덉??ㅽ듃由?(?숈쟻 ?꾪룷?? ???

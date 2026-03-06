@@ -1,4 +1,4 @@
-﻿import { showToast } from './main.js';
+import { showToast } from './main.js';
 import { generateFeedback } from './feedback.js';
 
 // ??? Worker URL ?ㅼ젙 ???
