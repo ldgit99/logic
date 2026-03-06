@@ -230,8 +230,7 @@ async function handleConfirmSubmit() {
 }
 
 // ─── 초기화 ───
-export function initExport(chapterData) {
-  chapterDataRef = chapterData;
+export function initExport() {
 
   document.getElementById('btn-submit-pdf').addEventListener('click', openStudentModal);
   document.getElementById('modal-cancel').addEventListener('click', closeStudentModal);

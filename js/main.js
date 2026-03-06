@@ -1,6 +1,14 @@
-import { initChatbot } from './chatbot.js';
-import { renderChapter } from './chapters/chapter01.js';
+import { resetChatbot } from './chatbot.js';
 import { initExport } from './export.js';
+
+// ─── 챕터 모듈 레지스트리 (동적 임포트) ───
+const CHAPTER_MODULES = {
+  '01': () => import('./chapters/chapter01.js'),
+  '02': () => import('./chapters/chapter02.js'),
+};
+
+let currentChapterId = null;
+let scrollObserver = null;
 
 // ─── 토스트 알림 ───
 export function showToast(message, type = 'info') {
@@ -17,27 +25,48 @@ export function showToast(message, type = 'info') {
   setTimeout(() => toast.remove(), 4000);
 }
 
-// ─── TOC 구성 ───
-function buildTOC(data) {
+// ─── TOC 전체 빌드 (index.json 기반) ───
+function buildTOC(chapters) {
   const tocList = document.getElementById('toc-list');
   tocList.innerHTML = '';
 
-  const chapterEl = document.createElement('li');
-  chapterEl.className = 'toc-chapter';
+  chapters.forEach(ch => {
+    const chapterEl = document.createElement('li');
+    chapterEl.className = 'toc-chapter collapsed';
+    chapterEl.dataset.chapterId = ch.id;
 
-  const label = document.createElement('div');
-  label.className = 'toc-chapter-label';
-  label.innerHTML = `
-    <span class="chapter-num">${data.id}</span>
-    <span class="chapter-title">${data.title}</span>
-    <span class="toc-arrow">▾</span>
-  `;
-  label.addEventListener('click', () => chapterEl.classList.toggle('collapsed'));
+    const label = document.createElement('div');
+    label.className = 'toc-chapter-label';
+    label.innerHTML = `
+      <span class="chapter-num">${ch.id}</span>
+      <span class="chapter-title">${ch.title}</span>
+      <span class="toc-arrow">▾</span>
+    `;
+    label.addEventListener('click', () => loadChapter(ch.id));
 
-  const sections = document.createElement('ul');
-  sections.className = 'toc-sections';
+    const sections = document.createElement('ul');
+    sections.className = 'toc-sections';
 
-  data.sections.forEach(sec => {
+    chapterEl.appendChild(label);
+    chapterEl.appendChild(sections);
+    tocList.appendChild(chapterEl);
+  });
+}
+
+// ─── 활성 챕터의 섹션 목록 업데이트 ───
+function updateTOCSections(chapterId, chapterData) {
+  document.querySelectorAll('.toc-chapter').forEach(el => {
+    el.classList.add('collapsed');
+    el.querySelector('.toc-sections').innerHTML = '';
+  });
+
+  const chapterEl = document.querySelector(`.toc-chapter[data-chapter-id="${chapterId}"]`);
+  if (!chapterEl) return;
+
+  chapterEl.classList.remove('collapsed');
+  const sections = chapterEl.querySelector('.toc-sections');
+
+  chapterData.sections.forEach(sec => {
     const li = document.createElement('li');
     li.className = 'toc-section-item';
     const a = document.createElement('a');
@@ -49,34 +78,29 @@ function buildTOC(data) {
       if (el) el.scrollIntoView({ behavior: 'smooth' });
       if (window.innerWidth <= 768) {
         document.getElementById('sidebar').classList.remove('open');
-        document.getElementById('app-body').classList.add('sidebar-hidden');
       }
     });
     li.appendChild(a);
     sections.appendChild(li);
   });
 
-  chapterEl.appendChild(label);
-  chapterEl.appendChild(sections);
-  tocList.appendChild(chapterEl);
-
-  // 하단 푸터에 학습목표 표시
   const footer = document.getElementById('sidebar-footer');
-  if (footer && data.objectives) {
+  if (footer && chapterData.objectives) {
     footer.innerHTML = `
       <div class="objectives-title">학습목표</div>
-      ${data.objectives.map(o => `<div class="objective-item">${o}</div>`).join('')}
+      ${chapterData.objectives.map(o => `<div class="objective-item">${o}</div>`).join('')}
     `;
   }
 }
 
 // ─── 스크롤 스파이 ───
 function setupScrollSpy() {
+  if (scrollObserver) scrollObserver.disconnect();
   const sections = document.querySelectorAll('.content-section');
   if (!sections.length) return;
   const contentArea = document.getElementById('content-area');
 
-  const observer = new IntersectionObserver(entries => {
+  scrollObserver = new IntersectionObserver(entries => {
     entries.forEach(entry => {
       if (entry.isIntersecting) {
         const id = entry.target.id.replace('section-', '');
@@ -87,7 +111,36 @@ function setupScrollSpy() {
     });
   }, { root: contentArea, rootMargin: '-5% 0px -60% 0px' });
 
-  sections.forEach(el => observer.observe(el));
+  sections.forEach(el => scrollObserver.observe(el));
+}
+
+// ─── 챕터 로드 ───
+async function loadChapter(id) {
+  if (id === currentChapterId) return;
+  currentChapterId = id;
+
+  document.getElementById('content-inner').innerHTML =
+    '<div id="loading-screen"><div class="spinner"></div><p>콘텐츠를 불러오는 중...</p></div>';
+  document.getElementById('content-area').scrollTop = 0;
+
+  try {
+    const res = await fetch(`./chapters/${id}.json`);
+    if (!res.ok) throw new Error(`chapters/${id}.json not found`);
+    const chapterData = await res.json();
+
+    document.getElementById('chapter-indicator').textContent = chapterData.title;
+    updateTOCSections(id, chapterData);
+
+    const mod = await CHAPTER_MODULES[id]();
+    await mod.renderChapter(chapterData);
+
+    resetChatbot(chapterData);
+    setTimeout(setupScrollSpy, 150);
+  } catch (err) {
+    console.error(`챕터 ${id} 로드 실패:`, err);
+    document.getElementById('content-inner').innerHTML =
+      `<p style="color:var(--accent-red);padding:32px;">챕터 ${id} 로드에 실패했습니다.</p>`;
+  }
 }
 
 // ─── 사이드바 / 챗봇 토글 ───
@@ -112,7 +165,6 @@ function setupToggleHandlers() {
     }
   });
 
-  // 모바일: 오버레이 영역 클릭 시 닫기
   document.addEventListener('click', e => {
     if (window.innerWidth <= 768 && sidebar.classList.contains('open')) {
       if (!sidebar.contains(e.target) && !e.target.closest('#sidebar-toggle')) {
@@ -130,19 +182,15 @@ function setupToggleHandlers() {
 // ─── 앱 초기화 ───
 async function init() {
   try {
-    const res = await fetch('./chapters/01.json');
-    if (!res.ok) throw new Error('chapter data fetch failed');
-    const chapterData = await res.json();
+    const res = await fetch('./chapters/index.json');
+    if (!res.ok) throw new Error('index.json not found');
+    const chapters = await res.json();
 
-    buildTOC(chapterData);
-    document.getElementById('chapter-indicator').textContent = chapterData.title;
-
-    await renderChapter(chapterData);
-
-    initChatbot(chapterData);
-    initExport(chapterData);
+    buildTOC(chapters);
     setupToggleHandlers();
-    setTimeout(setupScrollSpy, 150);
+    initExport();
+
+    await loadChapter(chapters[0].id);
   } catch (err) {
     console.error('앱 초기화 실패:', err);
     document.getElementById('loading-screen').innerHTML = `

@@ -6,13 +6,14 @@ import { generateFeedback } from './feedback.js';
 const WORKER_URL = 'https://logic-proxy.ldgit99.workers.dev';
 
 const COMPLETION_MARKER = '===형성평가완료===';
-const SESSION_KEY = 'logic_session_ch01';
 
 // ─── 상태 ───
 let conversationMessages = [];
 let chapterRef = null;
 let isStreaming = false;
 let assessmentComplete = false;
+let sessionKey = 'logic_session_ch01';
+let chatbotEventsBound = false;
 
 // ─── 시스템 프롬프트 생성 ───
 function buildSystemPrompt(data) {
@@ -223,13 +224,13 @@ function saveSession() {
     savedAt: Date.now(),
   };
   try {
-    localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+    localStorage.setItem(sessionKey, JSON.stringify(session));
   } catch { /* 용량 초과 시 무시 */ }
 }
 
 function loadSession() {
   try {
-    const raw = localStorage.getItem(SESSION_KEY);
+    const raw = localStorage.getItem(sessionKey);
     if (!raw) return false;
     const session = JSON.parse(raw);
     if (session.chapterId !== chapterRef?.id) return false;
@@ -279,45 +280,53 @@ export function getChapterRef() {
   return chapterRef;
 }
 
-// ─── 초기화 ───
-export function initChatbot(chapterData) {
+// ─── 챕터 전환 시 리셋 (main.js에서 호출) ───
+export function resetChatbot(chapterData) {
   chapterRef = chapterData;
+  sessionKey = `logic_session_ch${chapterData.id}`;
+  isStreaming = false;
+  assessmentComplete = false;
 
-  // 배지 초기화
-  const badge = document.getElementById('assessment-badge');
-  badge.textContent = '진행 중';
-  badge.className = 'badge badge-active';
+  // UI 초기화
+  document.getElementById('chat-messages').innerHTML = '';
+  document.getElementById('assessment-badge').textContent = '진행 중';
+  document.getElementById('assessment-badge').className = 'badge badge-active';
+  document.getElementById('btn-submit-pdf').disabled = true;
+  document.getElementById('chat-input').disabled = false;
+  document.getElementById('chat-send').disabled = false;
 
-  // 세션 복원
+  // 세션 복원 시도
   const restored = loadSession();
 
   if (restored && conversationMessages.length > 1) {
     restoreUIFromSession();
     appendBubble('system', '이전 세션이 복원되었습니다. 이어서 진행하세요.');
   } else {
-    // 시스템 프롬프트 설정
     conversationMessages = [{ role: 'system', content: buildSystemPrompt(chapterData) }];
-
-    // 웰컴 메시지
     const welcome = `안녕하세요! 저는 ${chapterData.title}의 AI 튜터입니다. 🎓\n\n강의 내용을 학습하셨나요? 준비가 되셨다면 "시작"이라고 입력해주세요. 총 ${chapterData.formativeAssessment.totalQuestions}개의 문제로 형성평가를 진행하겠습니다!`;
     conversationMessages.push({ role: 'assistant', content: welcome });
     appendBubble('ai', welcome);
     saveSession();
   }
 
-  // 이벤트 핸들러
-  document.getElementById('chat-send').addEventListener('click', handleSend);
+  // 이벤트는 최초 1회만 바인딩
+  if (!chatbotEventsBound) {
+    chatbotEventsBound = true;
+    document.getElementById('chat-send').addEventListener('click', handleSend);
+    document.getElementById('chat-input').addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        handleSend();
+      }
+    });
+    document.getElementById('chat-input').addEventListener('input', function () {
+      this.style.height = 'auto';
+      this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+    });
+  }
+}
 
-  document.getElementById('chat-input').addEventListener('keydown', e => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
-  });
-
-  // 자동 높이 조절
-  document.getElementById('chat-input').addEventListener('input', function () {
-    this.style.height = 'auto';
-    this.style.height = Math.min(this.scrollHeight, 120) + 'px';
-  });
+// ─── 하위 호환 (initChatbot → resetChatbot 위임) ───
+export function initChatbot(chapterData) {
+  resetChatbot(chapterData);
 }
