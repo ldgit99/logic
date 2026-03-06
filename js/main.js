@@ -1,7 +1,6 @@
-﻿import { resetChatbot } from './chatbot.js';
+import { resetChatbot } from './chatbot.js';
 import { initExport } from './export.js';
 
-// ?????? 筌?벤苑?筌뤴뫀諭??????쎈뱜??(??덉읅 ?袁る７?? ??????
 const CHAPTER_MODULES = {
   '01': () => import('./chapters/chapter01.js'),
   '02': () => import('./chapters/chapter02.js'),
@@ -13,22 +12,33 @@ let scrollObserver = null;
 async function fetchJsonWithTimeout(url, timeoutMs = 10000) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
+
   try {
     const res = await fetch(url, {
       signal: controller.signal,
       cache: 'no-store',
       headers: { 'Cache-Control': 'no-cache' },
     });
-    if (!res.ok) throw new Error(${url} HTTP );
+
+    if (!res.ok) {
+      throw new Error(`${url} HTTP ${res.status}`);
+    }
+
     return await res.json();
   } finally {
     clearTimeout(timer);
   }
 }
+
 function showFatalLoadError(message) {
   const loading = document.getElementById('loading-screen');
   if (!loading) return;
-  loading.innerHTML = `<p style="color:var(--accent-red);text-align:center;padding:24px;white-space:pre-wrap;">肄섑뀗痢?濡쒕뵫 ?ㅻ쪟\n${message}</p>`;
+
+  loading.innerHTML = `
+    <p style="color:var(--accent-red);text-align:center;padding:24px;white-space:pre-wrap;">
+      콘텐츠 로딩 오류\n${message}
+    </p>
+  `;
 }
 
 window.addEventListener('error', (e) => {
@@ -42,7 +52,6 @@ window.addEventListener('unhandledrejection', (e) => {
   showFatalLoadError(msg);
 });
 
-// ?????? ?醫롫뮞?????뵝 ??????
 export function showToast(message, type = 'info') {
   let container = document.getElementById('toast-container');
   if (!container) {
@@ -50,19 +59,20 @@ export function showToast(message, type = 'info') {
     container.id = 'toast-container';
     document.body.appendChild(container);
   }
+
   const toast = document.createElement('div');
   toast.className = `toast ${type}`;
   toast.textContent = message;
   container.appendChild(toast);
+
   setTimeout(() => toast.remove(), 4000);
 }
 
-// ?????? TOC ?袁⑷퍥 ??슢諭?(index.json 疫꿸퀡而? ??????
 function buildTOC(chapters) {
   const tocList = document.getElementById('toc-list');
   tocList.innerHTML = '';
 
-  chapters.forEach(ch => {
+  chapters.forEach((ch) => {
     const chapterEl = document.createElement('li');
     chapterEl.className = 'toc-chapter collapsed';
     chapterEl.dataset.chapterId = ch.id;
@@ -72,7 +82,7 @@ function buildTOC(chapters) {
     label.innerHTML = `
       <span class="chapter-num">${ch.id}</span>
       <span class="chapter-title">${ch.title}</span>
-      <span class="toc-arrow">??/span>
+      <span class="toc-arrow">▾</span>
     `;
     label.addEventListener('click', () => loadChapter(ch.id));
 
@@ -85,9 +95,8 @@ function buildTOC(chapters) {
   });
 }
 
-// ?????? ??뽮쉐 筌?벤苑???諭??筌뤴뫖以???낅쑓??꾨뱜 ??????
 function updateTOCSections(chapterId, chapterData) {
-  document.querySelectorAll('.toc-chapter').forEach(el => {
+  document.querySelectorAll('.toc-chapter').forEach((el) => {
     el.classList.add('collapsed');
     el.querySelector('.toc-sections').innerHTML = '';
   });
@@ -98,9 +107,10 @@ function updateTOCSections(chapterId, chapterData) {
   chapterEl.classList.remove('collapsed');
   const sections = chapterEl.querySelector('.toc-sections');
 
-  chapterData.sections.forEach(sec => {
+  chapterData.sections.forEach((sec) => {
     const li = document.createElement('li');
     li.className = 'toc-section-item';
+
     const a = document.createElement('a');
     a.className = 'toc-section-link';
     a.dataset.section = sec.id;
@@ -108,10 +118,12 @@ function updateTOCSections(chapterId, chapterData) {
     a.addEventListener('click', () => {
       const el = document.getElementById(`section-${sec.id}`);
       if (el) el.scrollIntoView({ behavior: 'smooth' });
+
       if (window.innerWidth <= 768) {
         document.getElementById('sidebar').classList.remove('open');
       }
     });
+
     li.appendChild(a);
     sections.appendChild(li);
   });
@@ -119,40 +131,44 @@ function updateTOCSections(chapterId, chapterData) {
   const footer = document.getElementById('sidebar-footer');
   if (footer && chapterData.objectives) {
     footer.innerHTML = `
-      <div class="objectives-title">??덈뮸筌뤴뫚紐?/div>
-      ${chapterData.objectives.map(o => `<div class="objective-item">${o}</div>`).join('')}
+      <div class="objectives-title">학습목표</div>
+      ${chapterData.objectives.map((o) => `<div class="objective-item">${o}</div>`).join('')}
     `;
   }
 }
 
-// ?????? ??쎄쾿嚥???쎈솁????????
 function setupScrollSpy() {
   if (scrollObserver) scrollObserver.disconnect();
+
   const sections = document.querySelectorAll('.content-section');
   if (!sections.length) return;
+
   const contentArea = document.getElementById('content-area');
 
-  scrollObserver = new IntersectionObserver(entries => {
-    entries.forEach(entry => {
+  scrollObserver = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
       if (entry.isIntersecting) {
         const id = entry.target.id.replace('section-', '');
-        document.querySelectorAll('.toc-section-link').forEach(link => {
+        document.querySelectorAll('.toc-section-link').forEach((link) => {
           link.classList.toggle('active', link.dataset.section === id);
         });
       }
     });
   }, { root: contentArea, rootMargin: '-5% 0px -60% 0px' });
 
-  sections.forEach(el => scrollObserver.observe(el));
+  sections.forEach((el) => scrollObserver.observe(el));
 }
 
-// ?????? 筌?벤苑?嚥≪뮆諭???????
 async function loadChapter(id) {
   if (id === currentChapterId) return;
   currentChapterId = id;
 
-  document.getElementById('content-inner').innerHTML =
-    '<div id="loading-screen"><div class="spinner"></div><p>?꾩꼹?쀯㎘醫? ?븍뜄???삳뮉 餓?..</p></div>';
+  document.getElementById('content-inner').innerHTML = `
+    <div id="loading-screen">
+      <div class="spinner"></div>
+      <p>콘텐츠를 불러오는 중...</p>
+    </div>
+  `;
   document.getElementById('content-area').scrollTop = 0;
 
   try {
@@ -167,13 +183,13 @@ async function loadChapter(id) {
     resetChatbot(chapterData);
     setTimeout(setupScrollSpy, 150);
   } catch (err) {
-    console.error(`筌?벤苑?${id} 嚥≪뮆諭???쎈솭:`, err);
-    document.getElementById('content-inner').innerHTML =
-      `<p style="color:var(--accent-red);padding:32px;">筌?벤苑?${id} 嚥≪뮆諭????쎈솭??됰뮸??덈뼄.</p>`;
+    console.error(`챕터 ${id} 로드 실패:`, err);
+    document.getElementById('content-inner').innerHTML = `
+      <p style="color:var(--accent-red);padding:32px;">챕터 ${id} 로드에 실패했습니다.</p>
+    `;
   }
 }
 
-// ?????? ?????뺤뺍 / 筌?ロ겦 ?醫? ??????
 function setupToggleHandlers() {
   const appBody = document.getElementById('app-body');
   const sidebar = document.getElementById('sidebar');
@@ -195,12 +211,13 @@ function setupToggleHandlers() {
     }
   });
 
-  document.addEventListener('click', e => {
+  document.addEventListener('click', (e) => {
     if (window.innerWidth <= 768 && sidebar.classList.contains('open')) {
       if (!sidebar.contains(e.target) && !e.target.closest('#sidebar-toggle')) {
         sidebar.classList.remove('open');
       }
     }
+
     if (window.innerWidth <= 1024 && chatbotPanel.classList.contains('open')) {
       if (!chatbotPanel.contains(e.target) && !e.target.closest('#chatbot-toggle')) {
         chatbotPanel.classList.remove('open');
@@ -209,7 +226,6 @@ function setupToggleHandlers() {
   });
 }
 
-// ?????? ???λ뜃由????????
 async function init() {
   try {
     const chapters = await fetchJsonWithTimeout('./chapters/index.json');
@@ -217,20 +233,16 @@ async function init() {
     buildTOC(chapters);
     setupToggleHandlers();
     initExport();
-
     await loadChapter(chapters[0].id);
   } catch (err) {
-    console.error('???λ뜃由????쎈솭:', err);
+    console.error('앱 초기화 실패:', err);
     document.getElementById('loading-screen').innerHTML = `
       <p style="color:var(--accent-red);text-align:center;">
-        ?꾩꼹?쀯㎘?嚥≪뮆諭???쎈솭.<br>
-        <small>嚥≪뮇類?癒?퐣 ??쎈뻬 ??<code>python -m http.server</code> ?癒?뮉 Live Server???????뤾쉭??</small>
-      </p>`;
+        콘텐츠 로드 실패.<br>
+        <small>잠시 후 다시 시도해주세요.</small>
+      </p>
+    `;
   }
 }
 
 document.addEventListener('DOMContentLoaded', init);
-
-
-
-

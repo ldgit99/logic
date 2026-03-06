@@ -1,75 +1,70 @@
 import { showToast } from './main.js';
-import { generateFeedback } from './feedback.js';
 
-// ??? Worker URL ?ㅼ젙 ???
-// Cloudflare Worker 諛고룷 ???꾨옒 URL??蹂寃쏀븯?몄슂
-const WORKER_URLS = ['https://logic-proxy.dongkuklee99.workers.dev/', 'https://logic-proxy.ldgit99.workers.dev/'];
+const WORKER_URLS = [
+  'https://logic-proxy.dongkuklee99.workers.dev/',
+  'https://logic-proxy.ldgit99.workers.dev/',
+];
 let activeWorkerUrl = WORKER_URLS[0];
 
-const COMPLETION_MARKER = '===?뺤꽦?됯??꾨즺===';
+const COMPLETION_MARKER = '===형성평가완료===';
 
-// ??? ?곹깭 ???
 let conversationMessages = [];
 let chapterRef = null;
 let isStreaming = false;
 let assessmentComplete = false;
 let sessionKey = 'logic_session_ch01';
-let chatbotEventsBound = false;
+let eventsBound = false;
 
-// ??? ?쒖뒪???꾨＼?꾪듃 ?앹꽦 ???
 function buildSystemPrompt(data) {
   const { title, objectives, keyConcepts, formativeAssessment } = data;
 
-  const questionsText = formativeAssessment.questions.map((q, i) => {
-    const hints = q.hints.map((h, j) => `  ?뚰듃${j + 1}: ${h}`).join('\n');
-    return `Q${i + 1} [Bloom: ${q.bloomLevel}] ?듭떖 媛쒕뀗: ${q.concept}\n  吏덈Ц: ${q.question}\n  紐⑤쾾 ?듭븞: ${q.keyAnswer}\n${hints}`;
-  }).join('\n\n');
+  const questionsText = formativeAssessment.questions
+    .map((q, i) => {
+      const hints = (q.hints || []).map((h, j) => `  힌트${j + 1}: ${h}`).join('\n');
+      return `Q${i + 1} [Bloom: ${q.bloomLevel}] 개념: ${q.concept}\n  질문: ${q.question}\n  모범답안: ${q.keyAnswer}${hints ? `\n${hints}` : ''}`;
+    })
+    .join('\n\n');
 
-  return `?뱀떊? "?붿????쇰━?뚮줈" 怨쇰ぉ??AI ?쒗꽣?낅땲?? ?뚰겕?쇳뀒??臾몃떟踰뺢낵 Bloom's Taxonomy瑜??쒖슜?섏뿬 ?뺤꽦?됯?瑜?吏꾪뻾?⑸땲??
+  return `당신은 "디지털 논리회로" 과목의 AI 튜터입니다. 학생과의 문답으로 형성평가를 진행하세요.
 
-[?꾩옱 梨뺥꽣]
+[현재 챕터]
 ${title}
 
-[?숈뒿紐⑺몴]
+[학습목표]
 ${objectives.map((o, i) => `${i + 1}. ${o}`).join('\n')}
 
-[?듭떖 媛쒕뀗]
+[핵심 개념]
 ${keyConcepts.join(', ')}
 
-[?뺤꽦?됯? 臾명빆 (珥?${formativeAssessment.totalQuestions}媛?]
+[형성평가 문항]
 ${questionsText}
 
-[?뺤꽦?됯? 吏꾪뻾 洹쒖튃]
-1. ?숈깮??以鍮꾨릱?ㅺ퀬 ?섎㈃ Q1遺???쒖꽌?濡?吏덈Ц?⑸땲??
-2. ?듬???遺덉땐遺꾪븯嫄곕굹 ?由щ㈃ ?뚰듃瑜??④퀎蹂꾨줈 ?쒓났?섍퀬 ?ъ쭏臾명빀?덈떎.
-3. ?덈? 諛붾줈 ?뺣떟???뚮젮二쇱? ?딆뒿?덈떎. ?뚰듃??理쒕? 3?④퀎源뚯?留??ъ슜?⑸땲??
-4. 3?④퀎 ?뚰듃 ?댄썑?먮룄 ?由щ㈃ ?뺣떟???뚮젮以 ???ㅼ쓬 臾몄젣濡??섏뼱媛묐땲??
-5. 媛??듬? ???숈깮???ㅺ컻?먯쓣 ?뚯븙?섏뿬 ?꾩쟻 硫붾え?⑸땲??
-6. 紐⑤뱺 吏덈Ц???앸굹硫?留욎텣 臾명빆, ?由?臾명빆, 痍⑥빟 媛쒕뀗???붿빟?⑸땲??
-7. ?붿빟 ?쒖떆 ??諛섎뱶???ㅼ쓬 ?띿뒪?몃? ?ы븿?섏뿬 ?꾨즺瑜??뚮┰?덈떎: ${COMPLETION_MARKER}
-
-[?묐떟 洹쒖튃]
-- 諛섎뱶???쒓뎅?대줈留??묐떟?⑸땲??
-- 移쒖젅?섍퀬 寃⑸젮?곸씤 ?ㅼ쓣 ?좎??⑸땲??
-- ??踰덉뿉 ?섎굹??吏덈Ц留??⑸땲??
-- ?뺤꽦?됯?? 臾닿???吏덈Ц? "?뺤꽦?됯?瑜?留덉튇 ?꾩뿉 ?댁빞湲고빐??"?쇨퀬 ?듯빀?덈떎.`;
+[진행 규칙]
+1. 학생이 "시작"이라고 입력하면 Q1부터 순서대로 진행합니다.
+2. 학생이 막히면 힌트를 단계적으로 제공합니다.
+3. 정답을 바로 말하지 말고 사고를 유도하세요.
+4. 모든 문항이 끝나면 결과를 요약하고 마지막 줄에 정확히 ${COMPLETION_MARKER} 를 출력하세요.
+5. 답변은 반드시 한국어로 작성하세요.`;
 }
 
-// ??? 梨꾪똿 留먰뭾??異붽? ???
-function appendBubble(role, text, isStreaming = false) {
-  const container = document.getElementById('chat-messages');
-  const time = new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+function getEl(id) {
+  return document.getElementById(id);
+}
 
+function appendBubble(role, text, isTyping = false) {
+  const container = getEl('chat-messages');
+  if (!container) return null;
+
+  const time = new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
   const bubble = document.createElement('div');
   bubble.className = `chat-bubble ${role}`;
-
-  const avatarText = role === 'ai' ? '?쨼' : role === 'user' ? '?뫀' : '';
 
   if (role === 'system') {
     bubble.innerHTML = `<div class="bubble-text">${escapeHtml(text)}</div>`;
   } else {
+    const avatarText = role === 'ai' ? '🤖' : '👤';
     const textEl = document.createElement('div');
-    textEl.className = `bubble-text${isStreaming ? ' typing-cursor' : ''}`;
+    textEl.className = `bubble-text${isTyping ? ' typing-cursor' : ''}`;
     textEl.textContent = text;
 
     bubble.innerHTML = `<div class="bubble-avatar">${avatarText}</div>`;
@@ -86,16 +81,76 @@ function appendBubble(role, text, isStreaming = false) {
 }
 
 function escapeHtml(str) {
-  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
 }
 
-// ??? SSE ?ㅽ듃由щ컢 ???
-async function streamFromWorker(messages) {
-  if (activeWorkerUrl.includes('YOUR_WORKER')) {
-    showToast('Worker URL을 설정해주세요 (js/chatbot.js)', 'error');
-    throw new Error('Worker URL not configured');
-  }
+function updateBadge() {
+  const badge = getEl('assessment-badge');
+  if (!badge) return;
 
+  if (assessmentComplete) {
+    badge.textContent = '완료';
+    badge.className = 'badge badge-complete';
+  } else {
+    badge.textContent = '진행 중';
+    badge.className = 'badge badge-active';
+  }
+}
+
+function setSubmitEnabled(enabled) {
+  const btn = getEl('btn-submit-pdf');
+  if (btn) btn.disabled = !enabled;
+}
+
+function saveSession() {
+  const payload = {
+    chapterId: chapterRef?.id,
+    messages: conversationMessages,
+    assessmentComplete,
+    savedAt: Date.now(),
+  };
+
+  try {
+    localStorage.setItem(sessionKey, JSON.stringify(payload));
+  } catch {
+    // ignore storage failure
+  }
+}
+
+function loadSession() {
+  try {
+    const raw = localStorage.getItem(sessionKey);
+    if (!raw) return false;
+
+    const saved = JSON.parse(raw);
+    if (saved.chapterId !== chapterRef?.id) return false;
+    if (Date.now() - Number(saved.savedAt || 0) > 86400000) return false;
+
+    conversationMessages = Array.isArray(saved.messages) ? saved.messages : [];
+    assessmentComplete = Boolean(saved.assessmentComplete);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function restoreUIFromSession() {
+  const container = getEl('chat-messages');
+  if (!container) return;
+
+  container.innerHTML = '';
+  conversationMessages
+    .filter((m) => m.role !== 'system')
+    .forEach((m) => appendBubble(m.role === 'user' ? 'user' : 'ai', m.content));
+
+  updateBadge();
+  setSubmitEnabled(assessmentComplete);
+}
+
+async function streamFromWorker(messages) {
   let lastError = null;
 
   for (const url of WORKER_URLS) {
@@ -113,8 +168,8 @@ async function streamFromWorker(messages) {
       });
 
       if (!res.ok) {
-        const errText = await res.text();
-        throw new Error(`Worker error ${res.status}: ${errText}`);
+        const text = await res.text();
+        throw new Error(`Worker error ${res.status}: ${text}`);
       }
 
       activeWorkerUrl = url;
@@ -124,29 +179,24 @@ async function streamFromWorker(messages) {
     }
   }
 
-  throw lastError || new Error('No worker endpoint available');
+  throw lastError || new Error('All worker endpoints failed');
 }
 
-// ??? AI ?묐떟 ?ㅽ듃由щ컢 泥섎━ ???
 async function sendToAI(userText) {
   if (isStreaming) return;
   isStreaming = true;
 
-  // ?ъ슜??硫붿떆吏 異붽?
   conversationMessages.push({ role: 'user', content: userText });
   appendBubble('user', userText);
   saveSession();
 
-  // ?낅젰李?鍮꾪솢?깊솕
-  const input = document.getElementById('chat-input');
-  const sendBtn = document.getElementById('chat-send');
-  input.disabled = true;
-  sendBtn.disabled = true;
+  const input = getEl('chat-input');
+  const sendBtn = getEl('chat-send');
+  if (input) input.disabled = true;
+  if (sendBtn) sendBtn.disabled = true;
 
-  // ?ㅽ듃由щ컢 留먰뭾???앹꽦
   const aiBubble = appendBubble('ai', '', true);
-  const textEl = aiBubble.querySelector('.bubble-text');
-
+  const textEl = aiBubble?.querySelector('.bubble-text');
   let fullText = '';
 
   try {
@@ -161,127 +211,102 @@ async function sendToAI(userText) {
 
       buffer += decoder.decode(value, { stream: true });
       const lines = buffer.split('\n');
-      buffer = lines.pop();
+      buffer = lines.pop() || '';
 
       for (const line of lines) {
         if (!line.startsWith('data: ')) continue;
         const data = line.slice(6).trim();
-        if (data === '[DONE]') break;
+        if (data === '[DONE]') continue;
+
         try {
           const parsed = JSON.parse(data);
-          const chunk = parsed.choices?.[0]?.delta?.content;
+          const chunk = parsed?.choices?.[0]?.delta?.content;
           if (chunk) {
             fullText += chunk;
-            // ?꾨즺 留덉빱???쒖떆?섏? ?딆쓬
-            textEl.textContent = fullText.replace(COMPLETION_MARKER, '').trimEnd();
-            aiBubble.closest('#chat-messages').scrollTop = 999999;
+            if (textEl) {
+              textEl.textContent = fullText.replace(COMPLETION_MARKER, '').trimEnd();
+            }
+            const messages = getEl('chat-messages');
+            if (messages) messages.scrollTop = messages.scrollHeight;
           }
-        } catch { /* JSON parse ?ㅻ쪟 臾댁떆 */ }
+        } catch {
+          // ignore malformed chunk
+        }
       }
     }
   } catch (err) {
-    textEl.textContent = '?ㅻ쪟媛 諛쒖깮?덉뒿?덈떎. ?좎떆 ???ㅼ떆 ?쒕룄?댁＜?몄슂.';
-    textEl.style.color = 'var(--accent-red)';
     console.error('Streaming error:', err);
+    if (textEl) {
+      textEl.textContent = '오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
+      textEl.style.color = 'var(--accent-red)';
+    }
+    showToast('챗봇 호출에 실패했습니다.', 'error');
   } finally {
-    textEl.classList.remove('typing-cursor');
+    if (textEl) textEl.classList.remove('typing-cursor');
     isStreaming = false;
-    input.disabled = false;
-    sendBtn.disabled = false;
-    input.focus();
-
-    // ?쒓컙 異붽?
-    const timeEl = aiBubble.querySelector('.bubble-time');
-    if (timeEl) {
-      timeEl.textContent = new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+    if (input) {
+      input.disabled = false;
+      input.focus();
     }
+    if (sendBtn) sendBtn.disabled = false;
 
-    // ?꾨즺 留덉빱 媛먯?
     if (fullText.includes(COMPLETION_MARKER)) {
-      const displayText = fullText.replace(COMPLETION_MARKER, '').trimEnd();
-      fullText = displayText;
+      fullText = fullText.replace(COMPLETION_MARKER, '').trimEnd();
       handleAssessmentComplete();
+      if (textEl) textEl.textContent = fullText;
     }
 
-    // ???湲곕줉?????    conversationMessages.push({ role: 'assistant', content: fullText });
-    saveSession();
+    if (fullText) {
+      conversationMessages.push({ role: 'assistant', content: fullText });
+      saveSession();
+    }
   }
 }
 
-// ??? ?뺤꽦?됯? ?꾨즺 泥섎━ ???
 function handleAssessmentComplete() {
   assessmentComplete = true;
-
-  // 諛곗? ?낅뜲?댄듃
-  const badge = document.getElementById('assessment-badge');
-  badge.textContent = '?꾨즺';
-  badge.className = 'badge badge-complete';
-
-  // ?쒖텧 踰꾪듉 ?쒖꽦??  document.getElementById('btn-submit-pdf').disabled = false;
-
-  // ?쒖뒪??硫붿떆吏
-  appendBubble('system', '?뺤꽦?됯?媛 ?꾨즺?섏뿀?듬땲?? ?꾨옒 "?뺤꽦?됯? ?쒖텧 (PDF)" 踰꾪듉???뚮윭 寃곌낵瑜??쒖텧?섏꽭??');
-
+  updateBadge();
+  setSubmitEnabled(true);
+  appendBubble('system', '형성평가가 완료되었습니다. 아래 제출 버튼으로 PDF를 생성하세요.');
   saveSession();
 }
 
-// ??? localStorage ?몄뀡 ???
-function saveSession() {
-  const session = {
-    chapterId: chapterRef?.id,
-    messages: conversationMessages,
-    assessmentComplete,
-    savedAt: Date.now(),
-  };
-  try {
-    localStorage.setItem(sessionKey, JSON.stringify(session));
-  } catch { /* ?⑸웾 珥덇낵 ??臾댁떆 */ }
-}
-
-function loadSession() {
-  try {
-    const raw = localStorage.getItem(sessionKey);
-    if (!raw) return false;
-    const session = JSON.parse(raw);
-    if (session.chapterId !== chapterRef?.id) return false;
-    // 24?쒓컙 ?대궡 ?몄뀡留?蹂듭썝
-    if (Date.now() - session.savedAt > 86400000) return false;
-
-    conversationMessages = session.messages || [];
-    assessmentComplete = session.assessmentComplete || false;
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-function restoreUIFromSession() {
-  const container = document.getElementById('chat-messages');
-  container.innerHTML = '';
-
-  // system 硫붿떆吏 ?쒖쇅?섍퀬 ?쒖떆
-  conversationMessages.filter(m => m.role !== 'system').forEach(m => {
-    appendBubble(m.role === 'user' ? 'user' : 'ai', m.content);
-  });
-
-  if (assessmentComplete) {
-    document.getElementById('assessment-badge').textContent = '?꾨즺';
-    document.getElementById('assessment-badge').className = 'badge badge-complete';
-    document.getElementById('btn-submit-pdf').disabled = false;
-  }
-}
-
-// ??? ?낅젰 泥섎━ ???
 function handleSend() {
-  const input = document.getElementById('chat-input');
+  const input = getEl('chat-input');
+  if (!input) return;
+
   const text = input.value.trim();
   if (!text || isStreaming) return;
+
   input.value = '';
   input.style.height = 'auto';
   sendToAI(text);
 }
 
-// ??? ?몃? ?몄텧 (export.js?먯꽌 ?ъ슜) ???
+function bindEventsOnce() {
+  if (eventsBound) return;
+  eventsBound = true;
+
+  const sendBtn = getEl('chat-send');
+  const input = getEl('chat-input');
+
+  if (sendBtn) sendBtn.addEventListener('click', handleSend);
+
+  if (input) {
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        handleSend();
+      }
+    });
+
+    input.addEventListener('input', function onInput() {
+      this.style.height = 'auto';
+      this.style.height = `${Math.min(this.scrollHeight, 120)}px`;
+    });
+  }
+}
+
 export function getConversationMessages() {
   return conversationMessages;
 }
@@ -290,56 +315,33 @@ export function getChapterRef() {
   return chapterRef;
 }
 
-// ??? 梨뺥꽣 ?꾪솚 ??由ъ뀑 (main.js?먯꽌 ?몄텧) ???
 export function resetChatbot(chapterData) {
   chapterRef = chapterData;
-  sessionKey = `logic_session_ch${chapterData.id}`;
-  isStreaming = false;
+  sessionKey = `logic_session_ch${chapterData?.id || '01'}`;
   assessmentComplete = false;
+  setSubmitEnabled(false);
+  updateBadge();
 
-  // UI 珥덇린??  document.getElementById('chat-messages').innerHTML = '';
-  document.getElementById('assessment-badge').textContent = '吏꾪뻾 以?;
-  document.getElementById('assessment-badge').className = 'badge badge-active';
-  document.getElementById('btn-submit-pdf').disabled = true;
-  document.getElementById('chat-input').disabled = false;
-  document.getElementById('chat-send').disabled = false;
+  bindEventsOnce();
 
-  // ?몄뀡 蹂듭썝 ?쒕룄
   const restored = loadSession();
-
-  if (restored && conversationMessages.length > 1) {
+  if (restored && conversationMessages.length > 0) {
     restoreUIFromSession();
-    appendBubble('system', '?댁쟾 ?몄뀡??蹂듭썝?섏뿀?듬땲?? ?댁뼱??吏꾪뻾?섏꽭??');
-  } else {
-    conversationMessages = [{ role: 'system', content: buildSystemPrompt(chapterData) }];
-    const welcome = `?덈뀞?섏꽭?? ???${chapterData.title}??AI ?쒗꽣?낅땲?? ?럳\n\n媛뺤쓽 ?댁슜???숈뒿?섏뀲?섏슂? 以鍮꾧? ?섏뀲?ㅻ㈃ "?쒖옉"?대씪怨??낅젰?댁＜?몄슂. 珥?${chapterData.formativeAssessment.totalQuestions}媛쒖쓽 臾몄젣濡??뺤꽦?됯?瑜?吏꾪뻾?섍쿋?듬땲??`;
-    conversationMessages.push({ role: 'assistant', content: welcome });
-    appendBubble('ai', welcome);
-    saveSession();
+    appendBubble('system', '이전 세션이 복원되었습니다. 이어서 진행하세요.');
+    return;
   }
 
-  // ?대깽?몃뒗 理쒖큹 1?뚮쭔 諛붿씤??  if (!chatbotEventsBound) {
-    chatbotEventsBound = true;
-    document.getElementById('chat-send').addEventListener('click', handleSend);
-    document.getElementById('chat-input').addEventListener('keydown', e => {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        handleSend();
-      }
-    });
-    document.getElementById('chat-input').addEventListener('input', function () {
-      this.style.height = 'auto';
-      this.style.height = Math.min(this.scrollHeight, 120) + 'px';
-    });
-  }
+  const container = getEl('chat-messages');
+  if (container) container.innerHTML = '';
+
+  conversationMessages = [{ role: 'system', content: buildSystemPrompt(chapterData) }];
+
+  const welcome = `안녕하세요! 저는 ${chapterData.title} AI 튜터입니다.\n\n준비가 되셨다면 "시작"이라고 입력해주세요.`;
+  conversationMessages.push({ role: 'assistant', content: welcome });
+  appendBubble('ai', welcome);
+  saveSession();
 }
 
-// ??? ?섏쐞 ?명솚 (initChatbot ??resetChatbot ?꾩엫) ???
 export function initChatbot(chapterData) {
   resetChatbot(chapterData);
 }
-
-
-
-
-
