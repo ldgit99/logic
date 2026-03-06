@@ -52,12 +52,11 @@ function buildReportHTML(studentName, studentId, chapterData, messages, feedback
   const now = new Date();
   const createdAt = now.toLocaleString('ko-KR', { hour12: false });
 
-  const chatRows = messages.length
-    ? messages
+  const printableMessages = messages.filter((m) => m.role === 'user' || m.role === 'assistant');
+  const chatRows = printableMessages.length
+    ? printableMessages
       .map((m) => {
-        let roleLabel = 'SYSTEM';
-        if (m.role === 'user') roleLabel = '\uD559\uC0DD';
-        if (m.role === 'assistant') roleLabel = 'AI \uD29C\uD130';
+        const roleLabel = m.role === 'user' ? '\\uD559\\uC0DD' : 'AI \\uD29C\\uD130';
 
         return `
           <div style="border:1px solid #dbe4f0;border-radius:8px;padding:8px;margin-bottom:8px;overflow-wrap:anywhere;word-break:break-word;">
