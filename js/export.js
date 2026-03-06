@@ -17,13 +17,12 @@ function escapeHtml(text) {
     .replace(/'/g, '&#39;');
 }
 
-function setLoading(visible, message = '??곕굡獄쏄퉮????밴쉐??롫뮉 餓λ쵐???덈뼄...') {
+function setLoading(visible, message = '\uD53C\uB4DC\uBC31\uC744 \uC0DD\uC131\uD558\uB294 \uC911\uC785\uB2C8\uB2E4...') {
   const overlay = getEl('loading-overlay');
   const msg = getEl('loading-message');
 
   if (msg) msg.textContent = message;
   if (!overlay) return;
-
   overlay.classList.toggle('hidden', !visible);
 }
 
@@ -57,52 +56,52 @@ function buildReportHTML(studentName, studentId, chapterData, messages, feedback
     ? messages
       .map((m) => {
         let roleLabel = 'SYSTEM';
-        if (m.role === 'user') roleLabel = '??덇문';
-        if (m.role === 'assistant') roleLabel = 'AI ??쀪숲';
+        if (m.role === 'user') roleLabel = '\uD559\uC0DD';
+        if (m.role === 'assistant') roleLabel = 'AI \uD29C\uD130';
 
         return `
-          <div style="border:1px solid #dbe4f0;border-radius:10px;padding:10px 12px;margin-bottom:10px;overflow-wrap:anywhere;word-break:break-word;">
-            <div style="font-weight:700;color:#1e3a8a;margin-bottom:6px;">${roleLabel}</div>
+          <div style="border:1px solid #dbe4f0;border-radius:8px;padding:8px;margin-bottom:8px;overflow-wrap:anywhere;word-break:break-word;">
+            <div style="font-weight:700;margin-bottom:4px;">${roleLabel}</div>
             <div style="white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;">${escapeHtml(m.content || '')}</div>
           </div>
         `;
       })
       .join('')
-    : '<p style="margin:0;">????嚥≪뮄?뉐첎? ??곷뮸??덈뼄.</p>';
+    : '<p style="margin:0;">\uB300\uD654 \uB85C\uADF8\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4.</p>';
 
   const weakConcepts = feedback.weakConcepts.length
     ? feedback.weakConcepts.map((item) => `<li>${escapeHtml(item)}</li>`).join('')
-    : '<li>??????곸벉</li>';
+    : '<li>\uD574\uB2F9 \uC5C6\uC74C</li>';
 
   return `
-    <div style="width:794px;padding:36px 44px;background:#fff;color:#111827;font-family:'Noto Sans KR','Malgun Gothic',sans-serif;line-height:1.6;overflow-wrap:anywhere;word-break:break-word;">
-      <h1 style="margin:0 0 12px;font-size:28px;color:#0f172a;">?遺?????겸봺???쨮 ?類ㅺ쉐??? 野껉퀗??/h1>
-      <div style="height:3px;background:#2563eb;margin-bottom:18px;"></div>
+    <div style="width:794px;padding:24px;background:#fff;color:#111827;font-family:'Noto Sans KR','Malgun Gothic',sans-serif;font-size:10.7pt;line-height:1.45;overflow-wrap:anywhere;word-break:break-word;">
+      <h1 style="margin:0 0 8px;font-size:10.7pt;font-weight:700;">\uB514\uC9C0\uD138 \uB17C\uB9AC\uD68C\uB85C \uD615\uC131\uD3C9\uAC00 \uACB0\uACFC</h1>
+      <div style="height:2px;background:#2563eb;margin-bottom:10px;"></div>
 
-      <table style="width:100%;border-collapse:collapse;margin-bottom:18px;font-size:15px;table-layout:fixed;">
-        <tr><td style="padding:6px 0;width:120px;font-weight:700;">??已?/td><td style="overflow-wrap:anywhere;word-break:break-word;">${escapeHtml(studentName)}</td></tr>
-        <tr><td style="padding:6px 0;font-weight:700;">??뉗쓰</td><td style="overflow-wrap:anywhere;word-break:break-word;">${escapeHtml(studentId)}</td></tr>
-        <tr><td style="padding:6px 0;font-weight:700;">筌?벤苑?/td><td style="overflow-wrap:anywhere;word-break:break-word;">${escapeHtml(chapterData.title)}</td></tr>
-        <tr><td style="padding:6px 0;font-weight:700;">?臾믨쉐 ??볦퍢</td><td style="overflow-wrap:anywhere;word-break:break-word;">${escapeHtml(createdAt)}</td></tr>
+      <table style="width:100%;border-collapse:collapse;margin-bottom:10px;font-size:10.7pt;table-layout:fixed;">
+        <tr><td style="padding:3px 0;width:90px;font-weight:700;">\uC774\uB984</td><td>${escapeHtml(studentName)}</td></tr>
+        <tr><td style="padding:3px 0;font-weight:700;">\uD559\uBC88</td><td>${escapeHtml(studentId)}</td></tr>
+        <tr><td style="padding:3px 0;font-weight:700;">\uCC55\uD130</td><td>${escapeHtml(chapterData.title)}</td></tr>
+        <tr><td style="padding:3px 0;font-weight:700;">\uC791\uC131 \uC2DC\uAC04</td><td>${escapeHtml(createdAt)}</td></tr>
       </table>
 
-      <h2 style="margin:20px 0 8px;font-size:22px;color:#1d4ed8;">?袁⑷퍥 ????嚥≪뮄??/h2>
+      <h2 style="margin:10px 0 6px;font-size:10.7pt;font-weight:700;">\uC804\uCCB4 \uB300\uD654 \uB85C\uADF8</h2>
       ${chatRows}
 
-      <h2 style="margin:24px 0 8px;font-size:22px;color:#1d4ed8;">??곕굡獄?/h2>
-      <p style="margin:0 0 10px;overflow-wrap:anywhere;word-break:break-word;"><strong>?癒?땾:</strong> ${feedback.score}??(${feedback.correctCount}/${feedback.totalCount})</p>
+      <h2 style="margin:12px 0 6px;font-size:10.7pt;font-weight:700;">\uD53C\uB4DC\uBC31</h2>
+      <p style="margin:0 0 6px;font-size:10.7pt;"><strong>\uC810\uC218:</strong> ${feedback.score}\uC810 (${feedback.correctCount}/${feedback.totalCount})</p>
 
-      <h3 style="margin:14px 0 6px;font-size:18px;color:#1e40af;">Feed Up</h3>
-      <p style="margin:0 0 12px;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;">${escapeHtml(feedback.feedUp || '-')}</p>
+      <h3 style="margin:8px 0 4px;font-size:10.7pt;font-weight:700;">Feed Up</h3>
+      <p style="margin:0 0 6px;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;font-size:10.7pt;">${escapeHtml(feedback.feedUp || '-')}</p>
 
-      <h3 style="margin:14px 0 6px;font-size:18px;color:#1e40af;">Feed Back</h3>
-      <p style="margin:0 0 12px;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;">${escapeHtml(feedback.feedBack || '-')}</p>
+      <h3 style="margin:8px 0 4px;font-size:10.7pt;font-weight:700;">Feed Back</h3>
+      <p style="margin:0 0 6px;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;font-size:10.7pt;">${escapeHtml(feedback.feedBack || '-')}</p>
 
-      <h3 style="margin:14px 0 6px;font-size:18px;color:#1e40af;">Feed Forward</h3>
-      <p style="margin:0 0 12px;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;">${escapeHtml(feedback.feedForward || '-')}</p>
+      <h3 style="margin:8px 0 4px;font-size:10.7pt;font-weight:700;">Feed Forward</h3>
+      <p style="margin:0 0 6px;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;font-size:10.7pt;">${escapeHtml(feedback.feedForward || '-')}</p>
 
-      <h3 style="margin:14px 0 6px;font-size:18px;color:#1e40af;">?띯뫁鍮?揶쏆뮆??/h3>
-      <ul style="margin:0 0 8px 22px;padding:0;overflow-wrap:anywhere;word-break:break-word;">${weakConcepts}</ul>
+      <h3 style="margin:8px 0 4px;font-size:10.7pt;font-weight:700;">\uCDE8\uC57D \uAC1C\uB150</h3>
+      <ul style="margin:0 0 0 16px;padding:0;overflow-wrap:anywhere;word-break:break-word;font-size:10.7pt;">${weakConcepts}</ul>
     </div>
   `;
 }
@@ -110,10 +109,10 @@ function buildReportHTML(studentName, studentId, chapterData, messages, feedback
 async function savePdf(studentName, studentId, chapterData, messages, feedback) {
   const jspdfNs = window.jspdf;
   if (!jspdfNs || !jspdfNs.jsPDF) {
-    throw new Error('jsPDF ??깆뵠?됰슢??뵳?? 筌≪뼚??????곷뮸??덈뼄.');
+    throw new Error('jsPDF library not found');
   }
   if (typeof window.html2canvas !== 'function') {
-    throw new Error('html2canvas ??깆뵠?됰슢??뵳?? 筌≪뼚??????곷뮸??덈뼄.');
+    throw new Error('html2canvas library not found');
   }
 
   const html = buildReportHTML(studentName, studentId, chapterData, messages, feedback);
@@ -137,24 +136,25 @@ async function savePdf(studentName, studentId, chapterData, messages, feedback) 
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
 
-    const marginPt = (15 / 25.4) * 72;
-    const usableWidth = pageWidth - marginPt * 2;
-    const usableHeight = pageHeight - marginPt * 2;
+    const marginTopBottomPt = (15 / 25.4) * 72; // 15mm top/bottom
+    const marginLeftRightPt = (15 / 25.4) * 72;
+    const usableWidth = pageWidth - marginLeftRightPt * 2;
+    const usableHeight = pageHeight - marginTopBottomPt * 2;
 
     const imgWidth = usableWidth;
     const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
     let offsetY = 0;
-    doc.addImage(imgData, 'PNG', marginPt, marginPt - offsetY, imgWidth, imgHeight);
+    doc.addImage(imgData, 'PNG', marginLeftRightPt, marginTopBottomPt - offsetY, imgWidth, imgHeight);
     offsetY += usableHeight;
 
     while (offsetY < imgHeight) {
       doc.addPage();
-      doc.addImage(imgData, 'PNG', marginPt, marginPt - offsetY, imgWidth, imgHeight);
+      doc.addImage(imgData, 'PNG', marginLeftRightPt, marginTopBottomPt - offsetY, imgWidth, imgHeight);
       offsetY += usableHeight;
     }
 
-    const safeName = studentName.replace(/[^a-zA-Z0-9가-힣]/g, '');
+    const safeName = studentName.replace(/[^a-zA-Z0-9\uAC00-\uD7A3]/g, '');
     const safeId = studentId.replace(/[^a-zA-Z0-9]/g, '');
     const fileName = `${safeId}${safeName}` || 'feedback';
     doc.save(`${fileName}.pdf`);
@@ -170,14 +170,14 @@ async function handleConfirmSubmit() {
   const studentId = (idEl?.value || '').trim();
 
   if (!studentName || !studentId) {
-    showToast('??已ユ???뉗쓰????낆젾??곻폒?紐꾩뒄.', 'error');
+    showToast('\uC774\uB984\uACFC \uD559\uBC88\uC744 \uC785\uB825\uD574\uC8FC\uC138\uC694.', 'error');
     return;
   }
 
   const chapterData = getChapterRef();
   const messages = getConversationMessages();
   if (!chapterData || !Array.isArray(messages) || messages.length === 0) {
-    showToast('??뽱뀱???????怨쀬뵠?怨? ??곷뮸??덈뼄.', 'error');
+    showToast('\uC81C\uCD9C\uD560 \uB300\uD654 \uB370\uC774\uD130\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4.', 'error');
     return;
   }
 
@@ -188,10 +188,10 @@ async function handleConfirmSubmit() {
     const rawFeedback = await generateFeedback(chapterData, messages);
     const feedback = normalizeFeedback(rawFeedback, chapterData.formativeAssessment.totalQuestions);
     await savePdf(studentName, studentId, chapterData, messages, feedback);
-    showToast('PDF ??밴쉐???袁⑥┷??뤿???щ빍??', 'success');
+    showToast('PDF \uC0DD\uC131\uC774 \uC644\uB8CC\uB418\uC5C8\uC2B5\uB2C8\uB2E4.', 'success');
   } catch (err) {
     console.error('PDF export error:', err);
-    showToast('PDF ??밴쉐????쎈솭??됰뮸??덈뼄. ?醫롫뻻 ????쇰뻻 ??뺣즲??곻폒?紐꾩뒄.', 'error');
+    showToast('PDF \uC0DD\uC131\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4. \uC7A0\uC2DC \uD6C4 \uB2E4\uC2DC \uC2DC\uB3C4\uD574\uC8FC\uC138\uC694.', 'error');
   } finally {
     setLoading(false);
   }
