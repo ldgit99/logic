@@ -1,39 +1,38 @@
-// ─── Worker URL (chatbot.js와 동일하게 유지) ───
-const WORKER_URL = 'https://logic-proxy.ldgit99.workers.dev';
+﻿// ??? Worker URL (chatbot.js? ?숈씪?섍쾶 ?좎?) ???
+const WORKER_URL = 'https://logic.dongkuklee99.workers.dev/';
 
-// ─── 피드백 분석 프롬프트 생성 ───
+// ??? ?쇰뱶諛?遺꾩꽍 ?꾨＼?꾪듃 ?앹꽦 ???
 function buildFeedbackPrompt(chapterData, messages) {
   const chatLog = messages
     .filter(m => m.role !== 'system')
-    .map(m => `[${m.role === 'user' ? '학생' : 'AI 튜터'}]\n${m.content}`)
+    .map(m => `[${m.role === 'user' ? '?숈깮' : 'AI ?쒗꽣'}]\n${m.content}`)
     .join('\n\n---\n\n');
 
-  return `당신은 디지털 논리회로 과목의 형성평가 분석 전문가입니다.
-아래 학생의 형성평가 대화 기록을 분석하여 Hattie & Timperley의 3단계 피드백 모델로 평가 보고서를 생성하세요.
+  return `?뱀떊? ?붿????쇰━?뚮줈 怨쇰ぉ???뺤꽦?됯? 遺꾩꽍 ?꾨Ц媛?낅땲??
+?꾨옒 ?숈깮???뺤꽦?됯? ???湲곕줉??遺꾩꽍?섏뿬 Hattie & Timperley??3?④퀎 ?쇰뱶諛?紐⑤뜽濡??됯? 蹂닿퀬?쒕? ?앹꽦?섏꽭??
 
-[챕터] ${chapterData.title}
-[총 문항] ${chapterData.formativeAssessment.totalQuestions}개
-[평가 기준]
+[梨뺥꽣] ${chapterData.title}
+[珥?臾명빆] ${chapterData.formativeAssessment.totalQuestions}媛?[?됯? 湲곗?]
 ${chapterData.formativeAssessment.questions.map((q, i) =>
-    `Q${i + 1} [${q.bloomLevel}]: ${q.question}\n  모범답안: ${q.keyAnswer}`
+    `Q${i + 1} [${q.bloomLevel}]: ${q.question}\n  紐⑤쾾?듭븞: ${q.keyAnswer}`
   ).join('\n')}
 
-[대화 기록]
+[???湲곕줉]
 ${chatLog}
 
-아래 JSON 형식으로만 응답하세요 (다른 텍스트 없이):
+?꾨옒 JSON ?뺤떇?쇰줈留??묐떟?섏꽭??(?ㅻⅨ ?띿뒪???놁씠):
 {
-  "correctCount": <정답 또는 대체로 올바른 문항 수 (숫자)>,
+  "correctCount": <?뺣떟 ?먮뒗 ?泥대줈 ?щ컮瑜?臾명빆 ??(?レ옄)>,
   "totalCount": ${chapterData.formativeAssessment.totalQuestions},
-  "score": <점수 0-100 (숫자)>,
-  "weakConcepts": ["<취약 개념 1>", "<취약 개념 2>"],
-  "feedUp": "<Feed Up: 이번 챕터 학습목표를 얼마나 달성했는지 평가. 강점을 먼저 언급 (2-3문장)>",
-  "feedBack": "<Feed Back: 오답·혼동이 있었던 개념과 그 이유를 구체적으로 설명 (3-4문장)>",
-  "feedForward": "<Feed Forward: 취약 개념을 보완하기 위한 구체적인 다음 학습 단계 안내 (2-3문장)>"
+  "score": <?먯닔 0-100 (?レ옄)>,
+  "weakConcepts": ["<痍⑥빟 媛쒕뀗 1>", "<痍⑥빟 媛쒕뀗 2>"],
+  "feedUp": "<Feed Up: ?대쾲 梨뺥꽣 ?숈뒿紐⑺몴瑜??쇰쭏???ъ꽦?덈뒗吏 ?됯?. 媛뺤젏??癒쇱? ?멸툒 (2-3臾몄옣)>",
+  "feedBack": "<Feed Back: ?ㅻ떟쨌?쇰룞???덉뿀??媛쒕뀗怨?洹??댁쑀瑜?援ъ껜?곸쑝濡??ㅻ챸 (3-4臾몄옣)>",
+  "feedForward": "<Feed Forward: 痍⑥빟 媛쒕뀗??蹂댁셿?섍린 ?꾪븳 援ъ껜?곸씤 ?ㅼ쓬 ?숈뒿 ?④퀎 ?덈궡 (2-3臾몄옣)>"
 }`;
 }
 
-// ─── AI 피드백 생성 (non-streaming, JSON) ───
+// ??? AI ?쇰뱶諛??앹꽦 (non-streaming, JSON) ???
 export async function generateFeedback(chapterData, messages) {
   const prompt = buildFeedbackPrompt(chapterData, messages);
 
@@ -43,7 +42,7 @@ export async function generateFeedback(chapterData, messages) {
     body: JSON.stringify({
       model: 'gpt-4o',
       messages: [
-        { role: 'system', content: '당신은 교육 평가 전문가입니다. 요청된 JSON 형식으로만 응답합니다.' },
+        { role: 'system', content: '?뱀떊? 援먯쑁 ?됯? ?꾨Ц媛?낅땲?? ?붿껌??JSON ?뺤떇?쇰줈留??묐떟?⑸땲??' },
         { role: 'user', content: prompt },
       ],
       stream: false,
@@ -64,3 +63,4 @@ export async function generateFeedback(chapterData, messages) {
 
   return JSON.parse(content);
 }
+
