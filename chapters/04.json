@@ -1,6 +1,7 @@
 {
   "id": "04",
   "title": "제04장. 논리 게이트",
+  "keyConcepts": ["논리 레벨", "TTL", "CMOS", "NOT 게이트", "AND 게이트", "OR 게이트", "NAND 게이트", "NOR 게이트", "XOR 게이트", "XNOR 게이트", "전파지연", "잡음여유도", "팬아웃"],
   "objectives": [
     "논리 게이트와 논리 레벨의 기본 개념을 이해한다",
     "각 논리 게이트의 동작 원리와 진리표를 이해하고 활용한다",
@@ -12,19 +13,39 @@
       "title": "4.1 논리 레벨",
       "blocks": [
         {
-          "type": "text",
-          "content": "디지털 회로에서 논리 레벨(Logic Level)은 전압으로 표현되는 0과 1의 이진 값입니다. TTL과 CMOS는 대표적인 디지털 IC 계열로, 각각 논리 High와 Low를 정의하는 전압 범위가 다릅니다."
+          "type": "definition",
+          "term": "논리 레벨 (Logic Level)",
+          "definition": "디지털 회로에서 논리 레벨은 전압으로 표현되는 0과 1의 이진 값입니다. TTL과 CMOS는 대표적인 디지털 IC 계열로, 각각 High와 Low를 정의하는 전압 범위가 다릅니다."
         },
         {
-          "type": "comparison",
-          "title": "정논리 vs 부논리",
-          "left": { "label": "정논리 (Positive Logic)", "items": ["높은 전압 = 논리 1", "낮은 전압 = 논리 0", "일반적으로 많이 사용", "예: TTL, CMOS"] },
-          "right": { "label": "부논리 (Negative Logic)", "items": ["낮은 전압 = 논리 1", "높은 전압 = 논리 0", "특수 목적 사용", "AND ↔ OR 기능 교환"] }
+          "type": "table",
+          "title": "TTL vs CMOS 논리 레벨 비교 (5V 기준)",
+          "headers": ["파라미터", "LS-TTL", "HC-CMOS"],
+          "rows": [
+            ["VOH (출력 High 최솟값)", "2.7V", "4.9V"],
+            ["VOL (출력 Low 최댓값)", "0.5V", "0.1V"],
+            ["VIH (입력 High 최솟값)", "2.0V", "3.5V"],
+            ["VIL (입력 Low 최댓값)", "0.8V", "1.0V"],
+            ["NMH (High 잡음여유도)", "0.7V", "1.4V"],
+            ["NML (Low 잡음여유도)", "0.3V", "0.9V"]
+          ]
         },
         {
           "type": "definition",
           "term": "트랜지스터와 NOT 게이트",
-          "definition": "게이트는 스위치 역할을 하는 트랜지스터(Transistor)로 구성됩니다. 입력 전압이 임계값보다 낮으면 출력은 High, 높으면 출력은 Low가 됩니다. 이는 논리 부정(NOT)으로 동작합니다."
+          "definition": "게이트는 스위치 역할을 하는 트랜지스터(Transistor)로 구성됩니다. 입력 전압 Vin이 임계값보다 낮으면 출력 Vout = High, 높으면 출력 Vout = Low가 됩니다. 트랜지스터는 기본적으로 논리 부정(NOT)으로 동작합니다."
+        },
+        {
+          "type": "comparison",
+          "title": "정논리 vs 부논리",
+          "left": {
+            "label": "정논리 (Positive Logic)",
+            "items": ["높은 전압 = 논리 1", "낮은 전압 = 논리 0", "일반적으로 많이 사용", "예: TTL, CMOS"]
+          },
+          "right": {
+            "label": "부논리 (Negative Logic)",
+            "items": ["낮은 전압 = 논리 1", "높은 전압 = 논리 0", "특수 목적에 사용", "AND ↔ OR 기능 교환"]
+          }
         }
       ]
     },
@@ -34,18 +55,36 @@
       "blocks": [
         {
           "type": "definition",
-          "term": "NOT 게이트 (인버터)",
-          "definition": "1개의 입력과 1개의 출력을 갖는 게이트로 논리 부정을 수행합니다. 입력이 0이면 출력은 1, 입력이 1이면 출력은 0이 됩니다. 논리식: F = Ā"
+          "term": "NOT 게이트 (인버터, Inverter)",
+          "definition": "1개의 입력과 1개의 출력을 갖는 게이트로 논리 부정을 나타냅니다. 입력이 0이면 출력은 1, 입력이 1이면 출력은 0이 됩니다. 논리식: F = Ā"
+        },
+        {
+          "type": "table",
+          "title": "NOT 게이트 진리표",
+          "headers": ["입력 A", "출력 F = Ā"],
+          "rows": [["0", "1"], ["1", "0"]]
+        },
+        {
+          "type": "example",
+          "title": "NOT 게이트 2단 연결",
+          "problem": "NOT 게이트 2개를 직렬 연결할 때, 입력 A=1이면 최종 출력 Y는?",
+          "solution": "첫 번째 NOT 게이트 출력 X = Ā = 0\n두 번째 NOT 게이트 출력 Y = X̄ = 1\n결과: Y = A (이중 부정은 원래 값으로 복원됨)\n→ 두 NOT 게이트를 직렬 연결하면 버퍼와 동일하게 동작합니다."
         },
         {
           "type": "definition",
           "term": "버퍼 (Buffer)",
-          "definition": "입력 신호를 변경하지 않고 그대로 출력하는 게이트입니다. 신호 구동 능력(드라이빙)을 강화할 때 사용합니다. 논리식: F = A"
+          "definition": "입력 신호를 변경하지 않고 그대로 출력하는 게이트입니다. 입력이 1이면 출력도 1, 입력이 0이면 출력도 0. 신호의 구동 능력(드라이빙)을 강화할 때 사용합니다. 논리식: F = A"
         },
         {
           "type": "definition",
           "term": "3상태 버퍼 (Tri-State Buffer)",
-          "definition": "출력이 High, Low, 하이 임피던스(Hi-Z) 세 가지 상태 중 하나를 갖는 소자입니다. 제어 단자(Enable)로 출력을 연결하거나 분리할 수 있습니다."
+          "definition": "출력이 High, Low, 하이 임피던스(Hi-Z) 세 가지 상태 중 하나를 갖는 논리소자입니다. 제어 단자(Enable)로 출력을 연결하거나 분리할 수 있습니다. 버스 배선 시 여러 소자를 공유 배선에 연결할 때 사용합니다. 대표 IC: 74125(Active-High Enable), 74126(Active-Low Enable)"
+        },
+        {
+          "type": "example",
+          "title": "3상태 버퍼 동작",
+          "problem": "Active-High Enable 3상태 버퍼에서 제어 단자 E가 High인 구간과 Low인 구간에서의 출력 F는?",
+          "solution": "E=High(활성) 구간: 출력 F = 입력 A의 파형 그대로 출력\nE=Low(비활성) 구간: 출력 F = 하이 임피던스(Hi-Z) 상태\n→ Hi-Z 상태는 입력과 출력이 전기적으로 분리된 상태로, 다른 소자가 버스를 제어할 수 있게 됩니다."
         },
         {
           "type": "simulation",
@@ -61,14 +100,26 @@
         {
           "type": "definition",
           "term": "AND 게이트",
-          "definition": "모든 입력이 1일 때만 출력이 1이 되는 게이트입니다. 논리곱(Logical Product)이라 하며 논리식은 F = A·B 입니다. 마스크(Mask) 연산에 활용됩니다."
+          "definition": "모든 입력이 1(on)인 경우에만 출력이 1(on)이 되고, 입력 중에 하나라도 0(off)이 있으면 출력은 0이 됩니다. 논리곱(Logical Product)이라 하며 논리식은 F = A·B 입니다."
+        },
+        {
+          "type": "table",
+          "title": "AND 게이트 진리표 (2입력)",
+          "headers": ["A", "B", "F = A·B"],
+          "rows": [["0","0","0"],["0","1","0"],["1","0","0"],["1","1","1"]]
+        },
+        {
+          "type": "example",
+          "title": "마스크(Mask) 연산",
+          "problem": "8비트 데이터 A = 11001011이 있을 때, 마스크 B = 00001111을 AND 연산하면 어떤 결과가 나오는가? 이 연산의 의미는?",
+          "solution": "  11001011 (A)\nAND 00001111 (B=마스크)\n= 00001011\n\n상위 4비트(1100)가 0000으로 지워지고, 하위 4비트(1011)는 그대로 유지됩니다.\n→ AND 마스크 연산: 원하는 비트 위치를 0으로 만들어 선택적으로 비트를 삭제하거나 추출할 때 사용합니다. 마스크 비트가 0인 위치는 삭제, 1인 위치는 보존됩니다."
         },
         {
           "type": "list",
           "title": "AND 게이트 활용 예",
           "items": [
-            "자동차 좌석벨트 경보 시스템: 점화 스위치 AND 벨트 미착용 AND 타이머",
-            "마스크 연산: 특정 비트를 0으로 만들기 위해 AND 사용",
+            "좌석벨트 경보 시스템: 점화스위치(A=1) AND 벨트 미착용(B=1) AND 타이머 30초 이내(C=1)일 때 경보음 출력",
+            "마스크(Mask) 연산: 특정 비트를 0으로 만들기 위해 AND 사용 (예: 하위 4비트만 추출)",
             "조건부 데이터 통과: Enable 신호로 데이터 흐름 제어"
           ]
         }
@@ -81,14 +132,26 @@
         {
           "type": "definition",
           "term": "OR 게이트",
-          "definition": "입력 중 하나라도 1이면 출력이 1이 되는 게이트입니다. 논리합(Logical Sum)이라 하며 논리식은 F = A+B 입니다."
+          "definition": "입력이 모두 0인 경우에만 출력이 0이 되고, 입력 중에 하나라도 1이 있으면 출력은 1이 됩니다. 논리합(Logical Sum)이라 하며 논리식은 F = A+B 입니다."
+        },
+        {
+          "type": "table",
+          "title": "OR 게이트 진리표 (2입력)",
+          "headers": ["A", "B", "F = A+B"],
+          "rows": [["0","0","0"],["0","1","1"],["1","0","1"],["1","1","1"]]
+        },
+        {
+          "type": "example",
+          "title": "침입 탐지 시스템",
+          "problem": "가정에 출입문(A), 창문1(B), 창문2(C) 센서가 있고, 열리면 1을 출력한다. OR 게이트로 경보 시스템을 구성할 때 논리식과 동작을 설명하시오.",
+          "solution": "논리식: F = A + B + C\n동작: A, B, C 중 하나라도 1(열림)이면 경보 출력 F = 1\n→ OR 게이트는 여러 조건 중 하나라도 만족하면 출력을 활성화하는 '하나라도(any)' 논리에 적합합니다."
         },
         {
           "type": "list",
           "title": "OR 게이트 활용 예",
           "items": [
             "침입 탐지 시스템: 출입문 OR 창문1 OR 창문2 열림 감지",
-            "비트 삽입 연산: 특정 비트를 1로 강제 설정",
+            "비트 삽입 연산: 특정 비트를 1로 강제 설정 (마스크 OR 연산)",
             "다중 인터럽트: 여러 소스 중 하나라도 인터럽트 발생 시 처리"
           ]
         }
@@ -96,25 +159,79 @@
     },
     {
       "id": "4-5",
-      "title": "4.5 NAND / 4.6 NOR 게이트",
+      "title": "4.5 NAND 게이트 / 4.6 NOR 게이트",
       "blocks": [
         {
+          "type": "definition",
+          "term": "NAND 게이트",
+          "definition": "입력이 모두 1인 경우에만 출력이 0이 되고, 그렇지 않은 경우에는 출력이 1이 됩니다. NOT AND(AND 후 반전)의 의미입니다. 논리식: F = (A·B)̄"
+        },
+        {
+          "type": "definition",
+          "term": "NOR 게이트",
+          "definition": "입력이 모두 0인 경우에만 출력이 1이 되고, 하나라도 1이 있으면 출력이 0이 됩니다. NOT OR(OR 후 반전)의 의미입니다. 논리식: F = (A+B)̄"
+        },
+        {
+          "type": "table",
+          "title": "NAND / NOR 진리표 (2입력)",
+          "headers": ["A", "B", "NAND (A·B)̄", "NOR (A+B)̄"],
+          "rows": [["0","0","1","1"],["0","1","1","0"],["1","0","1","0"],["1","1","0","0"]]
+        },
+        {
           "type": "comparison",
-          "title": "NAND vs NOR 게이트",
-          "left": { "label": "NAND 게이트", "items": ["AND + NOT 결합", "모든 입력이 1일 때만 출력 0", "F = (A·B)̄", "범용 게이트: 모든 게이트 구현 가능"] },
-          "right": { "label": "NOR 게이트", "items": ["OR + NOT 결합", "모든 입력이 0일 때만 출력 1", "F = (A+B)̄", "범용 게이트: 모든 게이트 구현 가능"] }
+          "title": "NAND vs NOR: 범용 게이트",
+          "left": {
+            "label": "NAND 게이트 (범용)",
+            "items": ["AND + NOT 결합", "모든 게이트 구현 가능", "NOT: A NAND A", "AND: (A NAND B) NAND (A NAND B)", "OR: (A NAND A) NAND (B NAND B)"]
+          },
+          "right": {
+            "label": "NOR 게이트 (범용)",
+            "items": ["OR + NOT 결합", "모든 게이트 구현 가능", "NOT: A NOR A", "OR: (A NOR B) NOR (A NOR B)", "AND: (A NOR A) NOR (B NOR B)"]
+          }
+        },
+        {
+          "type": "example",
+          "title": "NAND 타이밍 다이어그램",
+          "problem": "3입력 NAND 게이트에서 입력 A, B, C가 시간대별로 주어질 때, 출력이 0이 되는 시간구간은?",
+          "solution": "NAND 출력이 0이 되려면 A=1, B=1, C=1 이 모두 동시에 1이어야 합니다.\n→ 시간구간 2, 6에서만 3입력이 모두 1이므로 출력 F = 0\n→ 나머지 시간구간(1,3,4,5,7,8,9)에서는 F = 1"
         }
       ]
     },
     {
       "id": "4-6",
-      "title": "4.7 XOR / 4.8 XNOR 게이트",
+      "title": "4.7 XOR 게이트 / 4.8 XNOR 게이트",
       "blocks": [
         {
-          "type": "comparison",
-          "title": "XOR vs XNOR 게이트",
-          "left": { "label": "XOR (배타적 OR)", "items": ["홀수 개의 입력이 1일 때 출력 1", "두 입력이 다를 때 1", "F = A⊕B", "비교 연산, 패리티 체크에 활용"] },
-          "right": { "label": "XNOR (배타적 NOR)", "items": ["짝수 개의 입력이 1일 때 출력 1", "두 입력이 같을 때 1", "F = (A⊕B)̄", "동치 비교(Equivalence)에 활용"] }
+          "type": "definition",
+          "term": "XOR 게이트 (배타적 OR)",
+          "definition": "입력 중 홀수 개의 1이 입력된 경우에 출력이 1이 됩니다. 2입력의 경우 두 입력이 다를 때 1, 같을 때 0이 됩니다. 논리식: F = A⊕B = AB̄ + ĀB"
+        },
+        {
+          "type": "definition",
+          "term": "XNOR 게이트 (배타적 NOR)",
+          "definition": "입력 중 짝수 개의 1이 입력될 때 출력이 1이 됩니다. 2입력의 경우 두 입력이 같을 때 1, 다를 때 0이 됩니다. XOR의 출력을 반전시킨 것입니다. 논리식: F = (A⊕B)̄ = AB + ĀB̄"
+        },
+        {
+          "type": "table",
+          "title": "XOR / XNOR 진리표 (2입력)",
+          "headers": ["A", "B", "XOR A⊕B", "XNOR (A⊕B)̄"],
+          "rows": [["0","0","0","1"],["0","1","1","0"],["1","0","1","0"],["1","1","0","1"]]
+        },
+        {
+          "type": "example",
+          "title": "XOR 비트 반전 연산",
+          "problem": "8비트 데이터 A = 10110101을 XOR 마스크 B = 11110000과 XOR 연산하면?",
+          "solution": "  10110101 (A)\nXOR 11110000 (B=마스크)\n= 01000101\n\n상위 4비트(1011)가 반전(0100)되고, 하위 4비트(0101)는 그대로 유지됩니다.\n→ XOR 마스크 연산: 마스크 비트가 1인 위치의 비트를 선택적으로 반전시킬 때 사용합니다."
+        },
+        {
+          "type": "table",
+          "title": "논리 연산(AND/OR/XOR) 정리",
+          "headers": ["연산", "마스크 비트=0인 위치", "마스크 비트=1인 위치", "주요 용도"],
+          "rows": [
+            ["AND", "0으로 강제", "원래값 유지", "비트 삭제(마스크)"],
+            ["OR", "원래값 유지", "1로 강제", "비트 삽입(세트)"],
+            ["XOR", "원래값 유지", "비트 반전", "비트 토글/비교"]
+          ]
         },
         {
           "type": "simulation",
@@ -128,21 +245,51 @@
       "title": "4.9 게이트의 전기적 특성",
       "blocks": [
         {
-          "type": "list",
-          "title": "주요 전기적 특성",
-          "items": [
-            "전파 지연 시간(Propagation Delay): 입력 → 출력까지 걸리는 시간. 게이트 속도를 나타냄",
-            "전력 소모(Power Dissipation): 게이트가 동작할 때 소모하는 전력",
-            "잡음 여유도(Noise Margin): 데이터 값 변경 없이 허용되는 최대 잡음",
-            "팬-인(Fan-in): 게이트에 연결 가능한 최대 입력 수",
-            "팬-아웃(Fan-out): 하나의 출력에 연결 가능한 최대 게이트 수"
-          ]
+          "type": "definition",
+          "term": "전파 지연 시간 (Propagation Delay Time)",
+          "definition": "신호가 게이트의 입력에서 출력으로 전달될 때까지 걸리는 시간으로, 게이트의 동작 속도를 나타냅니다. tPHL(High→Low 지연)과 tPLH(Low→High 지연)로 구분합니다. 전파지연시간 = (tPHL + tPLH) / 2. 최대 동작 주파수 fmax = 1 / 전파지연시간"
         },
         {
-          "type": "comparison",
+          "type": "example",
+          "title": "전파 지연 시간과 최대 동작 주파수 계산",
+          "problem": "게이트 X: tPHL=5ns, tPLH=4.5ns / 게이트 Y: tPHL=8ns, tPLH=7.5ns\n각 게이트의 전파지연시간과 최대 동작 주파수를 계산하시오.",
+          "solution": "게이트 X:\n  전파지연시간 = 5 + 4.5 = 9.5ns\n  최대 동작 주파수 = 1 / 9.5ns ≒ 105.3MHz\n\n게이트 Y:\n  전파지연시간 = 8 + 7.5 = 15.5ns\n  최대 동작 주파수 = 1 / 15.5ns ≒ 64.5MHz\n\n→ 게이트 X가 더 짧은 지연시간과 더 높은 최대 주파수를 가집니다."
+        },
+        {
+          "type": "definition",
+          "term": "잡음 여유도 (Noise Margin)",
+          "definition": "디지털 회로에서 데이터 값에 변경을 주지 않는 범위 내에서 최대로 허용되는 잡음의 크기입니다.\n• NMH = VOH(min) - VIH(min) : High 레벨 잡음 여유도\n• NML = VIL(max) - VOL(max) : Low 레벨 잡음 여유도\n잡음 여유도가 클수록 잡음에 강한 회로입니다."
+        },
+        {
+          "type": "example",
+          "title": "잡음 여유도 계산",
+          "problem": "LS-TTL 게이트의 파라미터: VOH=2.7V, VOL=0.5V, VIH=2.0V, VIL=0.8V\nHigh 레벨과 Low 레벨 잡음 여유도를 계산하시오.",
+          "solution": "NMH = VOH(min) - VIH(min) = 2.7 - 2.0 = 0.7V\nNML = VIL(max) - VOL(max) = 0.8 - 0.5 = 0.3V\n\n→ High 레벨에서는 0.7V까지, Low 레벨에서는 0.3V까지의 잡음을 허용합니다. NML이 더 작으므로 Low 레벨에서 잡음에 더 취약합니다."
+        },
+        {
+          "type": "definition",
+          "term": "팬-인(Fan-in)과 팬-아웃(Fan-out)",
+          "definition": "• 팬-인(Fan-in): 하나의 게이트 입력으로 접속할 수 있는 최대 입력 단자 수\n• 팬-아웃(Fan-out): 하나의 게이트 출력에서 다른 게이트의 입력으로 연결 가능한 최대 게이트 수. 팬아웃을 초과하면 출력 전압이 논리 레벨 범위를 벗어납니다."
+        },
+        {
+          "type": "example",
+          "title": "팬아웃 계산",
+          "problem": "LS-TTL 구동 게이트: IOH=-0.4mA, IOL=8mA / 부하 게이트: IIH=20μA, IIL=0.4mA\n최대 팬아웃은?",
+          "solution": "High 레벨: IOH / IIH = 0.4mA / 0.02mA = 20개\nLow 레벨: IOL / IIL = 8mA / 0.4mA = 20개\n\n→ 팬아웃 = min(20, 20) = 20개\n실제로는 최악의 경우를 고려하여 설계합니다."
+        },
+        {
+          "type": "table",
           "title": "TTL vs CMOS 특성 비교",
-          "left": { "label": "TTL (74계열)", "items": ["BJT와 다이오드로 구성", "동작전압: 5V", "빠른 속도", "소비전력 비교적 큼", "동작온도: 0~70°C (74계열)"] },
-          "right": { "label": "CMOS", "items": ["NMOS + PMOS FET로 구성", "동작전압: 넓은 범위(3~18V)", "상대적으로 느린 속도", "소비전력 매우 작음", "정전기에 취약"] }
+          "headers": ["특성", "74LS-TTL", "74HC-CMOS"],
+          "rows": [
+            ["구성 소자", "BJT + 다이오드", "NMOS + PMOS FET"],
+            ["동작 전압", "5V 고정", "2~6V 광범위"],
+            ["전파 지연", "약 10ns (빠름)", "약 10ns (동등)"],
+            ["소비 전력", "비교적 큼", "매우 작음 (정적)"],
+            ["잡음 여유도", "0.3~0.7V", "0.9~1.4V (높음)"],
+            ["동작 온도 (74계열)", "0~70°C", "0~70°C"],
+            ["정전기 취약성", "강함", "취약 (주의 필요)"]
+          ]
         },
         {
           "type": "simulation",
@@ -153,31 +300,67 @@
     }
   ],
   "formativeAssessment": {
+    "totalQuestions": 5,
     "questions": [
       {
         "id": "Q1",
-        "bloom": "기억",
-        "question": "AND 게이트의 진리표를 2입력 기준으로 작성하고, 출력이 1이 되는 조건을 설명하시오."
+        "bloomLevel": "기억",
+        "concept": "AND/OR/NAND/NOR/XOR 게이트 진리표",
+        "question": "AND 게이트와 OR 게이트의 2입력 진리표를 각각 작성하고, 두 게이트의 출력 조건의 차이를 설명하시오.",
+        "keyAnswer": "AND: 모든 입력이 1일 때만 출력 1. OR: 하나라도 1이면 출력 1.",
+        "hints": [
+          "진리표는 입력의 모든 조합(00, 01, 10, 11)을 나열합니다.",
+          "AND는 '모두', OR는 '하나라도'가 핵심 키워드입니다.",
+          "AND: 0·0=0, 0·1=0, 1·0=0, 1·1=1 / OR: 0+0=0, 0+1=1, 1+0=1, 1+1=1"
+        ]
       },
       {
         "id": "Q2",
-        "bloom": "이해",
-        "question": "NAND 게이트가 '범용 게이트(Universal Gate)'라고 불리는 이유를 설명하시오. NAND만으로 NOT, AND, OR을 어떻게 구현할 수 있는지 논리식으로 나타내시오."
+        "bloomLevel": "이해",
+        "concept": "NAND 범용 게이트",
+        "question": "NAND 게이트가 '범용 게이트(Universal Gate)'라고 불리는 이유를 설명하시오. NAND만으로 NOT, AND, OR을 어떻게 구현할 수 있는지 논리식으로 나타내시오.",
+        "keyAnswer": "NOT: A NAND A = Ā / AND: (A NAND B) NAND 자신 / OR: (Ā) NAND (B̄)",
+        "hints": [
+          "NAND 하나에 두 입력을 같은 신호로 연결하면 어떤 게이트가 됩니까?",
+          "NAND NAND = 이중 부정 = AND와 같습니다.",
+          "드모르간 정리: (A·B)̄ = Ā+B̄ 을 이용해 OR를 NAND로 표현해 보세요."
+        ]
       },
       {
         "id": "Q3",
-        "bloom": "적용",
-        "question": "8비트 데이터 10110101을 마스크 01001010과 AND 연산한 결과는? 그리고 OR 연산하면? 계산 결과를 구하고 각 연산의 의미를 설명하시오."
+        "bloomLevel": "적용",
+        "concept": "마스크 연산 (AND/OR/XOR)",
+        "question": "8비트 데이터 10110101을 마스크 01001010과 AND, OR, XOR 연산한 결과를 각각 구하고 각 연산의 의미를 설명하시오.",
+        "keyAnswer": "AND: 00000000 (겹치는 1비트 없음) / OR: 11111111 / XOR: 11111111. AND=비트 삭제, OR=비트 삽입, XOR=비트 반전",
+        "hints": [
+          "각 비트 위치별로 개별 연산을 적용합니다. 1과 0의 연산 규칙을 생각해보세요.",
+          "AND: 둘 다 1이어야 1, OR: 하나라도 1이면 1, XOR: 다를 때 1",
+          "AND 0000000: 마스크 비트가 0인 자리는 모두 0, OR 결과는 양쪽 합, XOR은 차이"
+        ]
       },
       {
         "id": "Q4",
-        "bloom": "분석",
-        "question": "게이트 X의 tPHL=5ns, tPLH=4.5ns이고, 게이트 Y의 tPHL=8ns, tPLH=7.5ns일 때, 두 게이트의 최대 동작 주파수를 각각 계산하고 비교하시오."
+        "bloomLevel": "분석",
+        "concept": "전파지연과 최대 동작 주파수",
+        "question": "게이트 X의 tPHL=5ns, tPLH=4.5ns이고 게이트 Y의 tPHL=8ns, tPLH=7.5ns일 때, 두 게이트의 최대 동작 주파수를 각각 계산하고 어느 게이트가 더 빠른지 설명하시오.",
+        "keyAnswer": "게이트 X: (5+4.5)ns=9.5ns → fmax=105.3MHz / 게이트 Y: 15.5ns → fmax=64.5MHz. X가 더 빠름.",
+        "hints": [
+          "전파지연시간 = tPHL + tPLH (두 지연의 합)",
+          "최대 동작 주파수 fmax = 1 / 전파지연시간",
+          "게이트 X: 9.5ns → 1/(9.5×10⁻⁹) ≒ 105MHz"
+        ]
       },
       {
         "id": "Q5",
-        "bloom": "평가",
-        "question": "CMOS 게이트와 TTL 게이트 중 배터리 구동 IoT 기기에 더 적합한 것을 선택하고, 전력 소모, 잡음 여유도, 동작 전압 범위 관점에서 근거를 제시하시오."
+        "bloomLevel": "평가",
+        "concept": "TTL vs CMOS 선택",
+        "question": "배터리로 구동되는 IoT 기기에 TTL과 CMOS 중 어느 게이트 IC가 더 적합한지 선택하고, 전력 소모, 잡음 여유도, 동작 전압 범위 세 가지 관점에서 근거를 제시하시오.",
+        "keyAnswer": "CMOS 적합. 정적 소비전력 거의 0, 잡음여유도 크고(1.4V), 저전압(3.3V) 동작 가능.",
+        "hints": [
+          "배터리 기기에서 가장 중요한 특성은 무엇일까요?",
+          "CMOS는 정적 상태에서 전력을 거의 소모하지 않습니다. TTL은 항상 전류가 흐릅니다.",
+          "CMOS: 광범위 동작전압(2~6V), 높은 잡음여유도(~1.4V), 소비전력 매우 작음"
+        ]
       }
     ]
   }

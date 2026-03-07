@@ -126,5 +126,68 @@
 
   <!-- ─── 앱 진입점 (ES Module) ─── -->
   <script type="module" src="js/main.js?v=20260307i"></script>
+  <script>
+    (function () {
+      function escapeHtml(str) {
+        return String(str || '')
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/\"/g, '&quot;');
+      }
+
+      function looksStuck() {
+        const loading = document.getElementById('loading-screen');
+        const hasSections = document.querySelector('.content-section');
+        return !!loading && !hasSections;
+      }
+
+      async function recoverBasicView() {
+        if (!looksStuck()) return;
+
+        try {
+          const [chaptersRes, chapterRes] = await Promise.all([
+            fetch('./chapters/index.json?fallback=20260307j', { cache: 'no-store' }),
+            fetch('./chapters/01.json?fallback=20260307j', { cache: 'no-store' })
+          ]);
+
+          if (!chaptersRes.ok || !chapterRes.ok) throw new Error('fallback fetch failed');
+
+          const chapters = await chaptersRes.json();
+          const chapter = await chapterRes.json();
+
+          const indicator = document.getElementById('chapter-indicator');
+          if (indicator && chapter.title) indicator.textContent = chapter.title;
+
+          const toc = document.getElementById('toc-list');
+          if (toc && Array.isArray(chapters)) {
+            toc.innerHTML = chapters.map(function (c) {
+              return '<li class="toc-chapter"><div class="toc-chapter-label"><span class="chapter-num">' + escapeHtml(c.id) + '</span><span class="chapter-title">' + escapeHtml(c.title) + '</span></div></li>';
+            }).join('');
+          }
+
+          const contentInner = document.getElementById('content-inner');
+          if (contentInner) {
+            const sections = Array.isArray(chapter.sections) ? chapter.sections : [];
+            const html = sections.map(function (sec) {
+              const blocks = sec.blocks || sec.content || [];
+              const textBlock = blocks.find(function (b) { return b.type === 'text'; });
+              const text = textBlock ? (textBlock.body || textBlock.content || '') : '';
+              return '<div class="content-section"><h3 class="section-title">' + escapeHtml(sec.title) + '</h3><div class="content-block block-text">' + escapeHtml(text) + '</div></div>';
+            }).join('');
+
+            contentInner.innerHTML = '<div class="chapter-header"><h2>' + escapeHtml(chapter.title || '제01장') + '</h2><p style="color:var(--text-secondary);font-size:0.9rem;">모바일 복구 모드로 표시 중입니다. 새로고침 후에도 동일하면 캐시 삭제 후 다시 접속해주세요.</p></div>' + html;
+          }
+        } catch (e) {
+          const contentInner = document.getElementById('content-inner');
+          if (contentInner) {
+            contentInner.innerHTML = '<div style="padding:24px;color:var(--accent-red);">모바일 로딩 오류가 지속됩니다. 브라우저 사이트 데이터 삭제 후 다시 접속해주세요.</div>';
+          }
+        }
+      }
+
+      window.setTimeout(recoverBasicView, 3500);
+    })();
+  </script>
 </body>
 </html>

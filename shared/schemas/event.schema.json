@@ -1,0 +1,54 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Event",
+  "description": "학생 앱에서 발생하는 모든 이벤트의 공통 스키마 (B1 태스크)",
+  "type": "object",
+  "required": ["event_id", "event_type", "timestamp", "chapter_id", "session_id", "student_id", "student_name"],
+  "additionalProperties": false,
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "description": "멱등성 보장용 UUID (중복 전송 시 동일 ID면 1회만 저장)",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    },
+    "event_type": {
+      "type": "string",
+      "enum": [
+        "chat_message",
+        "hint_used",
+        "question_advanced",
+        "assessment_completed",
+        "pdf_generated",
+        "session_started",
+        "session_ended"
+      ]
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 UTC 타임스탬프"
+    },
+    "chapter_id": {
+      "type": "string",
+      "description": "예: '01', '05'",
+      "maxLength": 4
+    },
+    "session_id": {
+      "type": "string",
+      "description": "세션 UUID (chatbot.js에서 생성)"
+    },
+    "student_id": {
+      "type": "string",
+      "maxLength": 30
+    },
+    "student_name": {
+      "type": "string",
+      "maxLength": 50
+    },
+    "payload": {
+      "type": "object",
+      "description": "event_type에 따른 추가 데이터",
+      "additionalProperties": true
+    }
+  }
+}

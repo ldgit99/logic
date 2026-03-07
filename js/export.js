@@ -1,6 +1,7 @@
 import { showToast } from './main.js';
 import { generateFeedback } from './feedback.js';
 import { getConversationMessages, getChapterRef } from './chatbot.js';
+import { sendAssessment, sendFeedbackReport } from './instrumentation.js';
 
 let exportEventsBound = false;
 
@@ -187,6 +188,33 @@ async function handleConfirmSubmit() {
     const rawFeedback = await generateFeedback(chapterData, messages);
     const feedback = normalizeFeedback(rawFeedback, chapterData.formativeAssessment.totalQuestions);
     await savePdf(studentName, studentId, chapterData, messages, feedback);
+
+    // 서버 전송 — PDF와 독립적으로 실행 (실패해도 사용자에게 알리지 않음)
+    const submittedAt = new Date().toISOString();
+    const sessionId = (typeof crypto !== 'undefined' && crypto.randomUUID)
+      ? crypto.randomUUID()
+      : `${chapterData.id}_${studentId}_${Date.now()}`;
+    sendAssessment({
+      session_id: sessionId,
+      student_id: studentId,
+      student_name: studentName,
+      chapter_id: chapterData.id,
+      submitted_at: submittedAt,
+      correct_count: feedback.correctCount,
+      total_count: feedback.totalCount,
+      score: feedback.score,
+      weak_concepts: feedback.weakConcepts,
+    });
+    sendFeedbackReport({
+      session_id: sessionId,
+      student_id: studentId,
+      chapter_id: chapterData.id,
+      submitted_at: submittedAt,
+      feed_up: feedback.feedUp,
+      feed_back: feedback.feedBack,
+      feed_forward: feedback.feedForward,
+    });
+
     showToast('PDF \uC0DD\uC131\uC774 \uC644\uB8CC\uB418\uC5C8\uC2B5\uB2C8\uB2E4.', 'success');
   } catch (err) {
     console.error('PDF export error:', err);

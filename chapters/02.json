@@ -157,6 +157,11 @@
           "type": "simulation",
           "simId": "binaryArithmetic",
           "title": "2진수 덧셈 시뮬레이터 — 캐리(Carry) 전파 시각화"
+        },
+        {
+          "type": "simulation",
+          "simId": "signedOverflowLab",
+          "title": "부호 있는 오버플로우 실험실 — Carry-in ≠ Carry-out 판정"
         }
       ]
     },

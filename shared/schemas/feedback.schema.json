@@ -1,0 +1,38 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "FeedbackReport",
+  "description": "AI 피드백 리포트 스키마 (B3 태스크)",
+  "type": "object",
+  "required": ["session_id", "student_id", "chapter_id", "submitted_at", "feed_up", "feed_back", "feed_forward"],
+  "additionalProperties": false,
+  "properties": {
+    "session_id": { "type": "string" },
+    "student_id": { "type": "string", "maxLength": 30 },
+    "student_name": { "type": "string", "maxLength": 50 },
+    "chapter_id": { "type": "string", "maxLength": 4 },
+    "submitted_at": { "type": "string", "format": "date-time" },
+    "feed_up": {
+      "type": "string",
+      "description": "강점 칭찬 (1-2문장)",
+      "minLength": 1
+    },
+    "feed_back": {
+      "type": "string",
+      "description": "비판적 개선점 (번호 목록 포함)",
+      "minLength": 1
+    },
+    "feed_forward": {
+      "type": "string",
+      "description": "구체적 개선 행동 (번호 목록 포함)",
+      "minLength": 1
+    },
+    "score": { "type": "number", "minimum": 0, "maximum": 100 },
+    "correct_count": { "type": "integer", "minimum": 0 },
+    "total_count": { "type": "integer", "minimum": 1 },
+    "weak_concepts": {
+      "type": "array",
+      "items": { "type": "string" },
+      "maxItems": 20
+    }
+  }
+}
