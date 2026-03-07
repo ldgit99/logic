@@ -124,11 +124,12 @@ async function apiRequest(path, method = 'GET', body = null, token = '') {
   throw lastErr || new Error('network error');
 }
 
-async function signup(studentName, studentId, password) {
+async function signup(studentName, studentId, password, email) {
   const data = await apiRequest('/auth/signup', 'POST', {
     student_name: studentName,
     student_id: studentId,
     password,
+    email,
   });
   return {
     token: data.token,
@@ -170,13 +171,15 @@ function getInputValues() {
   return {
     studentName: sanitize(getEl('login-name')?.value),
     studentId: sanitize(getEl('login-student-id')?.value),
+    email: sanitize(getEl('login-email')?.value),
     password: String(getEl('login-password')?.value || ''),
     passwordConfirm: String(getEl('login-password-confirm')?.value || ''),
   };
 }
 
-function validateForSignup({ studentName, studentId, password, passwordConfirm }) {
-  if (!studentName || !studentId || !password) return '이름, 학번, 비밀번호를 입력하세요.';
+function validateForSignup({ studentName, studentId, email, password, passwordConfirm }) {
+  if (!studentName || !studentId || !email || !password) return '이름, 학번, 이메일, 비밀번호를 입력하세요.';
+  if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) return '유효한 이메일 형식을 입력하세요.';
   if (password.length < 8) return '비밀번호는 8자 이상이어야 합니다.';
   if (password !== passwordConfirm) return '비밀번호와 비밀번호 확인이 일치하지 않습니다.';
   return '';
@@ -227,6 +230,7 @@ export async function initAuthGate() {
 
   const nameInput = getEl('login-name');
   const idInput = getEl('login-student-id');
+  const emailInput = getEl('login-email');
   const pwInput = getEl('login-password');
   const pwConfirmInput = getEl('login-password-confirm');
   const loginBtn = getEl('login-submit');
@@ -275,7 +279,7 @@ export async function initAuthGate() {
       setBusy(true);
       setError('');
       try {
-        const profile = await signup(values.studentName, values.studentId, values.password);
+        const profile = await signup(values.studentName, values.studentId, values.password, values.email);
         completeAuth(profile);
       } catch (err) {
         setError(err?.message || '회원가입에 실패했습니다.');
@@ -297,5 +301,6 @@ export async function initAuthGate() {
     pwInput?.addEventListener('keydown', onKeyDown);
     pwConfirmInput?.addEventListener('keydown', onKeyDown);
     nameInput?.addEventListener('keydown', onKeyDown);
+    emailInput?.addEventListener('keydown', onKeyDown);
   });
 }

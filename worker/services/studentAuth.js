@@ -78,7 +78,7 @@ export async function getUserByStudentId(env, studentId) {
   }
 }
 
-export async function createUser(env, { studentId, studentName, password }) {
+export async function createUser(env, { studentId, studentName, password, email }) {
   const exists = await getUserByStudentId(env, studentId);
   if (exists) return { error: 'USER_EXISTS' };
 
@@ -89,6 +89,7 @@ export async function createUser(env, { studentId, studentName, password }) {
     student_name: studentName,
     salt,
     password_hash: passwordHash,
+    email: String(email || ''),
     created_at: new Date().toISOString(),
   };
 

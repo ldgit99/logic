@@ -1,6 +1,6 @@
-import { initChatbot } from './chatbot.js?v=20260308f';
-import { initExport } from './export.js?v=20260308f';
-import { initAuthGate } from './auth.js?v=20260308f';
+import { initChatbot } from './chatbot.js?v=20260308h';
+import { initExport } from './export.js?v=20260308h';
+import { initAuthGate } from './auth.js?v=20260308h';
 
 // ─── 챕터 모듈 레지스트리 (동적 임포트) ───
 const CHAPTER_MODULES = {
@@ -216,3 +216,4 @@ async function init() {
 }
 
 document.addEventListener('DOMContentLoaded', init);
+

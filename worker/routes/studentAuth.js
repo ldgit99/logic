@@ -23,12 +23,13 @@ function sanitize(value) {
   return String(value || '').trim();
 }
 
-function validateCredentials({ studentId, studentName, password, needName }) {
-  if (!studentId || !password || (needName && !studentName)) {
+function validateCredentials({ studentId, studentName, password, email, needName }) {
+  if (!studentId || !password || (needName && (!studentName || !email))) {
     return 'missing required fields';
   }
   if (studentId.length < 4 || studentId.length > 32) return 'invalid student_id length';
   if (needName && (studentName.length < 2 || studentName.length > 30)) return 'invalid student_name length';
+  if (needName && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email || '')) return 'invalid email format';
   if (password.length < 8 || password.length > 64) return 'invalid password length';
   return null;
 }
@@ -44,19 +45,24 @@ export async function handleStudentAuth(request, env, pathname) {
 
     const studentId = sanitize(body.student_id);
     const studentName = sanitize(body.student_name);
+    const email = sanitize(body.email);
     const password = String(body.password || '');
 
-    const invalid = validateCredentials({ studentId, studentName, password, needName: true });
+    const invalid = validateCredentials({ studentId, studentName, password, email, needName: true });
     if (invalid) return json({ error: invalid }, 400);
 
-    const created = await createUser(env, { studentId, studentName, password });
+    const created = await createUser(env, { studentId, studentName, password, email });
     if (created.error === 'USER_EXISTS') return json({ error: 'student already exists' }, 409);
 
     const { token } = await createSession(env, created.user);
     return json({
       ok: true,
       token,
-      profile: { student_id: created.user.student_id, student_name: created.user.student_name },
+      profile: {
+        student_id: created.user.student_id,
+        student_name: created.user.student_name,
+        email: created.user.email || '',
+      },
     }, 201);
   }
 
@@ -71,7 +77,7 @@ export async function handleStudentAuth(request, env, pathname) {
     const studentId = sanitize(body.student_id);
     const password = String(body.password || '');
 
-    const invalid = validateCredentials({ studentId, studentName: '', password, needName: false });
+    const invalid = validateCredentials({ studentId, studentName: '', password, email: '', needName: false });
     if (invalid) return json({ error: invalid }, 400);
 
     const user = await verifyUser(env, { studentId, password });
@@ -81,7 +87,11 @@ export async function handleStudentAuth(request, env, pathname) {
     return json({
       ok: true,
       token,
-      profile: { student_id: user.student_id, student_name: user.student_name },
+      profile: {
+        student_id: user.student_id,
+        student_name: user.student_name,
+        email: user.email || '',
+      },
     });
   }
 
@@ -95,6 +105,7 @@ export async function handleStudentAuth(request, env, pathname) {
       profile: {
         student_id: found.session.student_id,
         student_name: found.session.student_name,
+        email: found.session.email || '',
       },
     });
   }
