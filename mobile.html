@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>?붿????쇰━?뚮줈 ?명꽣?숉떚釉?援먯옱</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/layout.css" />
+  <link rel="stylesheet" href="css/sidebar.css" />
+  <link rel="stylesheet" href="css/content.css" />
+  <link rel="stylesheet" href="css/chatbot.css" />
+  <link rel="stylesheet" href="css/modal.css" />
+</head>
+<body>
+
+  <header id="app-header">
+    <button id="sidebar-toggle" aria-label="紐⑹감 ?닿린/?リ린">??/button>
+    <div id="header-title">
+      <h1>寃쎈턿??숆탳 ?뺣낫而댄벂?곌탳?↔낵 ?붿????쇰━?뚮줈</h1>
+      <span id="chapter-indicator">??1?? ?ㅼ뼱媛湲?/span>
+    </div>
+    <button id="chatbot-toggle" aria-label="梨쀫큸 ?닿린/?リ린" title="AI ?쒗꽣">?쨼</button>
+  </header>
+
+  <div id="app-body">
+
+    <nav id="sidebar">
+      <div id="sidebar-header">
+        <span>紐⑹감</span>
+      </div>
+      <ul id="toc-list">
+      </ul>
+    </nav>
+
+    <main id="content-area">
+      <div id="content-inner">
+        <div id="loading-screen">
+          <div class="spinner"></div>
+          <p>肄섑뀗痢좊? 遺덈윭?ㅻ뒗 以?..</p>
+        </div>
+      </div>
+    </main>
+
+    <aside id="chatbot-panel">
+      <div id="chatbot-header">
+        <span class="chatbot-icon">?쨼</span>
+        <div>
+          <div id="chatbot-title">AI ?쒗꽣</div>
+          <div id="chatbot-subtitle">?뺤꽦?됯? 吏꾪뻾 以?/div>
+        </div>
+        <div id="assessment-badge" class="badge badge-pending">?湲?以?/div>
+      </div>
+
+      <div id="chat-messages" role="log" aria-live="polite">
+      </div>
+
+      <div id="chat-input-area">
+        <textarea
+          id="chat-input"
+          placeholder="吏덈Ц???낅젰?섏꽭??.. (Shift+Enter: 以꾨컮轅?/ Enter: ?꾩넚)"
+          rows="3"
+          aria-label="梨쀫큸 ?낅젰"
+        ></textarea>
+        <button id="chat-send" aria-label="?꾩넚">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+          </svg>
+        </button>
+      </div>
+
+      <button id="btn-submit-pdf" disabled>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/>
+          <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/>
+        </svg>
+        ?뺤꽦?됯? ?쒖텧 (PDF)
+      </button>
+    </aside>
+  </div>
+
+  <div id="student-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-box">
+      <h2 id="modal-title">?뺤꽦?됯? ?쒖텧</h2>
+      <p class="modal-desc">PDF ?쒖텧???꾪빐 ?뺣낫瑜??낅젰?댁＜?몄슂.</p>
+      <div class="form-group">
+        <label for="input-name">?대쫫</label>
+        <input type="text" id="input-name" placeholder="?띻만?? autocomplete="name" />
+      </div>
+      <div class="form-group">
+        <label for="input-student-id">?숇쾲</label>
+        <input type="text" id="input-student-id" placeholder="2024XXXXXX" />
+      </div>
+      <div class="modal-actions">
+        <button id="modal-cancel" class="btn-secondary">痍⑥냼</button>
+        <button id="modal-confirm" class="btn-primary">PDF ?앹꽦 ?쒖옉</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="loading-overlay" class="modal-overlay hidden">
+    <div class="modal-box loading-box">
+      <div class="spinner large"></div>
+      <p id="loading-message">AI媛 ?쇰뱶諛깆쓣 ?앹꽦 以묒엯?덈떎...</p>
+      <p class="loading-sub">?좎떆留?湲곕떎?ㅼ＜?몄슂 (10~20珥??뚯슂)</p>
+    </div>
+  </div>
+
+  <div id="pdf-export-container" aria-hidden="true"></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script type="module" src="js/main.mobilefix.js?v=20260307g"></script>
+</body>
+</html>
