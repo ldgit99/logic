@@ -1,0 +1,57 @@
+﻿<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Diode Electron Flow Preview</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/layout.css" />
+  <link rel="stylesheet" href="../css/content.css" />
+  <style>
+    body {
+      margin: 0;
+      background: #0b1220;
+      color: #e5e7eb;
+      font-family: "Noto Sans KR", sans-serif;
+    }
+    .wrap {
+      max-width: 980px;
+      margin: 32px auto;
+      padding: 0 16px;
+    }
+    .panel {
+      background: #111827;
+      border: 1px solid #1f2937;
+      border-radius: 12px;
+      padding: 20px;
+    }
+    h1 {
+      margin: 0 0 6px;
+      font-size: 1.25rem;
+    }
+    p {
+      margin: 0 0 16px;
+      color: #9ca3af;
+      font-size: 0.95rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="panel">
+      <h1>다이오드 전자 이동 시뮬레이션 (미리보기)</h1>
+      <p>배포/챕터 반영 전 확인용입니다.</p>
+      <div id="sim-root"></div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { mountDiodeElectronFlow } from '../js/simulations/diodeElectronFlow.js';
+
+    const root = document.getElementById('sim-root');
+    mountDiodeElectronFlow(root);
+  </script>
+</body>
+</html>
