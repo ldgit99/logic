@@ -1,7 +1,7 @@
 import { showToast } from './main.js';
 import { generateFeedback } from './feedback.js';
 import { getConversationMessages, getChapterRef } from './chatbot.js';
-import { sendAssessment, sendFeedbackReport } from './instrumentation.js';
+import { sendAssessment, sendFeedbackReport } from './instrumentation.js?v=20260308a';
 
 let exportEventsBound = false;
 

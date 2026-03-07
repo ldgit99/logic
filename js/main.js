@@ -1,5 +1,5 @@
-import { initChatbot } from './chatbot.js';
-import { initExport } from './export.js';
+import { initChatbot } from './chatbot.js?v=20260308a';
+import { initExport } from './export.js?v=20260308a';
 
 // ─── 챕터 모듈 레지스트리 (동적 임포트) ───
 const CHAPTER_MODULES = {
