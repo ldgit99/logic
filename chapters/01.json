@@ -1,351 +1,351 @@
 {
   "id": "01",
-  "title": "제01장. 들어가기",
+  "title": "\uC81C01\uC7A5. \uB4E4\uC5B4\uAC00\uAE30",
   "objectives": [
-    "아날로그 신호와 디지털 신호의 개념을 설명할 수 있다",
-    "디지털 정보의 표현방법을 설명할 수 있다",
-    "주기적인 파형에서 주파수, 주기, 듀티 사이클을 설명할 수 있다",
-    "디지털 회로의 장점과 단점에 대해 설명할 수 있다",
-    "ADC와 DAC의 개념을 설명할 수 있다"
+    "\uC544\uB0A0\uB85C\uADF8 \uC2E0\uD638\uC640 \uB514\uC9C0\uD138 \uC2E0\uD638\uC758 \uAC1C\uB150\uC744 \uC124\uBA85\uD560 \uC218 \uC788\uB2E4",
+    "\uB514\uC9C0\uD138 \uC815\uBCF4\uC758 \uD45C\uD604\uBC29\uBC95\uC744 \uC124\uBA85\uD560 \uC218 \uC788\uB2E4",
+    "\uC8FC\uAE30\uC801\uC778 \uD30C\uD615\uC5D0\uC11C \uC8FC\uD30C\uC218, \uC8FC\uAE30, \uB4C0\uD2F0 \uC0AC\uC774\uD074\uC744 \uC124\uBA85\uD560 \uC218 \uC788\uB2E4",
+    "\uB514\uC9C0\uD138 \uD68C\uB85C\uC758 \uC7A5\uC810\uACFC \uB2E8\uC810\uC5D0 \uB300\uD574 \uC124\uBA85\uD560 \uC218 \uC788\uB2E4",
+    "ADC\uC640 DAC\uC758 \uAC1C\uB150\uC744 \uC124\uBA85\uD560 \uC218 \uC788\uB2E4"
   ],
   "keyConcepts": [
-    "아날로그 신호",
-    "디지털 신호",
-    "비트",
-    "바이트",
-    "주기",
-    "주파수",
-    "듀티 사이클",
+    "\uC544\uB0A0\uB85C\uADF8 \uC2E0\uD638",
+    "\uB514\uC9C0\uD138 \uC2E0\uD638",
+    "\uBE44\uD2B8",
+    "\uBC14\uC774\uD2B8",
+    "\uC8FC\uAE30",
+    "\uC8FC\uD30C\uC218",
+    "\uB4C0\uD2F0 \uC0AC\uC774\uD074",
     "ADC",
     "DAC",
-    "하이 임피던스"
+    "\uD558\uC774 \uC784\uD53C\uB358\uC2A4"
   ],
   "sections": [
     {
       "id": "1-1",
-      "title": "1.1 디지털과 아날로그",
+      "title": "1.1 \uB514\uC9C0\uD138\uACFC \uC544\uB0A0\uB85C\uADF8",
       "simulation": "analogDigital",
       "content": [
         {
           "type": "text",
-          "body": "논리회로란 0과 1의 이진 신호를 입력받아, 논리 규칙에 따라 출력으로 변환하는 디지털 전자 회로입니다. 이진 신호 → 불 대수 → 논리게이트 → 논리회로 → 컴퓨터 시스템으로 이어지는 흐름이 현대 컴퓨팅의 기반입니다."
+          "body": "\uB17C\uB9AC\uD68C\uB85C\uB780 0\uACFC 1\uC758 \uC774\uC9C4 \uC2E0\uD638\uB97C \uC785\uB825\uBC1B\uC544, \uB17C\uB9AC \uADDC\uCE59\uC5D0 \uB530\uB77C \uCD9C\uB825\uC73C\uB85C \uBCC0\uD658\uD558\uB294 \uB514\uC9C0\uD138 \uC804\uC790 \uD68C\uB85C\uC785\uB2C8\uB2E4. \uC774\uC9C4 \uC2E0\uD638 \u2192 \uBD88 \uB300\uC218 \u2192 \uB17C\uB9AC\uAC8C\uC774\uD2B8 \u2192 \uB17C\uB9AC\uD68C\uB85C \u2192 \uCEF4\uD4E8\uD130 \uC2DC\uC2A4\uD15C\uC73C\uB85C \uC774\uC5B4\uC9C0\uB294 \uD750\uB984\uC774 \uD604\uB300 \uCEF4\uD4E8\uD305\uC758 \uAE30\uBC18\uC785\uB2C8\uB2E4."
         },
         {
           "type": "comparison",
-          "title": "아날로그 신호 vs 디지털 신호",
+          "title": "\uC544\uB0A0\uB85C\uADF8 \uC2E0\uD638 vs \uB514\uC9C0\uD138 \uC2E0\uD638",
           "left": {
-            "label": "아날로그 신호 (Analog Signal)",
-            "body": "자연계에서 일어나는 물리적인 양은 시간에 따라 연속적으로 변화합니다. 온도, 습도, 소리, 빛 등은 시간에 따라 연속적인 값을 갖습니다.",
+            "label": "\uC544\uB0A0\uB85C\uADF8 \uC2E0\uD638 (Analog Signal)",
+            "body": "\uC790\uC5F0\uACC4\uC5D0\uC11C \uC77C\uC5B4\uB098\uB294 \uBB3C\uB9AC\uC801\uC778 \uC591\uC740 \uC2DC\uAC04\uC5D0 \uB530\uB77C \uC5F0\uC18D\uC801\uC73C\uB85C \uBCC0\uD654\uD569\uB2C8\uB2E4. \uC628\uB3C4, \uC2B5\uB3C4, \uC18C\uB9AC, \uBE5B \uB4F1\uC740 \uC2DC\uAC04\uC5D0 \uB530\uB77C \uC5F0\uC18D\uC801\uC778 \uAC12\uC744 \uAC16\uC2B5\uB2C8\uB2E4.",
             "color": "blue"
           },
           "right": {
-            "label": "디지털 신호 (Digital Signal)",
-            "body": "분명히 구별되는 두 레벨(0과 1)의 신호값만을 갖습니다. 이산적(discrete)으로 표현되며 잡음에 강합니다.",
+            "label": "\uB514\uC9C0\uD138 \uC2E0\uD638 (Digital Signal)",
+            "body": "\uBD84\uBA85\uD788 \uAD6C\uBCC4\uB418\uB294 \uB450 \uB808\uBCA8(0\uACFC 1)\uC758 \uC2E0\uD638\uAC12\uB9CC\uC744 \uAC16\uC2B5\uB2C8\uB2E4. \uC774\uC0B0\uC801(discrete)\uC73C\uB85C \uD45C\uD604\uB418\uBA70 \uC7A1\uC74C\uC5D0 \uAC15\uD569\uB2C8\uB2E4.",
             "color": "green"
           }
         },
         {
           "type": "comparison",
-          "title": "디지털 시스템 vs 아날로그 시스템",
+          "title": "\uB514\uC9C0\uD138 \uC2DC\uC2A4\uD15C vs \uC544\uB0A0\uB85C\uADF8 \uC2DC\uC2A4\uD15C",
           "left": {
-            "label": "디지털 시스템",
-            "body": "이산적인 정보를 가공하고 처리해서 최종 목적으로 하는 정보를 출력하는 모든 형태의 장치",
+            "label": "\uB514\uC9C0\uD138 \uC2DC\uC2A4\uD15C",
+            "body": "\uC774\uC0B0\uC801\uC778 \uC815\uBCF4\uB97C \uAC00\uACF5\uD558\uACE0 \uCC98\uB9AC\uD574\uC11C \uCD5C\uC885 \uBAA9\uC801\uC73C\uB85C \uD558\uB294 \uC815\uBCF4\uB97C \uCD9C\uB825\uD558\uB294 \uBAA8\uB4E0 \uD615\uD0DC\uC758 \uC7A5\uCE58",
             "color": "green"
           },
           "right": {
-            "label": "아날로그 시스템",
-            "body": "연속적인 정보를 입력받아 처리해서 연속적인 형태의 정보를 출력하는 시스템",
+            "label": "\uC544\uB0A0\uB85C\uADF8 \uC2DC\uC2A4\uD15C",
+            "body": "\uC5F0\uC18D\uC801\uC778 \uC815\uBCF4\uB97C \uC785\uB825\uBC1B\uC544 \uCC98\uB9AC\uD574\uC11C \uC5F0\uC18D\uC801\uC778 \uD615\uD0DC\uC758 \uC815\uBCF4\uB97C \uCD9C\uB825\uD558\uB294 \uC2DC\uC2A4\uD15C",
             "color": "blue"
           }
         },
         {
           "type": "list",
-          "title": "디지털 시스템의 장점",
+          "title": "\uB514\uC9C0\uD138 \uC2DC\uC2A4\uD15C\uC758 \uC7A5\uC810",
           "style": "check",
           "items": [
-            "내·외부 잡음에 강하다 (0과 1만 구별하면 되므로)",
-            "설계가 용이하다",
-            "프로그래밍으로 전체 시스템을 제어하여 사양 변경에 쉽게 대응",
-            "정보를 저장하거나 가공하기가 용이하다",
-            "정보처리의 정확성과 정밀도를 높일 수 있다",
-            "전체 시스템을 소형화, 저가격화로 구성할 수 있다"
+            "\uB0B4\u00B7\uC678\uBD80 \uC7A1\uC74C\uC5D0 \uAC15\uD558\uB2E4 (0\uACFC 1\uB9CC \uAD6C\uBCC4\uD558\uBA74 \uB418\uBBC0\uB85C)",
+            "\uC124\uACC4\uAC00 \uC6A9\uC774\uD558\uB2E4",
+            "\uD504\uB85C\uADF8\uB798\uBC0D\uC73C\uB85C \uC804\uCCB4 \uC2DC\uC2A4\uD15C\uC744 \uC81C\uC5B4\uD558\uC5EC \uC0AC\uC591 \uBCC0\uACBD\uC5D0 \uC27D\uAC8C \uB300\uC751",
+            "\uC815\uBCF4\uB97C \uC800\uC7A5\uD558\uAC70\uB098 \uAC00\uACF5\uD558\uAE30\uAC00 \uC6A9\uC774\uD558\uB2E4",
+            "\uC815\uBCF4\uCC98\uB9AC\uC758 \uC815\uD655\uC131\uACFC \uC815\uBC00\uB3C4\uB97C \uB192\uC77C \uC218 \uC788\uB2E4",
+            "\uC804\uCCB4 \uC2DC\uC2A4\uD15C\uC744 \uC18C\uD615\uD654, \uC800\uAC00\uACA9\uD654\uB85C \uAD6C\uC131\uD560 \uC218 \uC788\uB2E4"
           ]
         },
         {
           "type": "list",
-          "title": "디지털 시스템의 단점",
+          "title": "\uB514\uC9C0\uD138 \uC2DC\uC2A4\uD15C\uC758 \uB2E8\uC810",
           "style": "warning",
           "items": [
-            "A/D 변환기와 D/A 변환기가 필요하다",
-            "디지털 신호를 아날로그로 변환 시 샘플링 데이터가 부족하면 오차 발생"
+            "A/D \uBCC0\uD658\uAE30\uC640 D/A \uBCC0\uD658\uAE30\uAC00 \uD544\uC694\uD558\uB2E4",
+            "\uB514\uC9C0\uD138 \uC2E0\uD638\uB97C \uC544\uB0A0\uB85C\uADF8\uB85C \uBCC0\uD658 \uC2DC \uC0D8\uD50C\uB9C1 \uB370\uC774\uD130\uAC00 \uBD80\uC871\uD558\uBA74 \uC624\uCC28 \uBC1C\uC0DD"
           ]
         },
         {
           "type": "simulation",
           "simId": "analogDigital",
-          "title": "아날로그 vs 디지털 파형 비교"
+          "title": "\uC544\uB0A0\uB85C\uADF8 vs \uB514\uC9C0\uD138 \uD30C\uD615 \uBE44\uAD50"
         },
         {
           "type": "definition",
-          "term": "노이즈 마진 (Noise Margin) / 임계값 (Threshold)",
-          "body": "디지털 회로는 입력 전압을 연속값으로 해석하지 않고, 임계값을 기준으로 0 또는 1로 판정합니다. 임계값 주변을 제외한 구간(노이즈 마진)에서는 잡음이 섞여도 판정 결과가 유지되므로 신뢰성이 높습니다.\n\n예: 기준 전압이 2.5V일 때 0으로 판정되는 구간과 1로 판정되는 구간 사이 여유가 클수록 잡음에 강합니다."
+          "term": "\uB178\uC774\uC988 \uB9C8\uC9C4 (Noise Margin) / \uC784\uACC4\uAC12 (Threshold)",
+          "body": "\uB514\uC9C0\uD138 \uD68C\uB85C\uB294 \uC785\uB825 \uC804\uC555\uC744 \uC5F0\uC18D\uAC12\uC73C\uB85C \uD574\uC11D\uD558\uC9C0 \uC54A\uACE0, \uC784\uACC4\uAC12\uC744 \uAE30\uC900\uC73C\uB85C 0 \uB610\uB294 1\uB85C \uD310\uC815\uD569\uB2C8\uB2E4. \uC784\uACC4\uAC12 \uC8FC\uBCC0\uC744 \uC81C\uC678\uD55C \uAD6C\uAC04(\uB178\uC774\uC988 \uB9C8\uC9C4)\uC5D0\uC11C\uB294 \uC7A1\uC74C\uC774 \uC11E\uC5EC\uB3C4 \uD310\uC815 \uACB0\uACFC\uAC00 \uC720\uC9C0\uB418\uBBC0\uB85C \uC2E0\uB8B0\uC131\uC774 \uB192\uC2B5\uB2C8\uB2E4.\n\n\uC608: \uAE30\uC900 \uC804\uC555\uC774 2.5V\uC77C \uB54C 0\uC73C\uB85C \uD310\uC815\uB418\uB294 \uAD6C\uAC04\uACFC 1\uB85C \uD310\uC815\uB418\uB294 \uAD6C\uAC04 \uC0AC\uC774 \uC5EC\uC720\uAC00 \uD074\uC218\uB85D \uC7A1\uC74C\uC5D0 \uAC15\uD569\uB2C8\uB2E4."
         },
         {
           "type": "example",
-          "title": "노이즈 마진 직관 예시",
-          "problem": "입력 신호가 4.9V인데 잡음으로 ±0.2V 흔들린다면, 왜 디지털 회로는 대부분 같은 값으로 인식할까요?",
-          "solution": "디지털 회로는 연속 전압 자체가 아니라 임계값 기준으로 High/Low를 판단합니다. 4.9V ± 0.2V는 보통 High 판정 구간 내부에 있으므로 잡음이 있어도 같은 논리값(1)로 해석됩니다. 즉, 임계값과의 여유(노이즈 마진)가 안정성을 만듭니다."
+          "title": "\uB178\uC774\uC988 \uB9C8\uC9C4 \uC9C1\uAD00 \uC608\uC2DC",
+          "problem": "\uC785\uB825 \uC2E0\uD638\uAC00 4.9V\uC778\uB370 \uC7A1\uC74C\uC73C\uB85C \u00B10.2V \uD754\uB4E4\uB9B0\uB2E4\uBA74, \uC65C \uB514\uC9C0\uD138 \uD68C\uB85C\uB294 \uB300\uBD80\uBD84 \uAC19\uC740 \uAC12\uC73C\uB85C \uC778\uC2DD\uD560\uAE4C\uC694?",
+          "solution": "\uB514\uC9C0\uD138 \uD68C\uB85C\uB294 \uC5F0\uC18D \uC804\uC555 \uC790\uCCB4\uAC00 \uC544\uB2C8\uB77C \uC784\uACC4\uAC12 \uAE30\uC900\uC73C\uB85C High/Low\uB97C \uD310\uB2E8\uD569\uB2C8\uB2E4. 4.9V \u00B1 0.2V\uB294 \uBCF4\uD1B5 High \uD310\uC815 \uAD6C\uAC04 \uB0B4\uBD80\uC5D0 \uC788\uC73C\uBBC0\uB85C \uC7A1\uC74C\uC774 \uC788\uC5B4\uB3C4 \uAC19\uC740 \uB17C\uB9AC\uAC12(1)\uB85C \uD574\uC11D\uB429\uB2C8\uB2E4. \uC989, \uC784\uACC4\uAC12\uACFC\uC758 \uC5EC\uC720(\uB178\uC774\uC988 \uB9C8\uC9C4)\uAC00 \uC548\uC815\uC131\uC744 \uB9CC\uB4ED\uB2C8\uB2E4."
         }
       ]
     },
     {
       "id": "1-2",
-      "title": "1.2 디지털 정보의 표현",
+      "title": "1.2 \uB514\uC9C0\uD138 \uC815\uBCF4\uC758 \uD45C\uD604",
       "simulation": "unitConverter",
       "content": [
         {
           "type": "definition",
-          "term": "이진수 체계 (Binary System)",
-          "body": "디지털 정보를 표현하기 위해 2진수 체계를 사용합니다. \"0\"과 \"1\"만의 2종류 디지트(digit)를 사용하여 모든 정보를 표현합니다."
+          "term": "\uC774\uC9C4\uC218 \uCCB4\uACC4 (Binary System)",
+          "body": "\uB514\uC9C0\uD138 \uC815\uBCF4\uB97C \uD45C\uD604\uD558\uAE30 \uC704\uD574 2\uC9C4\uC218 \uCCB4\uACC4\uB97C \uC0AC\uC6A9\uD569\uB2C8\uB2E4. \"0\"\uACFC \"1\"\uB9CC\uC758 2\uC885\uB958 \uB514\uC9C0\uD2B8(digit)\uB97C \uC0AC\uC6A9\uD558\uC5EC \uBAA8\uB4E0 \uC815\uBCF4\uB97C \uD45C\uD604\uD569\uB2C8\uB2E4."
         },
         {
           "type": "definition",
-          "term": "하이 임피던스 (High Impedance)",
-          "body": "전류가 거의 흐르지 않는 상태로, 내부적으로 매우 큰 저항처럼 동작합니다. 입력신호의 범위가 넓은 이유는 신호 전송 과정 중 발생하는 노이즈에 대응하기 위함입니다."
+          "term": "\uD558\uC774 \uC784\uD53C\uB358\uC2A4 (High Impedance)",
+          "body": "\uC804\uB958\uAC00 \uAC70\uC758 \uD750\uB974\uC9C0 \uC54A\uB294 \uC0C1\uD0DC\uB85C, \uB0B4\uBD80\uC801\uC73C\uB85C \uB9E4\uC6B0 \uD070 \uC800\uD56D\uCC98\uB7FC \uB3D9\uC791\uD569\uB2C8\uB2E4. \uC785\uB825\uC2E0\uD638\uC758 \uBC94\uC704\uAC00 \uB113\uC740 \uC774\uC720\uB294 \uC2E0\uD638 \uC804\uC1A1 \uACFC\uC815 \uC911 \uBC1C\uC0DD\uD558\uB294 \uB178\uC774\uC988\uC5D0 \uB300\uC751\uD558\uAE30 \uC704\uD568\uC785\uB2C8\uB2E4."
         },
         {
           "type": "table",
-          "title": "디지털 정보의 표현 단위",
+          "title": "\uB514\uC9C0\uD138 \uC815\uBCF4\uC758 \uD45C\uD604 \uB2E8\uC704",
           "headers": [
-            "단위",
-            "크기",
-            "특징"
+            "\uB2E8\uC704",
+            "\uD06C\uAE30",
+            "\uD2B9\uC9D5"
           ],
           "rows": [
             [
               "1 bit",
-              "0 또는 1",
-              "정보의 최소 단위"
+              "0 \uB610\uB294 1",
+              "\uC815\uBCF4\uC758 \uCD5C\uC18C \uB2E8\uC704"
             ],
             [
               "1 nibble",
               "4 bit",
-              "16진수 한 자리와 정확히 1:1 대응 (예: 1010 1111₂ = AF₁₆)"
+              "16\uC9C4\uC218 \uD55C \uC790\uB9AC\uC640 \uC815\uD655\uD788 1:1 \uB300\uC751 (\uC608: 1010 1111\u2082 = AF\u2081\u2086)"
             ],
             [
               "1 byte",
               "8 bit",
-              "영어 1문자 표현 가능. 한글은 2byte 필요"
+              "\uC601\uC5B4 1\uBB38\uC790 \uD45C\uD604 \uAC00\uB2A5. \uD55C\uAE00\uC740 2byte \uD544\uC694"
             ],
             [
               "1 word",
-              "CPU에 따라 다름",
-              "특정 CPU가 취급하는 명령어·데이터 길이 (레지스터/데이터 경로 폭)"
+              "CPU\uC5D0 \uB530\uB77C \uB2E4\uB984",
+              "\uD2B9\uC815 CPU\uAC00 \uCDE8\uAE09\uD558\uB294 \uBA85\uB839\uC5B4\u00B7\uB370\uC774\uD130 \uAE38\uC774 (\uB808\uC9C0\uC2A4\uD130/\uB370\uC774\uD130 \uACBD\uB85C \uD3ED)"
             ]
           ]
         },
         {
           "type": "table",
-          "title": "SI 단위 vs IEC 단위 비교",
+          "title": "SI \uB2E8\uC704 vs IEC \uB2E8\uC704 \uBE44\uAD50",
           "headers": [
-            "구분",
-            "단위",
-            "기준",
-            "주요 활용"
+            "\uAD6C\uBD84",
+            "\uB2E8\uC704",
+            "\uAE30\uC900",
+            "\uC8FC\uC694 \uD65C\uC6A9"
           ],
           "rows": [
             [
-              "SI (십진)",
+              "SI (\uC2ED\uC9C4)",
               "kB / MB / GB / TB",
-              "1000 기반 (10³, 10⁶, 10⁹, 10¹²)",
-              "저장장치 표기, 통신 속도"
+              "1000 \uAE30\uBC18 (10\u00B3, 10\u2076, 10\u2079, 10\u00B9\u00B2)",
+              "\uC800\uC7A5\uC7A5\uCE58 \uD45C\uAE30, \uD1B5\uC2E0 \uC18D\uB3C4"
             ],
             [
-              "IEC (이진)",
+              "IEC (\uC774\uC9C4)",
               "KiB / MiB / GiB / TiB",
-              "1024 기반 (2¹⁰, 2²⁰, 2³⁰, 2⁴⁰)",
-              "메모리, OS, 개발 환경"
+              "1024 \uAE30\uBC18 (2\u00B9\u2070, 2\u00B2\u2070, 2\u00B3\u2070, 2\u2074\u2070)",
+              "\uBA54\uBAA8\uB9AC, OS, \uAC1C\uBC1C \uD658\uACBD"
             ]
           ]
         },
         {
           "type": "example",
-          "title": "1TB SSD가 윈도우에서 931GB로 보이는 이유",
-          "problem": "1TB SSD를 샀는데, 왜 윈도우에서는 931GB로 표시될까?",
-          "solution": "SSD 업체의 1TB = 10¹² 바이트 = 1,000,000,000,000 B (SI 단위)\n윈도우는 2³⁰(= 1,073,741,824) 바이트 단위로 나눠서 GiB처럼 \"GB\"로 표기\n1,000,000,000,000 ÷ 1,073,741,824 ≈ 931 → 931GB처럼 표시"
+          "title": "1TB SSD\uAC00 \uC708\uB3C4\uC6B0\uC5D0\uC11C 931GB\uB85C \uBCF4\uC774\uB294 \uC774\uC720",
+          "problem": "1TB SSD\uB97C \uC0C0\uB294\uB370, \uC65C \uC708\uB3C4\uC6B0\uC5D0\uC11C\uB294 931GB\uB85C \uD45C\uC2DC\uB420\uAE4C?",
+          "solution": "SSD \uC5C5\uCCB4\uC758 1TB = 10\u00B9\u00B2 \uBC14\uC774\uD2B8 = 1,000,000,000,000 B (SI \uB2E8\uC704)\n\uC708\uB3C4\uC6B0\uB294 2\u00B3\u2070(= 1,073,741,824) \uBC14\uC774\uD2B8 \uB2E8\uC704\uB85C \uB098\uB220\uC11C GiB\uCC98\uB7FC \"GB\"\uB85C \uD45C\uAE30\n1,000,000,000,000 \u00F7 1,073,741,824 \u2248 931 \u2192 931GB\uCC98\uB7FC \uD45C\uC2DC"
         },
         {
           "type": "example",
-          "title": "비트 수 계산",
-          "problem": "256가지 정보를 표현하려면 몇 비트가 필요한가?",
-          "solution": "비트 n개로는 2ⁿ가지 정보를 표현 가능\nm가지 정보를 표현하려면 ⌈log₂m⌉ 비트 필요\n⌈log₂256⌉ = ⌈8⌉ = 8 비트"
+          "title": "\uBE44\uD2B8 \uC218 \uACC4\uC0B0",
+          "problem": "256\uAC00\uC9C0 \uC815\uBCF4\uB97C \uD45C\uD604\uD558\uB824\uBA74 \uBA87 \uBE44\uD2B8\uAC00 \uD544\uC694\uD55C\uAC00?",
+          "solution": "\uBE44\uD2B8 n\uAC1C\uB85C\uB294 2\u207F\uAC00\uC9C0 \uC815\uBCF4\uB97C \uD45C\uD604 \uAC00\uB2A5\nm\uAC00\uC9C0 \uC815\uBCF4\uB97C \uD45C\uD604\uD558\uB824\uBA74 \u2308log\u2082m\u2309 \uBE44\uD2B8 \uD544\uC694\n\u2308log\u2082256\u2309 = \u23088\u2309 = 8 \uBE44\uD2B8"
         },
         {
           "type": "simulation",
           "simId": "unitConverter",
-          "title": "SI / IEC 단위 변환기"
+          "title": "SI / IEC \uB2E8\uC704 \uBCC0\uD658\uAE30"
         }
       ]
     },
     {
       "id": "1-3",
-      "title": "1.3 펄스 파형",
+      "title": "1.3 \uD384\uC2A4 \uD30C\uD615",
       "simulation": "pulseWave",
       "content": [
         {
           "type": "definition",
-          "term": "펄스(Pulse) 파형",
-          "body": "Low 상태와 High 상태를 반복하는 전압 레벨로 구성된 파형입니다. 주기 펄스(periodic pulse)와 비주기 펄스(non-periodic pulse)로 분류됩니다. 이상적인 주기 펄스는 상승 에지(rising edge)와 하강 에지(falling edge) 2개로 구성됩니다."
+          "term": "\uD384\uC2A4(Pulse) \uD30C\uD615",
+          "body": "Low \uC0C1\uD0DC\uC640 High \uC0C1\uD0DC\uB97C \uBC18\uBCF5\uD558\uB294 \uC804\uC555 \uB808\uBCA8\uB85C \uAD6C\uC131\uB41C \uD30C\uD615\uC785\uB2C8\uB2E4. \uC8FC\uAE30 \uD384\uC2A4(periodic pulse)\uC640 \uBE44\uC8FC\uAE30 \uD384\uC2A4(non-periodic pulse)\uB85C \uBD84\uB958\uB429\uB2C8\uB2E4. \uC774\uC0C1\uC801\uC778 \uC8FC\uAE30 \uD384\uC2A4\uB294 \uC0C1\uC2B9 \uC5D0\uC9C0(rising edge)\uC640 \uD558\uAC15 \uC5D0\uC9C0(falling edge) 2\uAC1C\uB85C \uAD6C\uC131\uB429\uB2C8\uB2E4."
         },
         {
           "type": "table",
-          "title": "실제 펄스 파형의 주요 파라미터",
+          "title": "\uC2E4\uC81C \uD384\uC2A4 \uD30C\uD615\uC758 \uC8FC\uC694 \uD30C\uB77C\uBBF8\uD130",
           "headers": [
-            "파라미터",
-            "기호",
-            "정의"
+            "\uD30C\uB77C\uBBF8\uD130",
+            "\uAE30\uD638",
+            "\uC815\uC758"
           ],
           "rows": [
             [
-              "상승 시간",
-              "tᵣ",
-              "펄스 진폭이 10%에서 90%까지 증가하는 시간"
+              "\uC0C1\uC2B9 \uC2DC\uAC04",
+              "t\u1D63",
+              "\uD384\uC2A4 \uC9C4\uD3ED\uC774 10%\uC5D0\uC11C 90%\uAE4C\uC9C0 \uC99D\uAC00\uD558\uB294 \uC2DC\uAC04"
             ],
             [
-              "하강 시간",
-              "tᶠ",
-              "펄스 진폭이 90%에서 10%까지 떨어지는 시간"
+              "\uD558\uAC15 \uC2DC\uAC04",
+              "t\u1DA0",
+              "\uD384\uC2A4 \uC9C4\uD3ED\uC774 90%\uC5D0\uC11C 10%\uAE4C\uC9C0 \uB5A8\uC5B4\uC9C0\uB294 \uC2DC\uAC04"
             ],
             [
-              "펄스 폭",
-              "tᵥᵥ",
-              "상승·하강 구간의 50% 두 지점 사이의 시간 간격"
+              "\uD384\uC2A4 \uD3ED",
+              "t\u1D65\u1D65",
+              "\uC0C1\uC2B9\u00B7\uD558\uAC15 \uAD6C\uAC04\uC758 50% \uB450 \uC9C0\uC810 \uC0AC\uC774\uC758 \uC2DC\uAC04 \uAC04\uACA9"
             ]
           ]
         },
         {
           "type": "table",
-          "title": "주파수, 주기, 듀티 사이클",
+          "title": "\uC8FC\uD30C\uC218, \uC8FC\uAE30, \uB4C0\uD2F0 \uC0AC\uC774\uD074",
           "headers": [
-            "개념",
-            "정의",
-            "공식"
+            "\uAC1C\uB150",
+            "\uC815\uC758",
+            "\uACF5\uC2DD"
           ],
           "rows": [
             [
-              "주파수 (f)",
-              "주기적인 파형이 1초 동안 진동한 횟수. 단위: Hz(헤르츠)",
+              "\uC8FC\uD30C\uC218 (f)",
+              "\uC8FC\uAE30\uC801\uC778 \uD30C\uD615\uC774 1\uCD08 \uB3D9\uC548 \uC9C4\uB3D9\uD55C \uD69F\uC218. \uB2E8\uC704: Hz(\uD5E4\uB974\uCE20)",
               "f = 1/T"
             ],
             [
-              "주기 (T)",
-              "주기적인 파형이 1회 반복하는 데 걸리는 시간. 단위: s(초)",
+              "\uC8FC\uAE30 (T)",
+              "\uC8FC\uAE30\uC801\uC778 \uD30C\uD615\uC774 1\uD68C \uBC18\uBCF5\uD558\uB294 \uB370 \uAC78\uB9AC\uB294 \uC2DC\uAC04. \uB2E8\uC704: s(\uCD08)",
               "T = 1/f"
             ],
             [
-              "듀티 사이클 (DC)",
-              "주기 T에 대한 펄스 폭의 비율. 충격계수라고도 함",
-              "DC = (tᵥᵥ / T) × 100%"
+              "\uB4C0\uD2F0 \uC0AC\uC774\uD074 (DC)",
+              "\uC8FC\uAE30 T\uC5D0 \uB300\uD55C \uD384\uC2A4 \uD3ED\uC758 \uBE44\uC728. \uCDA9\uACA9\uACC4\uC218\uB77C\uACE0\uB3C4 \uD568",
+              "DC = (t\u1D65\u1D65 / T) \u00D7 100%"
             ]
           ]
         },
         {
           "type": "example",
-          "title": "듀티 사이클 계산 예제",
-          "problem": "주파수가 250Hz이고 펄스 폭이 1ms인 파형의 듀티 사이클은?",
-          "solution": "① 주기 T = 1/f = 1/250 = 4ms\n② 듀티 사이클 DC = (tᵥᵥ / T) × 100% = (1ms / 4ms) × 100% = 25%"
+          "title": "\uB4C0\uD2F0 \uC0AC\uC774\uD074 \uACC4\uC0B0 \uC608\uC81C",
+          "problem": "\uC8FC\uD30C\uC218\uAC00 250Hz\uC774\uACE0 \uD384\uC2A4 \uD3ED\uC774 1ms\uC778 \uD30C\uD615\uC758 \uB4C0\uD2F0 \uC0AC\uC774\uD074\uC740?",
+          "solution": "\u2460 \uC8FC\uAE30 T = 1/f = 1/250 = 4ms\n\u2461 \uB4C0\uD2F0 \uC0AC\uC774\uD074 DC = (t\u1D65\u1D65 / T) \u00D7 100% = (1ms / 4ms) \u00D7 100% = 25%"
         },
         {
           "type": "example",
-          "title": "다양한 듀티 사이클",
-          "problem": "주파수 250Hz 파형의 듀티 사이클이 각각 0%, 25%, 50%, 75%, 100%일 때 High 구간은?",
-          "solution": "주기 T = 4ms 기준:\n• 0%  → High 구간 없음 (항상 Low)\n• 25% → High 1ms\n• 50% → High 2ms\n• 75% → High 3ms\n• 100%→ High 구간만 있음 (항상 High)"
+          "title": "\uB2E4\uC591\uD55C \uB4C0\uD2F0 \uC0AC\uC774\uD074",
+          "problem": "\uC8FC\uD30C\uC218 250Hz \uD30C\uD615\uC758 \uB4C0\uD2F0 \uC0AC\uC774\uD074\uC774 \uAC01\uAC01 0%, 25%, 50%, 75%, 100%\uC77C \uB54C High \uAD6C\uAC04\uC740?",
+          "solution": "\uC8FC\uAE30 T = 4ms \uAE30\uC900:\n\u2022 0%  \u2192 High \uAD6C\uAC04 \uC5C6\uC74C (\uD56D\uC0C1 Low)\n\u2022 25% \u2192 High 1ms\n\u2022 50% \u2192 High 2ms\n\u2022 75% \u2192 High 3ms\n\u2022 100%\u2192 High \uAD6C\uAC04\uB9CC \uC788\uC74C (\uD56D\uC0C1 High)"
         },
         {
           "type": "simulation",
           "simId": "pulseWave",
-          "title": "펄스 파형 시뮬레이터"
+          "title": "\uD384\uC2A4 \uD30C\uD615 \uC2DC\uBBAC\uB808\uC774\uD130"
         }
       ]
     },
     {
       "id": "1-4",
-      "title": "1.4 디지털 집적회로",
+      "title": "1.4 \uB514\uC9C0\uD138 \uC9D1\uC801\uD68C\uB85C",
       "content": [
         {
           "type": "definition",
-          "term": "디지털 회로 / 논리회로",
-          "body": "디지털 정보를 처리하는 디지털 시스템의 하드웨어를 말합니다. 디지털 하드웨어, 디지털 회로, 논리회로 등은 특별히 구별하지 않고 혼용합니다."
+          "term": "\uB514\uC9C0\uD138 \uD68C\uB85C / \uB17C\uB9AC\uD68C\uB85C",
+          "body": "\uB514\uC9C0\uD138 \uC815\uBCF4\uB97C \uCC98\uB9AC\uD558\uB294 \uB514\uC9C0\uD138 \uC2DC\uC2A4\uD15C\uC758 \uD558\uB4DC\uC6E8\uC5B4\uB97C \uB9D0\uD569\uB2C8\uB2E4. \uB514\uC9C0\uD138 \uD558\uB4DC\uC6E8\uC5B4, \uB514\uC9C0\uD138 \uD68C\uB85C, \uB17C\uB9AC\uD68C\uB85C \uB4F1\uC740 \uD2B9\uBCC4\uD788 \uAD6C\uBCC4\uD558\uC9C0 \uC54A\uACE0 \uD63C\uC6A9\uD569\uB2C8\uB2E4."
         },
         {
           "type": "definition",
-          "term": "집적회로 (IC: Integrated Circuit)",
-          "body": "작은 실리콘(silicon) 칩 위에 저항, 커패시터, 다이오드, 트랜지스터 등의 전자부품을 여러 단계의 공정을 거쳐 내부적으로 상호 연결한 것입니다."
+          "term": "\uC9D1\uC801\uD68C\uB85C (IC: Integrated Circuit)",
+          "body": "\uC791\uC740 \uC2E4\uB9AC\uCF58(silicon) \uCE69 \uC704\uC5D0 \uC800\uD56D, \uCEE4\uD328\uC2DC\uD130, \uB2E4\uC774\uC624\uB4DC, \uD2B8\uB79C\uC9C0\uC2A4\uD130 \uB4F1\uC758 \uC804\uC790\uBD80\uD488\uC744 \uC5EC\uB7EC \uB2E8\uACC4\uC758 \uACF5\uC815\uC744 \uAC70\uCCD0 \uB0B4\uBD80\uC801\uC73C\uB85C \uC0C1\uD638 \uC5F0\uACB0\uD55C \uAC83\uC785\uB2C8\uB2E4."
         },
         {
           "type": "table",
-          "title": "IC 패키지 종류",
+          "title": "IC \uD328\uD0A4\uC9C0 \uC885\uB958",
           "headers": [
-            "패키지",
-            "장착 방식",
-            "특징"
+            "\uD328\uD0A4\uC9C0",
+            "\uC7A5\uCC29 \uBC29\uC2DD",
+            "\uD2B9\uC9D5"
           ],
           "rows": [
             [
               "DIP (Dual In-line Package)",
-              "삽입 장착 (Through-hole)",
-              "PCB 구멍에 핀을 끼워 납땜. 실습/교육용으로 많이 사용"
+              "\uC0BD\uC785 \uC7A5\uCC29 (Through-hole)",
+              "PCB \uAD6C\uBA4D\uC5D0 \uD540\uC744 \uB07C\uC6CC \uB0A9\uB55C. \uC2E4\uC2B5/\uAD50\uC721\uC6A9\uC73C\uB85C \uB9CE\uC774 \uC0AC\uC6A9"
             ],
             [
               "SOIC (Small Outline IC)",
-              "표면 실장 (SMD)",
-              "DIP의 소형화 버전. 크기 70% 감소, 무게 90% 감소"
+              "\uD45C\uBA74 \uC2E4\uC7A5 (SMD)",
+              "DIP\uC758 \uC18C\uD615\uD654 \uBC84\uC804. \uD06C\uAE30 70% \uAC10\uC18C, \uBB34\uAC8C 90% \uAC10\uC18C"
             ],
             [
               "QFP (Quad Flat Package)",
-              "표면 실장 (SMD)",
-              "4면에 핀이 있어 고밀도 실장 가능"
+              "\uD45C\uBA74 \uC2E4\uC7A5 (SMD)",
+              "4\uBA74\uC5D0 \uD540\uC774 \uC788\uC5B4 \uACE0\uBC00\uB3C4 \uC2E4\uC7A5 \uAC00\uB2A5"
             ],
             [
               "PLCC (Plastic Leaded Chip Carrier)",
-              "표면 실장 (SMD)",
-              "J형 리드로 소형화, 휴대기기에 사용"
+              "\uD45C\uBA74 \uC2E4\uC7A5 (SMD)",
+              "J\uD615 \uB9AC\uB4DC\uB85C \uC18C\uD615\uD654, \uD734\uB300\uAE30\uAE30\uC5D0 \uC0AC\uC6A9"
             ]
           ]
         },
         {
           "type": "table",
-          "title": "집적 규모에 따른 IC 분류",
+          "title": "\uC9D1\uC801 \uADDC\uBAA8\uC5D0 \uB530\uB978 IC \uBD84\uB958",
           "headers": [
-            "분류",
-            "영문",
-            "트랜지스터 수",
-            "예시"
+            "\uBD84\uB958",
+            "\uC601\uBB38",
+            "\uD2B8\uB79C\uC9C0\uC2A4\uD130 \uC218",
+            "\uC608\uC2DC"
           ],
           "rows": [
             [
-              "소규모 집적회로",
+              "\uC18C\uADDC\uBAA8 \uC9D1\uC801\uD68C\uB85C",
               "SSI",
-              "1 ~ 10개",
-              "기본 논리 게이트"
+              "1 ~ 10\uAC1C",
+              "\uAE30\uBCF8 \uB17C\uB9AC \uAC8C\uC774\uD2B8"
             ],
             [
-              "중규모 집적회로",
+              "\uC911\uADDC\uBAA8 \uC9D1\uC801\uD68C\uB85C",
               "MSI",
-              "10 ~ 100개",
-              "반가산기, MUX"
+              "10 ~ 100\uAC1C",
+              "\uBC18\uAC00\uC0B0\uAE30, MUX"
             ],
             [
-              "대규모 집적회로",
+              "\uB300\uADDC\uBAA8 \uC9D1\uC801\uD68C\uB85C",
               "LSI",
-              "100 ~ 10,000개",
-              "계산기 칩"
+              "100 ~ 10,000\uAC1C",
+              "\uACC4\uC0B0\uAE30 \uCE69"
             ],
             [
-              "초대규모 집적회로",
+              "\uCD08\uB300\uADDC\uBAA8 \uC9D1\uC801\uD68C\uB85C",
               "VLSI",
-              "10,000개 이상",
-              "CPU, 메모리"
+              "10,000\uAC1C \uC774\uC0C1",
+              "CPU, \uBA54\uBAA8\uB9AC"
             ]
           ]
         }
@@ -353,109 +353,109 @@
     },
     {
       "id": "1-5",
-      "title": "1.5 ADC와 DAC",
+      "title": "1.5 ADC\uC640 DAC",
       "simulation": "adcSampling",
       "content": [
         {
           "type": "list",
-          "title": "ADC 3단계 흐름 요약 카드",
+          "title": "ADC 3\uB2E8\uACC4 \uD750\uB984 \uC694\uC57D \uCE74\uB4DC",
           "style": "numbered",
           "items": [
-            "샘플링(Sampling): 연속 아날로그 신호를 일정 시간 간격으로 점(샘플)으로 추출",
-            "양자화(Quantization): 각 샘플 값을 가장 가까운 이산 레벨로 근사",
-            "부호화(Coding): 양자화된 레벨 번호를 이진수 비트열로 변환"
+            "\uC0D8\uD50C\uB9C1(Sampling): \uC5F0\uC18D \uC544\uB0A0\uB85C\uADF8 \uC2E0\uD638\uB97C \uC77C\uC815 \uC2DC\uAC04 \uAC04\uACA9\uC73C\uB85C \uC810(\uC0D8\uD50C)\uC73C\uB85C \uCD94\uCD9C",
+            "\uC591\uC790\uD654(Quantization): \uAC01 \uC0D8\uD50C \uAC12\uC744 \uAC00\uC7A5 \uAC00\uAE4C\uC6B4 \uC774\uC0B0 \uB808\uBCA8\uB85C \uADFC\uC0AC",
+            "\uBD80\uD638\uD654(Coding): \uC591\uC790\uD654\uB41C \uB808\uBCA8 \uBC88\uD638\uB97C \uC774\uC9C4\uC218 \uBE44\uD2B8\uC5F4\uB85C \uBCC0\uD658"
           ]
         },
         {
           "type": "example",
-          "title": "ADC 단계 연결 예시 (한 번에 보기)",
-          "problem": "마이크 입력 전압 2.73V가 ADC를 통과하면 내부적으로 어떤 순서로 처리될까요?",
-          "solution": "1) 샘플링: 해당 시점의 전압 2.73V를 읽음\n2) 양자화: 2.73V를 가장 가까운 양자화 레벨로 반올림\n3) 부호화: 그 레벨 인덱스를 비트열(예: 10비트 코드)로 변환\n=> 최종적으로 디지털 회로가 처리 가능한 이진 데이터가 됩니다."
+          "title": "ADC \uB2E8\uACC4 \uC5F0\uACB0 \uC608\uC2DC (\uD55C \uBC88\uC5D0 \uBCF4\uAE30)",
+          "problem": "\uB9C8\uC774\uD06C \uC785\uB825 \uC804\uC555 2.73V\uAC00 ADC\uB97C \uD1B5\uACFC\uD558\uBA74 \uB0B4\uBD80\uC801\uC73C\uB85C \uC5B4\uB5A4 \uC21C\uC11C\uB85C \uCC98\uB9AC\uB420\uAE4C\uC694?",
+          "solution": "1) \uC0D8\uD50C\uB9C1: \uD574\uB2F9 \uC2DC\uC810\uC758 \uC804\uC555 2.73V\uB97C \uC77D\uC74C\n2) \uC591\uC790\uD654: 2.73V\uB97C \uAC00\uC7A5 \uAC00\uAE4C\uC6B4 \uC591\uC790\uD654 \uB808\uBCA8\uB85C \uBC18\uC62C\uB9BC\n3) \uBD80\uD638\uD654: \uADF8 \uB808\uBCA8 \uC778\uB371\uC2A4\uB97C \uBE44\uD2B8\uC5F4(\uC608: 10\uBE44\uD2B8 \uCF54\uB4DC)\uB85C \uBCC0\uD658\n=> \uCD5C\uC885\uC801\uC73C\uB85C \uB514\uC9C0\uD138 \uD68C\uB85C\uAC00 \uCC98\uB9AC \uAC00\uB2A5\uD55C \uC774\uC9C4 \uB370\uC774\uD130\uAC00 \uB429\uB2C8\uB2E4."
         },
         {
           "type": "comparison",
           "title": "ADC vs DAC",
           "left": {
             "label": "ADC (Analog-to-Digital Converter)",
-            "body": "아날로그 신호를 디지털 신호로 변환합니다. 마이크, 센서 등의 아날로그 입력을 컴퓨터가 처리할 수 있는 디지털 값으로 변환.",
+            "body": "\uC544\uB0A0\uB85C\uADF8 \uC2E0\uD638\uB97C \uB514\uC9C0\uD138 \uC2E0\uD638\uB85C \uBCC0\uD658\uD569\uB2C8\uB2E4. \uB9C8\uC774\uD06C, \uC13C\uC11C \uB4F1\uC758 \uC544\uB0A0\uB85C\uADF8 \uC785\uB825\uC744 \uCEF4\uD4E8\uD130\uAC00 \uCC98\uB9AC\uD560 \uC218 \uC788\uB294 \uB514\uC9C0\uD138 \uAC12\uC73C\uB85C \uBCC0\uD658.",
             "color": "blue"
           },
           "right": {
             "label": "DAC (Digital-to-Analog Converter)",
-            "body": "디지털 신호를 아날로그 신호로 변환합니다. 컴퓨터에서 처리된 디지털 음악을 스피커가 재생할 수 있는 아날로그 신호로 변환.",
+            "body": "\uB514\uC9C0\uD138 \uC2E0\uD638\uB97C \uC544\uB0A0\uB85C\uADF8 \uC2E0\uD638\uB85C \uBCC0\uD658\uD569\uB2C8\uB2E4. \uCEF4\uD4E8\uD130\uC5D0\uC11C \uCC98\uB9AC\uB41C \uB514\uC9C0\uD138 \uC74C\uC545\uC744 \uC2A4\uD53C\uCEE4\uAC00 \uC7AC\uC0DD\uD560 \uC218 \uC788\uB294 \uC544\uB0A0\uB85C\uADF8 \uC2E0\uD638\uB85C \uBCC0\uD658.",
             "color": "green"
           }
         },
         {
           "type": "list",
-          "title": "아날로그 → 디지털 변환 3단계",
+          "title": "\uC544\uB0A0\uB85C\uADF8 \u2192 \uB514\uC9C0\uD138 \uBCC0\uD658 3\uB2E8\uACC4",
           "style": "numbered",
           "items": [
-            "표본화 (Sampling): 연속 신호를 일정 간격으로 샘플링",
-            "양자화 (Quantization): 샘플 값을 정해진 레벨로 근사화",
-            "부호화 (Coding/Encoding): 양자화된 값을 이진수로 변환"
+            "\uD45C\uBCF8\uD654 (Sampling): \uC5F0\uC18D \uC2E0\uD638\uB97C \uC77C\uC815 \uAC04\uACA9\uC73C\uB85C \uC0D8\uD50C\uB9C1",
+            "\uC591\uC790\uD654 (Quantization): \uC0D8\uD50C \uAC12\uC744 \uC815\uD574\uC9C4 \uB808\uBCA8\uB85C \uADFC\uC0AC\uD654",
+            "\uBD80\uD638\uD654 (Coding/Encoding): \uC591\uC790\uD654\uB41C \uAC12\uC744 \uC774\uC9C4\uC218\uB85C \uBCC0\uD658"
           ]
         },
         {
           "type": "definition",
-          "term": "샤논의 표본화 정리 (Shannon's Sampling Theorem)",
-          "body": "신호의 최고 주파수의 2배 이상의 빈도로 샘플링하면, 샘플링된 데이터로부터 본래 신호를 완전히 재현 가능합니다.\n\n예) 사람의 음성(최고 4kHz)을 재현하려면 8kHz(= 2 × 4kHz) 이상으로 샘플링 필요 → 표본화 주기 = 1/8000 = 125μs"
+          "term": "\uC0E4\uB17C\uC758 \uD45C\uBCF8\uD654 \uC815\uB9AC (Shannon's Sampling Theorem)",
+          "body": "\uC2E0\uD638\uC758 \uCD5C\uACE0 \uC8FC\uD30C\uC218\uC758 2\uBC30 \uC774\uC0C1\uC758 \uBE48\uB3C4\uB85C \uC0D8\uD50C\uB9C1\uD558\uBA74, \uC0D8\uD50C\uB9C1\uB41C \uB370\uC774\uD130\uB85C\uBD80\uD130 \uBCF8\uB798 \uC2E0\uD638\uB97C \uC644\uC804\uD788 \uC7AC\uD604 \uAC00\uB2A5\uD569\uB2C8\uB2E4.\n\n\uC608) \uC0AC\uB78C\uC758 \uC74C\uC131(\uCD5C\uACE0 4kHz)\uC744 \uC7AC\uD604\uD558\uB824\uBA74 8kHz(= 2 \u00D7 4kHz) \uC774\uC0C1\uC73C\uB85C \uC0D8\uD50C\uB9C1 \uD544\uC694 \u2192 \uD45C\uBCF8\uD654 \uC8FC\uAE30 = 1/8000 = 125\u03BCs"
         },
         {
           "type": "example",
-          "title": "8bit DAC 출력 계산",
-          "problem": "8bit DAC에서 입력 50(= 0011 0010₂)일 때 출력이 1.0V라면, 입력이 최대값 255일 때 출력 전압은?",
-          "solution": "8bit DAC 입력 범위: 0(=0000 0000₂) ~ 255(=1111 1111₂)\n비율로 계산: 255 / 50 × 1.0V = 5.1V\n따라서 최대 입력 255 → 출력 5.1V"
+          "title": "8bit DAC \uCD9C\uB825 \uACC4\uC0B0",
+          "problem": "8bit DAC\uC5D0\uC11C \uC785\uB825 50(= 0011 0010\u2082)\uC77C \uB54C \uCD9C\uB825\uC774 1.0V\uB77C\uBA74, \uC785\uB825\uC774 \uCD5C\uB300\uAC12 255\uC77C \uB54C \uCD9C\uB825 \uC804\uC555\uC740?",
+          "solution": "8bit DAC \uC785\uB825 \uBC94\uC704: 0(=0000 0000\u2082) ~ 255(=1111 1111\u2082)\n\uBE44\uC728\uB85C \uACC4\uC0B0: 255 / 50 \u00D7 1.0V = 5.1V\n\uB530\uB77C\uC11C \uCD5C\uB300 \uC785\uB825 255 \u2192 \uCD9C\uB825 5.1V"
         },
         {
           "type": "simulation",
           "simId": "adcSampling",
-          "title": "ADC 샘플링 시뮬레이터"
+          "title": "ADC \uC0D8\uD50C\uB9C1 \uC2DC\uBBAC\uB808\uC774\uD130"
         }
       ]
     },
     {
       "id": "1-6",
-      "title": "1.6 참고 자료: NPN 트랜지스터",
+      "title": "1.6 \uCC38\uACE0 \uC790\uB8CC: NPN \uD2B8\uB79C\uC9C0\uC2A4\uD130",
       "content": [
         {
           "type": "definition",
-          "term": "트랜지스터의 역할",
-          "body": "트랜지스터는 전류의 흐름을 제어하는 핵심 반도체 소자입니다. 디지털 회로에서는 스위치(ON/OFF)로, 아날로그 회로에서는 작은 입력으로 큰 출력을 제어하는 증폭기로 동작합니다."
+          "term": "\uD2B8\uB79C\uC9C0\uC2A4\uD130\uC758 \uC5ED\uD560",
+          "body": "\uD2B8\uB79C\uC9C0\uC2A4\uD130\uB294 \uC804\uB958\uC758 \uD750\uB984\uC744 \uC81C\uC5B4\uD558\uB294 \uD575\uC2EC \uBC18\uB3C4\uCCB4 \uC18C\uC790\uC785\uB2C8\uB2E4. \uB514\uC9C0\uD138 \uD68C\uB85C\uC5D0\uC11C\uB294 \uC2A4\uC704\uCE58(ON/OFF)\uB85C, \uC544\uB0A0\uB85C\uADF8 \uD68C\uB85C\uC5D0\uC11C\uB294 \uC791\uC740 \uC785\uB825\uC73C\uB85C \uD070 \uCD9C\uB825\uC744 \uC81C\uC5B4\uD558\uB294 \uC99D\uD3ED\uAE30\uB85C \uB3D9\uC791\uD569\uB2C8\uB2E4."
         },
         {
           "type": "list",
-          "title": "핵심 배경 개념",
+          "title": "\uD575\uC2EC \uBC30\uACBD \uAC1C\uB150",
           "style": "numbered",
           "items": [
-            "진성 반도체는 자유전자가 적어 전류가 잘 흐르지 않습니다.",
-            "도핑을 통해 p형(정공 다수), n형(전자 다수) 반도체를 만듭니다.",
-            "트랜지스터는 p형/n형 접합을 이용해 전류 경로를 제어합니다."
+            "\uC9C4\uC131 \uBC18\uB3C4\uCCB4\uB294 \uC790\uC720\uC804\uC790\uAC00 \uC801\uC5B4 \uC804\uB958\uAC00 \uC798 \uD750\uB974\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4.",
+            "\uB3C4\uD551\uC744 \uD1B5\uD574 p\uD615(\uC815\uACF5 \uB2E4\uC218), n\uD615(\uC804\uC790 \uB2E4\uC218) \uBC18\uB3C4\uCCB4\uB97C \uB9CC\uB4ED\uB2C8\uB2E4.",
+            "\uD2B8\uB79C\uC9C0\uC2A4\uD130\uB294 p\uD615/n\uD615 \uC811\uD569\uC744 \uC774\uC6A9\uD574 \uC804\uB958 \uACBD\uB85C\uB97C \uC81C\uC5B4\uD569\uB2C8\uB2E4."
           ]
         },
         {
           "type": "definition",
-          "term": "NPN 동작 원리 (Emitter-Base-Collector)",
-          "body": "NPN은 Emitter(N)-Base(P)-Collector(N) 구조입니다. Base-Emitter 접합을 순방향으로 만들면 전자가 이미터에서 베이스로 주입되고, 얇은 베이스를 통과해 콜렉터로 이동합니다. 작은 베이스 제어로 큰 콜렉터 전류를 다룰 수 있습니다."
+          "term": "NPN \uB3D9\uC791 \uC6D0\uB9AC (Emitter-Base-Collector)",
+          "body": "NPN\uC740 Emitter(N)-Base(P)-Collector(N) \uAD6C\uC870\uC785\uB2C8\uB2E4. Base-Emitter \uC811\uD569\uC744 \uC21C\uBC29\uD5A5\uC73C\uB85C \uB9CC\uB4E4\uBA74 \uC804\uC790\uAC00 \uC774\uBBF8\uD130\uC5D0\uC11C \uBCA0\uC774\uC2A4\uB85C \uC8FC\uC785\uB418\uACE0, \uC587\uC740 \uBCA0\uC774\uC2A4\uB97C \uD1B5\uACFC\uD574 \uCF5C\uB809\uD130\uB85C \uC774\uB3D9\uD569\uB2C8\uB2E4. \uC791\uC740 \uBCA0\uC774\uC2A4 \uC81C\uC5B4\uB85C \uD070 \uCF5C\uB809\uD130 \uC804\uB958\uB97C \uB2E4\uB8F0 \uC218 \uC788\uC2B5\uB2C8\uB2E4."
         },
         {
           "type": "comparison",
-          "title": "증폭 동작과 스위치 동작",
+          "title": "\uC99D\uD3ED \uB3D9\uC791\uACFC \uC2A4\uC704\uCE58 \uB3D9\uC791",
           "left": {
-            "label": "증폭 (Active)",
-            "body": "베이스 입력의 작은 변화가 콜렉터-이미터 전류의 연속적인 변화를 만듭니다.",
+            "label": "\uC99D\uD3ED (Active)",
+            "body": "\uBCA0\uC774\uC2A4 \uC785\uB825\uC758 \uC791\uC740 \uBCC0\uD654\uAC00 \uCF5C\uB809\uD130-\uC774\uBBF8\uD130 \uC804\uB958\uC758 \uC5F0\uC18D\uC801\uC778 \uBCC0\uD654\uB97C \uB9CC\uB4ED\uB2C8\uB2E4.",
             "color": "green"
           },
           "right": {
-            "label": "스위치 (Cutoff / Saturation)",
-            "body": "베이스 입력이 거의 없으면 OFF, 충분하면 ON처럼 동작해 디지털 0/1을 구현합니다.",
+            "label": "\uC2A4\uC704\uCE58 (Cutoff / Saturation)",
+            "body": "\uBCA0\uC774\uC2A4 \uC785\uB825\uC774 \uAC70\uC758 \uC5C6\uC73C\uBA74 OFF, \uCDA9\uBD84\uD558\uBA74 ON\uCC98\uB7FC \uB3D9\uC791\uD574 \uB514\uC9C0\uD138 0/1\uC744 \uAD6C\uD604\uD569\uB2C8\uB2E4.",
             "color": "blue"
           }
         },
         {
           "type": "simulation",
           "simId": "npnTransistorLabDraft",
-          "title": "참고 시뮬레이션: NPN 트랜지스터 캐리어 이동(미리보기)"
+          "title": "\uCC38\uACE0 \uC2DC\uBBAC\uB808\uC774\uC158: NPN \uD2B8\uB79C\uC9C0\uC2A4\uD130 \uCE90\uB9AC\uC5B4 \uC774\uB3D9(\uBBF8\uB9AC\uBCF4\uAE30)"
         }
       ]
     }
@@ -465,59 +465,59 @@
     "questions": [
       {
         "id": "Q1",
-        "bloomLevel": "기억",
-        "concept": "논리회로 정의",
-        "question": "논리회로란 무엇인지 정의해보세요.",
-        "keyAnswer": "0과 1의 이진 신호를 입력받아 논리 규칙에 따라 출력으로 변환하는 디지털 전자 회로",
+        "bloomLevel": "\uAE30\uC5B5",
+        "concept": "\uB17C\uB9AC\uD68C\uB85C \uC815\uC758",
+        "question": "\uB17C\uB9AC\uD68C\uB85C\uB780 \uBB34\uC5C7\uC778\uC9C0 \uC815\uC758\uD574\uBCF4\uC138\uC694.",
+        "keyAnswer": "0\uACFC 1\uC758 \uC774\uC9C4 \uC2E0\uD638\uB97C \uC785\uB825\uBC1B\uC544 \uB17C\uB9AC \uADDC\uCE59\uC5D0 \uB530\uB77C \uCD9C\uB825\uC73C\uB85C \uBCC0\uD658\uD558\uB294 \uB514\uC9C0\uD138 \uC804\uC790 \uD68C\uB85C",
         "hints": [
-          "논리회로는 0과 1이라는 두 값만 사용합니다. 어떤 것을 입력받아서 무엇을 출력할까요?",
-          "입력(이진 신호)과 출력이 있고, 그 사이에 어떤 '규칙'이 적용됩니다. 그 규칙이 무엇인지 포함해서 설명해보세요.",
-          "정답은 '0과 1의 이진 신호를 입력받아, 논리 규칙에 따라 출력으로 변환하는 디지털 전자 회로'입니다."
+          "\uB17C\uB9AC\uD68C\uB85C\uB294 0\uACFC 1\uC774\uB77C\uB294 \uB450 \uAC12\uB9CC \uC0AC\uC6A9\uD569\uB2C8\uB2E4. \uC5B4\uB5A4 \uAC83\uC744 \uC785\uB825\uBC1B\uC544\uC11C \uBB34\uC5C7\uC744 \uCD9C\uB825\uD560\uAE4C\uC694?",
+          "\uC785\uB825(\uC774\uC9C4 \uC2E0\uD638)\uACFC \uCD9C\uB825\uC774 \uC788\uACE0, \uADF8 \uC0AC\uC774\uC5D0 \uC5B4\uB5A4 '\uADDC\uCE59'\uC774 \uC801\uC6A9\uB429\uB2C8\uB2E4. \uADF8 \uADDC\uCE59\uC774 \uBB34\uC5C7\uC778\uC9C0 \uD3EC\uD568\uD574\uC11C \uC124\uBA85\uD574\uBCF4\uC138\uC694.",
+          "\uC815\uB2F5\uC740 '0\uACFC 1\uC758 \uC774\uC9C4 \uC2E0\uD638\uB97C \uC785\uB825\uBC1B\uC544, \uB17C\uB9AC \uADDC\uCE59\uC5D0 \uB530\uB77C \uCD9C\uB825\uC73C\uB85C \uBCC0\uD658\uD558\uB294 \uB514\uC9C0\uD138 \uC804\uC790 \uD68C\uB85C'\uC785\uB2C8\uB2E4."
         ]
       },
       {
         "id": "Q2",
-        "bloomLevel": "이해",
-        "concept": "아날로그 vs 디지털 신호",
-        "question": "아날로그 신호와 디지털 신호의 차이를 설명하시오.",
-        "keyAnswer": "아날로그 신호는 시간에 따라 연속적으로 변화하는 신호이고, 디지털 신호는 0과 1 두 레벨만 갖는 이산적인 신호이다",
+        "bloomLevel": "\uC774\uD574",
+        "concept": "\uC544\uB0A0\uB85C\uADF8 vs \uB514\uC9C0\uD138 \uC2E0\uD638",
+        "question": "\uC544\uB0A0\uB85C\uADF8 \uC2E0\uD638\uC640 \uB514\uC9C0\uD138 \uC2E0\uD638\uC758 \uCC28\uC774\uB97C \uC124\uBA85\uD558\uC2DC\uC624.",
+        "keyAnswer": "\uC544\uB0A0\uB85C\uADF8 \uC2E0\uD638\uB294 \uC2DC\uAC04\uC5D0 \uB530\uB77C \uC5F0\uC18D\uC801\uC73C\uB85C \uBCC0\uD654\uD558\uB294 \uC2E0\uD638\uC774\uACE0, \uB514\uC9C0\uD138 \uC2E0\uD638\uB294 0\uACFC 1 \uB450 \uB808\uBCA8\uB9CC \uAC16\uB294 \uC774\uC0B0\uC801\uC778 \uC2E0\uD638\uC774\uB2E4",
         "hints": [
-          "온도계 눈금(아날로그)과 디지털 시계(디지털)의 차이를 떠올려보세요. 값이 어떻게 다른가요?",
-          "'연속적(continuous)'과 '이산적(discrete)'이라는 키워드를 사용해서 설명해보세요."
+          "\uC628\uB3C4\uACC4 \uB208\uAE08(\uC544\uB0A0\uB85C\uADF8)\uACFC \uB514\uC9C0\uD138 \uC2DC\uACC4(\uB514\uC9C0\uD138)\uC758 \uCC28\uC774\uB97C \uB5A0\uC62C\uB824\uBCF4\uC138\uC694. \uAC12\uC774 \uC5B4\uB5BB\uAC8C \uB2E4\uB978\uAC00\uC694?",
+          "'\uC5F0\uC18D\uC801(continuous)'\uACFC '\uC774\uC0B0\uC801(discrete)'\uC774\uB77C\uB294 \uD0A4\uC6CC\uB4DC\uB97C \uC0AC\uC6A9\uD574\uC11C \uC124\uBA85\uD574\uBCF4\uC138\uC694."
         ]
       },
       {
         "id": "Q3",
-        "bloomLevel": "적용",
-        "concept": "듀티 사이클 계산",
-        "question": "주파수가 250Hz이고 펄스 폭(tᵥᵥ)이 1ms인 파형의 듀티 사이클은 몇 %인가요? 계산 과정을 보여주세요.",
-        "keyAnswer": "25% (T = 1/250 = 4ms, DC = 1ms/4ms × 100% = 25%)",
+        "bloomLevel": "\uC801\uC6A9",
+        "concept": "\uB4C0\uD2F0 \uC0AC\uC774\uD074 \uACC4\uC0B0",
+        "question": "\uC8FC\uD30C\uC218\uAC00 250Hz\uC774\uACE0 \uD384\uC2A4 \uD3ED(t\u1D65\u1D65)\uC774 1ms\uC778 \uD30C\uD615\uC758 \uB4C0\uD2F0 \uC0AC\uC774\uD074\uC740 \uBA87 %\uC778\uAC00\uC694? \uACC4\uC0B0 \uACFC\uC815\uC744 \uBCF4\uC5EC\uC8FC\uC138\uC694.",
+        "keyAnswer": "25% (T = 1/250 = 4ms, DC = 1ms/4ms \u00D7 100% = 25%)",
         "hints": [
-          "먼저 주기 T를 구해보세요. 주파수 f와 주기 T의 관계는 T = 1/f 입니다. 주파수가 250Hz이면 주기는 얼마일까요?",
-          "주기 T = 1/250Hz = 0.004s = 4ms 입니다. 이제 듀티 사이클 공식 DC = (tᵥᵥ / T) × 100%를 적용해보세요.",
-          "DC = (1ms / 4ms) × 100% = 25% 입니다."
+          "\uBA3C\uC800 \uC8FC\uAE30 T\uB97C \uAD6C\uD574\uBCF4\uC138\uC694. \uC8FC\uD30C\uC218 f\uC640 \uC8FC\uAE30 T\uC758 \uAD00\uACC4\uB294 T = 1/f \uC785\uB2C8\uB2E4. \uC8FC\uD30C\uC218\uAC00 250Hz\uC774\uBA74 \uC8FC\uAE30\uB294 \uC5BC\uB9C8\uC77C\uAE4C\uC694?",
+          "\uC8FC\uAE30 T = 1/250Hz = 0.004s = 4ms \uC785\uB2C8\uB2E4. \uC774\uC81C \uB4C0\uD2F0 \uC0AC\uC774\uD074 \uACF5\uC2DD DC = (t\u1D65\u1D65 / T) \u00D7 100%\uB97C \uC801\uC6A9\uD574\uBCF4\uC138\uC694.",
+          "DC = (1ms / 4ms) \u00D7 100% = 25% \uC785\uB2C8\uB2E4."
         ]
       },
       {
         "id": "Q4",
-        "bloomLevel": "분석",
-        "concept": "디지털 시스템 장점 분석",
-        "question": "디지털 시스템이 아날로그 시스템에 비해 잡음(noise)에 강한 이유를 분석하시오.",
-        "keyAnswer": "디지털은 0과 1 두 레벨만 구분하면 되므로, 신호에 잡음이 섞여도 임계값(threshold) 이내라면 원래 값을 복원 가능하기 때문이다",
+        "bloomLevel": "\uBD84\uC11D",
+        "concept": "\uB514\uC9C0\uD138 \uC2DC\uC2A4\uD15C \uC7A5\uC810 \uBD84\uC11D",
+        "question": "\uB514\uC9C0\uD138 \uC2DC\uC2A4\uD15C\uC774 \uC544\uB0A0\uB85C\uADF8 \uC2DC\uC2A4\uD15C\uC5D0 \uBE44\uD574 \uC7A1\uC74C(noise)\uC5D0 \uAC15\uD55C \uC774\uC720\uB97C \uBD84\uC11D\uD558\uC2DC\uC624.",
+        "keyAnswer": "\uB514\uC9C0\uD138\uC740 0\uACFC 1 \uB450 \uB808\uBCA8\uB9CC \uAD6C\uBD84\uD558\uBA74 \uB418\uBBC0\uB85C, \uC2E0\uD638\uC5D0 \uC7A1\uC74C\uC774 \uC11E\uC5EC\uB3C4 \uC784\uACC4\uAC12(threshold) \uC774\uB0B4\uB77C\uBA74 \uC6D0\uB798 \uAC12\uC744 \uBCF5\uC6D0 \uAC00\uB2A5\uD558\uAE30 \uB54C\uBB38\uC774\uB2E4",
         "hints": [
-          "디지털 신호는 몇 가지 레벨(값)만 표현하나요? 아날로그와 비교해보세요.",
-          "신호에 잡음이 0.3V 섞였을 때, 0과 1만 구별하면 되는 디지털과 수천 가지 레벨을 구별해야 하는 아날로그 중 어느 쪽이 더 영향을 많이 받을까요?"
+          "\uB514\uC9C0\uD138 \uC2E0\uD638\uB294 \uBA87 \uAC00\uC9C0 \uB808\uBCA8(\uAC12)\uB9CC \uD45C\uD604\uD558\uB098\uC694? \uC544\uB0A0\uB85C\uADF8\uC640 \uBE44\uAD50\uD574\uBCF4\uC138\uC694.",
+          "\uC2E0\uD638\uC5D0 \uC7A1\uC74C\uC774 0.3V \uC11E\uC600\uC744 \uB54C, 0\uACFC 1\uB9CC \uAD6C\uBCC4\uD558\uBA74 \uB418\uB294 \uB514\uC9C0\uD138\uACFC \uC218\uCC9C \uAC00\uC9C0 \uB808\uBCA8\uC744 \uAD6C\uBCC4\uD574\uC57C \uD558\uB294 \uC544\uB0A0\uB85C\uADF8 \uC911 \uC5B4\uB290 \uCABD\uC774 \uB354 \uC601\uD5A5\uC744 \uB9CE\uC774 \uBC1B\uC744\uAE4C\uC694?"
         ]
       },
       {
         "id": "Q5",
-        "bloomLevel": "평가",
-        "concept": "IEC vs SI 단위 평가",
-        "question": "1TB SSD를 구매했는데 윈도우에서 931GB로 표시되는 현상을 IEC 단위와 SI 단위 관점에서 설명하고, 이 상황을 어떻게 평가하시겠습니까?",
-        "keyAnswer": "SSD 제조사는 SI 단위(1TB = 10¹² bytes)를 사용하지만, 윈도우는 IEC 기준(1GiB = 2³⁰ bytes)으로 계산하여 'GB'로 표시하기 때문. 1,000,000,000,000 ÷ 1,073,741,824 ≈ 931. 단위 기준 불일치로 인한 소비자 혼란 문제",
+        "bloomLevel": "\uD3C9\uAC00",
+        "concept": "IEC vs SI \uB2E8\uC704 \uD3C9\uAC00",
+        "question": "1TB SSD\uB97C \uAD6C\uB9E4\uD588\uB294\uB370 \uC708\uB3C4\uC6B0\uC5D0\uC11C 931GB\uB85C \uD45C\uC2DC\uB418\uB294 \uD604\uC0C1\uC744 IEC \uB2E8\uC704\uC640 SI \uB2E8\uC704 \uAD00\uC810\uC5D0\uC11C \uC124\uBA85\uD558\uACE0, \uC774 \uC0C1\uD669\uC744 \uC5B4\uB5BB\uAC8C \uD3C9\uAC00\uD558\uC2DC\uACA0\uC2B5\uB2C8\uAE4C?",
+        "keyAnswer": "SSD \uC81C\uC870\uC0AC\uB294 SI \uB2E8\uC704(1TB = 10\u00B9\u00B2 bytes)\uB97C \uC0AC\uC6A9\uD558\uC9C0\uB9CC, \uC708\uB3C4\uC6B0\uB294 IEC \uAE30\uC900(1GiB = 2\u00B3\u2070 bytes)\uC73C\uB85C \uACC4\uC0B0\uD558\uC5EC 'GB'\uB85C \uD45C\uC2DC\uD558\uAE30 \uB54C\uBB38. 1,000,000,000,000 \u00F7 1,073,741,824 \u2248 931. \uB2E8\uC704 \uAE30\uC900 \uBD88\uC77C\uCE58\uB85C \uC778\uD55C \uC18C\uBE44\uC790 \uD63C\uB780 \uBB38\uC81C",
         "hints": [
-          "제조사가 말하는 1TB와 운영체제가 계산하는 1GB의 기준이 다릅니다. SI 단위(10 기반)와 IEC 단위(2 기반)를 비교해보세요.",
-          "SI에서 1TB = 10¹² = 1,000,000,000,000 bytes. IEC에서 1GiB = 2³⁰ = 1,073,741,824 bytes. 이 두 기준으로 나누면 얼마가 나올까요?"
+          "\uC81C\uC870\uC0AC\uAC00 \uB9D0\uD558\uB294 1TB\uC640 \uC6B4\uC601\uCCB4\uC81C\uAC00 \uACC4\uC0B0\uD558\uB294 1GB\uC758 \uAE30\uC900\uC774 \uB2E4\uB985\uB2C8\uB2E4. SI \uB2E8\uC704(10 \uAE30\uBC18)\uC640 IEC \uB2E8\uC704(2 \uAE30\uBC18)\uB97C \uBE44\uAD50\uD574\uBCF4\uC138\uC694.",
+          "SI\uC5D0\uC11C 1TB = 10\u00B9\u00B2 = 1,000,000,000,000 bytes. IEC\uC5D0\uC11C 1GiB = 2\u00B3\u2070 = 1,073,741,824 bytes. \uC774 \uB450 \uAE30\uC900\uC73C\uB85C \uB098\uB204\uBA74 \uC5BC\uB9C8\uAC00 \uB098\uC62C\uAE4C\uC694?"
         ]
       }
     ]
