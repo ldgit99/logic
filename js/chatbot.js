@@ -16,11 +16,17 @@ let assessmentComplete = false;
 
 // ─── 시스템 프롬프트 생성 ───
 function buildSystemPrompt(data) {
-  const { title, objectives, keyConcepts, formativeAssessment } = data;
+  const { title, objectives, formativeAssessment } = data;
+  const keyConcepts = data.keyConcepts || [];
+  const questions = formativeAssessment?.questions || [];
+  const totalQuestions = formativeAssessment?.totalQuestions ?? questions.length;
 
-  const questionsText = formativeAssessment.questions.map((q, i) => {
-    const hints = q.hints.map((h, j) => `  힌트${j + 1}: ${h}`).join('\n');
-    return `Q${i + 1} [Bloom: ${q.bloomLevel}] 핵심 개념: ${q.concept}\n  질문: ${q.question}\n  모범 답안: ${q.keyAnswer}\n${hints}`;
+  const questionsText = questions.map((q, i) => {
+    const bloom = q.bloomLevel || q.bloom || '';
+    const concept = q.concept || '';
+    const keyAnswer = q.keyAnswer || q.answer || '';
+    const hints = (q.hints || []).map((h, j) => `  힌트${j + 1}: ${h}`).join('\n');
+    return `Q${i + 1} [Bloom: ${bloom}] 핵심 개념: ${concept}\n  질문: ${q.question}\n  모범 답안: ${keyAnswer}${hints ? '\n' + hints : ''}`;
   }).join('\n\n');
 
   return `당신은 "디지털 논리회로" 과목의 AI 튜터입니다. 소크라테스 문답법과 Bloom's Taxonomy를 활용하여 형성평가를 진행합니다.
@@ -32,9 +38,9 @@ ${title}
 ${objectives.map((o, i) => `${i + 1}. ${o}`).join('\n')}
 
 [핵심 개념]
-${keyConcepts.join(', ')}
+${keyConcepts.length ? keyConcepts.join(', ') : '챕터 내용 참조'}
 
-[형성평가 문항 (총 ${formativeAssessment.totalQuestions}개)]
+[형성평가 문항 (총 ${totalQuestions}개)]
 ${questionsText}
 
 [형성평가 진행 규칙]
@@ -299,7 +305,10 @@ export function initChatbot(chapterData) {
     conversationMessages = [{ role: 'system', content: buildSystemPrompt(chapterData) }];
 
     // 웰컴 메시지
-    const welcome = `안녕하세요! 저는 ${chapterData.title}의 AI 튜터입니다. 🎓\n\n강의 내용을 학습하셨나요? 준비가 되셨다면 "시작"이라고 입력해주세요. 총 ${chapterData.formativeAssessment.totalQuestions}개의 문제로 형성평가를 진행하겠습니다!`;
+    const totalQ = chapterData.formativeAssessment?.totalQuestions
+      ?? chapterData.formativeAssessment?.questions?.length
+      ?? 0;
+    const welcome = `안녕하세요! 저는 ${chapterData.title}의 AI 튜터입니다. 🎓\n\n강의 내용을 학습하셨나요? 준비가 되셨다면 "시작"이라고 입력해주세요. 총 ${totalQ}개의 문제로 형성평가를 진행하겠습니다!`;
     conversationMessages.push({ role: 'assistant', content: welcome });
     appendBubble('ai', welcome);
     saveSession();

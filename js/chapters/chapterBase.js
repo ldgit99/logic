@@ -21,35 +21,41 @@ function escapeHtml(str) {
 }
 
 function renderText(block) {
-  return `<div class="content-block block-text">${escapeHtml(block.body)}</div>`;
+  // 'body' 또는 'content' 필드 모두 지원
+  return `<div class="content-block block-text">${escapeHtml(block.body || block.content)}</div>`;
 }
 
 function renderDefinition(block) {
+  // 'body' 또는 'definition' 필드 모두 지원
   return `<div class="content-block block-definition">
     <div class="def-term">${escapeHtml(block.term)}</div>
-    <div class="def-body">${escapeHtml(block.body)}</div>
+    <div class="def-body">${escapeHtml(block.body || block.definition)}</div>
   </div>`;
 }
 
+function renderCompCard(side) {
+  if (!side) return '';
+  // 'body' 문자열 또는 'items' 배열 모두 지원
+  const bodyHtml = side.body
+    ? `<div class="comp-body">${escapeHtml(side.body)}</div>`
+    : (side.items || []).map(item => `<div class="comp-body-item">• ${escapeHtml(item)}</div>`).join('');
+  return `<div class="comp-card ${side.color || ''}">
+      <div class="comp-label">${escapeHtml(side.label)}</div>
+      ${bodyHtml}
+    </div>`;
+}
+
 function renderComparison(block) {
-  const l = block.left;
-  const r = block.right;
   return `<div class="content-block block-comparison">
     <div class="comp-title">${escapeHtml(block.title)}</div>
-    <div class="comp-card ${l.color}">
-      <div class="comp-label">${escapeHtml(l.label)}</div>
-      <div class="comp-body">${escapeHtml(l.body)}</div>
-    </div>
-    <div class="comp-card ${r.color}">
-      <div class="comp-label">${escapeHtml(r.label)}</div>
-      <div class="comp-body">${escapeHtml(r.body)}</div>
-    </div>
+    ${renderCompCard(block.left)}
+    ${renderCompCard(block.right)}
   </div>`;
 }
 
 function renderList(block) {
-  const items = block.items.map(item => `<li>${escapeHtml(item)}</li>`).join('');
-  return `<div class="content-block block-list ${block.style}">
+  const items = (block.items || []).map(item => `<li>${escapeHtml(item)}</li>`).join('');
+  return `<div class="content-block block-list ${block.style || ''}">
     ${block.title ? `<div class="list-title">${escapeHtml(block.title)}</div>` : ''}
     <ul>${items}</ul>
   </div>`;
