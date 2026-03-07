@@ -1,4 +1,9 @@
-const AUTH_KEY = 'logic_auth_v1';
+const AUTH_KEY = 'logic_auth_v2';
+
+const WORKER_URLS = [
+  'https://logic-proxy.dongkuklee99.workers.dev',
+  'https://logic-proxy.ldgit99.workers.dev',
+];
 
 function getEl(id) {
   return document.getElementById(id);
@@ -6,6 +11,20 @@ function getEl(id) {
 
 function sanitize(value) {
   return String(value || '').trim();
+}
+
+function setError(message) {
+  const el = getEl('login-error');
+  if (!el) return;
+  el.textContent = message || '';
+  el.classList.toggle('hidden', !message);
+}
+
+function setBusy(isBusy) {
+  const loginBtn = getEl('login-submit');
+  const signupBtn = getEl('signup-submit');
+  if (loginBtn) loginBtn.disabled = isBusy;
+  if (signupBtn) signupBtn.disabled = isBusy;
 }
 
 function loadAuthRaw() {
@@ -34,14 +53,12 @@ function clearAuth() {
 
 function normalizeProfile(raw) {
   if (!raw) return null;
+  const token = sanitize(raw.token);
   const studentId = sanitize(raw.studentId);
   const studentName = sanitize(raw.studentName);
-  if (!studentId || !studentName) return null;
+  if (!token || !studentId || !studentName) return null;
 
-  return {
-    studentId,
-    studentName,
-  };
+  return { token, studentId, studentName };
 }
 
 function updateHeaderProfile(profile) {
@@ -61,11 +78,116 @@ function hideLoginGate() {
   if (gate) gate.classList.add('hidden');
 }
 
+function parseError(data, fallback) {
+  if (!data) return fallback;
+  if (typeof data.error === 'string' && data.error) return data.error;
+  return fallback;
+}
+
+async function apiRequest(path, method = 'GET', body = null, token = '') {
+  let lastErr = null;
+
+  for (const base of WORKER_URLS) {
+    try {
+      const res = await fetch(`${base}${path}`, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: body ? JSON.stringify(body) : undefined,
+      });
+
+      let data = null;
+      try {
+        data = await res.json();
+      } catch {
+        data = null;
+      }
+
+      if (!res.ok) {
+        const e = new Error(parseError(data, `request failed: ${res.status}`));
+        e.status = res.status;
+        throw e;
+      }
+
+      return data;
+    } catch (err) {
+      lastErr = err;
+    }
+  }
+
+  throw lastErr || new Error('network error');
+}
+
+async function signup(studentName, studentId, password) {
+  const data = await apiRequest('/auth/signup', 'POST', {
+    student_name: studentName,
+    student_id: studentId,
+    password,
+  });
+  return {
+    token: data.token,
+    studentId: data.profile?.student_id || studentId,
+    studentName: data.profile?.student_name || studentName,
+  };
+}
+
+async function login(studentId, password) {
+  const data = await apiRequest('/auth/login', 'POST', {
+    student_id: studentId,
+    password,
+  });
+  return {
+    token: data.token,
+    studentId: data.profile?.student_id || studentId,
+    studentName: data.profile?.student_name || '',
+  };
+}
+
+async function me(token) {
+  const data = await apiRequest('/auth/me', 'GET', null, token);
+  return {
+    token,
+    studentId: data.profile?.student_id || '',
+    studentName: data.profile?.student_name || '',
+  };
+}
+
+async function logout(token) {
+  try {
+    await apiRequest('/auth/logout', 'POST', {}, token);
+  } catch {
+    // ignore
+  }
+}
+
+function getInputValues() {
+  return {
+    studentName: sanitize(getEl('login-name')?.value),
+    studentId: sanitize(getEl('login-student-id')?.value),
+    password: String(getEl('login-password')?.value || ''),
+  };
+}
+
+function validateForSignup({ studentName, studentId, password }) {
+  if (!studentName || !studentId || !password) return '이름, 학번, 비밀번호를 입력하세요.';
+  if (password.length < 8) return '비밀번호는 8자 이상이어야 합니다.';
+  return '';
+}
+
+function validateForLogin({ studentId, password }) {
+  if (!studentId || !password) return '학번과 비밀번호를 입력하세요.';
+  return '';
+}
+
 function bindLogoutOnce() {
   const btn = getEl('auth-logout');
   if (!btn || btn.dataset.bound === 'true') return;
   btn.dataset.bound = 'true';
-  btn.addEventListener('click', () => {
+  btn.addEventListener('click', async () => {
+    const current = getStudentProfile();
+    if (current?.token) await logout(current.token);
     clearAuth();
     location.reload();
   });
@@ -79,47 +201,93 @@ export async function initAuthGate() {
   bindLogoutOnce();
 
   const existing = getStudentProfile();
-  if (existing) {
-    updateHeaderProfile(existing);
-    hideLoginGate();
-    return existing;
+  if (existing?.token) {
+    try {
+      const verified = await me(existing.token);
+      const normalized = normalizeProfile(verified);
+      if (normalized) {
+        saveAuth(normalized);
+        updateHeaderProfile(normalized);
+        hideLoginGate();
+        return normalized;
+      }
+    } catch {
+      clearAuth();
+    }
   }
 
   showLoginGate();
+  setError('');
 
   const nameInput = getEl('login-name');
   const idInput = getEl('login-student-id');
-  const startBtn = getEl('login-start');
+  const pwInput = getEl('login-password');
+  const loginBtn = getEl('login-submit');
+  const signupBtn = getEl('signup-submit');
 
-  if (nameInput) nameInput.focus();
+  if (idInput) idInput.focus();
 
   return await new Promise((resolve) => {
-    const submit = () => {
-      const studentName = sanitize(nameInput?.value);
-      const studentId = sanitize(idInput?.value);
-
-      if (!studentName || !studentId) return;
-
-      const profile = { studentId, studentName };
-      saveAuth(profile);
-      updateHeaderProfile(profile);
+    const completeAuth = (profile) => {
+      const normalized = normalizeProfile(profile);
+      if (!normalized) return;
+      saveAuth(normalized);
+      updateHeaderProfile(normalized);
       hideLoginGate();
-      resolve(profile);
+      resolve(normalized);
     };
 
-    startBtn?.addEventListener('click', submit, { once: true });
+    const onLogin = async () => {
+      const values = getInputValues();
+      const invalid = validateForLogin(values);
+      if (invalid) {
+        setError(invalid);
+        return;
+      }
+
+      setBusy(true);
+      setError('');
+      try {
+        const profile = await login(values.studentId, values.password);
+        completeAuth(profile);
+      } catch (err) {
+        setError(err?.message || '로그인에 실패했습니다.');
+      } finally {
+        setBusy(false);
+      }
+    };
+
+    const onSignup = async () => {
+      const values = getInputValues();
+      const invalid = validateForSignup(values);
+      if (invalid) {
+        setError(invalid);
+        return;
+      }
+
+      setBusy(true);
+      setError('');
+      try {
+        const profile = await signup(values.studentName, values.studentId, values.password);
+        completeAuth(profile);
+      } catch (err) {
+        setError(err?.message || '회원가입에 실패했습니다.');
+      } finally {
+        setBusy(false);
+      }
+    };
+
+    loginBtn?.addEventListener('click', onLogin);
+    signupBtn?.addEventListener('click', onSignup);
 
     const onKeyDown = (e) => {
       if (e.key !== 'Enter') return;
       e.preventDefault();
-      submit();
-      if (getStudentProfile()) {
-        nameInput?.removeEventListener('keydown', onKeyDown);
-        idInput?.removeEventListener('keydown', onKeyDown);
-      }
+      onLogin();
     };
 
-    nameInput?.addEventListener('keydown', onKeyDown);
     idInput?.addEventListener('keydown', onKeyDown);
+    pwInput?.addEventListener('keydown', onKeyDown);
+    nameInput?.addEventListener('keydown', onKeyDown);
   });
 }

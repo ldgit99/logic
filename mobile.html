@@ -95,18 +95,24 @@
   <!-- ─── 학생 정보 입력 모달 ─── -->
   <div id="login-gate" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="login-title">
     <div class="modal-box">
-      <h2 id="login-title">학습 시작 로그인</h2>
-      <p class="modal-desc">학번과 이름을 입력하면 대화/평가 기록이 저장됩니다.</p>
+      <h2 id="login-title">학습 계정</h2>
+      <p class="modal-desc">학번/이름/비밀번호로 회원가입 후 로그인하세요.</p>
       <div class="form-group">
-        <label for="login-name">이름</label>
+        <label for="login-name">이름 (회원가입 시)</label>
         <input type="text" id="login-name" placeholder="홍길동" autocomplete="name" />
       </div>
       <div class="form-group">
         <label for="login-student-id">학번</label>
-        <input type="text" id="login-student-id" placeholder="2024XXXXXX" inputmode="numeric" />
+        <input type="text" id="login-student-id" placeholder="2024XXXXXX" inputmode="numeric" autocomplete="username" />
       </div>
+      <div class="form-group">
+        <label for="login-password">비밀번호</label>
+        <input type="password" id="login-password" placeholder="8자 이상" autocomplete="current-password" />
+      </div>
+      <p id="login-error" class="login-error hidden"></p>
       <div class="modal-actions">
-        <button id="login-start" class="btn-primary" type="button">학습 시작</button>
+        <button id="login-submit" class="btn-secondary" type="button">로그인</button>
+        <button id="signup-submit" class="btn-primary" type="button">회원가입</button>
       </div>
     </div>
   </div>

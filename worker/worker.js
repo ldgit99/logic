@@ -23,6 +23,7 @@ import { handleEvents } from './routes/events.js';
 import { handleAssessments } from './routes/assessments.js';
 import { handleFeedbackReports } from './routes/feedbackReports.js';
 import { handleDashboard } from './routes/dashboard.js';
+import { handleStudentAuth } from './routes/studentAuth.js';
 import { authenticate } from './services/auth.js';
 
 const ALLOWED_ORIGINS = [
@@ -64,8 +65,12 @@ export default {
     let response;
 
     try {
+      // auth endpoints
+      if (pathname.startsWith('/auth/')) {
+        response = await handleStudentAuth(request, env, pathname);
+
       // ── GET /dashboard/* ─────────────────────────────────────────
-      if (request.method === 'GET' && pathname.startsWith('/dashboard/')) {
+      } else if (request.method === 'GET' && pathname.startsWith('/dashboard/')) {
         const authError = authenticate(request, env, pathname);
         if (authError) return withCors(authError, origin);
 

@@ -217,3 +217,9 @@
     display: none;
   }
 }
+
+.login-error {
+  margin: 0 0 10px;
+  color: var(--accent-red);
+  font-size: 0.8rem;
+}
