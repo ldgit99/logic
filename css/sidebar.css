@@ -1,4 +1,4 @@
-/* ─── 사이드바 (목차 패널) ─── */
+﻿/* ??? ?ъ씠?쒕컮 (紐⑹감 ?⑤꼸) ??? */
 #sidebar {
   background: var(--bg-secondary);
   border-right: 1px solid var(--border);
@@ -30,7 +30,7 @@
 #toc-list::-webkit-scrollbar-track { background: transparent; }
 #toc-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
-/* 챕터 그룹 아이템 */
+/* 梨뺥꽣 洹몃９ ?꾩씠??*/
 .toc-chapter {
   padding: 0;
 }
@@ -79,7 +79,7 @@
   transform: rotate(-90deg);
 }
 
-/* 섹션 아이템 */
+/* ?뱀뀡 ?꾩씠??*/
 .toc-sections {
   list-style: none;
   overflow: hidden;
@@ -123,7 +123,7 @@
   font-weight: 500;
 }
 
-/* 진행 표시 도트 */
+/* 吏꾪뻾 ?쒖떆 ?꾪듃 */
 .toc-section-link::before {
   content: '';
   display: inline-block;
@@ -140,7 +140,7 @@
   background: var(--accent-blue);
 }
 
-/* 학습목표 패널 하단 */
+/* ?숈뒿紐⑺몴 ?⑤꼸 ?섎떒 */
 #sidebar-footer {
   padding: 12px 16px;
   border-top: 1px solid var(--border);
@@ -170,3 +170,4 @@
   color: var(--accent-green);
   flex-shrink: 0;
 }
+

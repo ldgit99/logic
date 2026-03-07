@@ -1,4 +1,4 @@
-/* ─── 챗봇 패널 ─── */
+﻿/* ??? 梨쀫큸 ?⑤꼸 ??? */
 #chatbot-panel {
   background: var(--bg-secondary);
   border-left: 1px solid var(--border);
@@ -8,7 +8,7 @@
   transition: width var(--transition);
 }
 
-/* 헤더 */
+/* ?ㅻ뜑 */
 #chatbot-header {
   display: flex;
   align-items: center;
@@ -34,7 +34,7 @@
   color: var(--text-secondary);
 }
 
-/* 진행 상태 배지 */
+/* 吏꾪뻾 ?곹깭 諛곗? */
 .badge {
   margin-left: auto;
   font-size: 0.68rem;
@@ -69,7 +69,7 @@
   50% { opacity: 0.6; }
 }
 
-/* ─── 대화 영역 ─── */
+/* ??? ????곸뿭 ??? */
 #chat-messages {
   flex: 1;
   overflow-y: auto;
@@ -84,7 +84,7 @@
 #chat-messages::-webkit-scrollbar-track { background: transparent; }
 #chat-messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
-/* 말풍선 공통 */
+/* 留먰뭾??怨듯넻 */
 .chat-bubble {
   display: flex;
   gap: 8px;
@@ -130,7 +130,7 @@
   padding: 0 4px;
 }
 
-/* AI 말풍선 */
+/* AI 留먰뭾??*/
 .chat-bubble.ai .bubble-avatar {
   background: rgba(16, 185, 129, 0.15);
   color: var(--accent-green);
@@ -143,7 +143,7 @@
   border-top-left-radius: 4px;
 }
 
-/* 학생 말풍선 */
+/* ?숈깮 留먰뭾??*/
 .chat-bubble.user {
   flex-direction: row-reverse;
 }
@@ -162,7 +162,7 @@
 
 .chat-bubble.user .bubble-time { text-align: right; }
 
-/* 시스템 메시지 */
+/* ?쒖뒪??硫붿떆吏 */
 .chat-bubble.system {
   justify-content: center;
 }
@@ -176,9 +176,9 @@
   border-radius: 20px;
 }
 
-/* 스트리밍 중 타이핑 커서 */
+/* ?ㅽ듃由щ컢 以???댄븨 而ㅼ꽌 */
 .typing-cursor::after {
-  content: '▋';
+  content: '▌';
   animation: blink 0.7s step-end infinite;
   color: var(--accent-green);
 }
@@ -188,7 +188,7 @@
   50% { opacity: 0; }
 }
 
-/* 요약 리포트 카드 (형성평가 완료 시) */
+/* ?붿빟 由ы룷??移대뱶 (?뺤꽦?됯? ?꾨즺 ?? */
 .assessment-report {
   background: var(--bg-card);
   border: 1px solid rgba(37, 99, 235, 0.3);
@@ -251,7 +251,7 @@
   line-height: 1.5;
 }
 
-/* ─── 입력 영역 ─── */
+/* ??? ?낅젰 ?곸뿭 ??? */
 #chat-input-area {
   display: flex;
   gap: 8px;
@@ -306,7 +306,7 @@
 #chat-send:hover { background: var(--accent-blue-hover); }
 #chat-send:disabled { background: var(--border); cursor: not-allowed; }
 
-/* ─── 제출 버튼 ─── */
+/* ??? ?쒖텧 踰꾪듉 ??? */
 #btn-submit-pdf {
   margin: 0 12px 12px;
   padding: 10px 16px;
@@ -340,3 +340,4 @@
   0%, 100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); }
   50% { box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15); }
 }
+
