@@ -167,12 +167,14 @@ function getInputValues() {
     studentName: sanitize(getEl('login-name')?.value),
     studentId: sanitize(getEl('login-student-id')?.value),
     password: String(getEl('login-password')?.value || ''),
+    passwordConfirm: String(getEl('login-password-confirm')?.value || ''),
   };
 }
 
-function validateForSignup({ studentName, studentId, password }) {
+function validateForSignup({ studentName, studentId, password, passwordConfirm }) {
   if (!studentName || !studentId || !password) return '이름, 학번, 비밀번호를 입력하세요.';
   if (password.length < 8) return '비밀번호는 8자 이상이어야 합니다.';
+  if (password !== passwordConfirm) return '비밀번호와 비밀번호 확인이 일치하지 않습니다.';
   return '';
 }
 
@@ -222,6 +224,7 @@ export async function initAuthGate() {
   const nameInput = getEl('login-name');
   const idInput = getEl('login-student-id');
   const pwInput = getEl('login-password');
+  const pwConfirmInput = getEl('login-password-confirm');
   const loginBtn = getEl('login-submit');
   const signupBtn = getEl('signup-submit');
 
@@ -288,6 +291,7 @@ export async function initAuthGate() {
 
     idInput?.addEventListener('keydown', onKeyDown);
     pwInput?.addEventListener('keydown', onKeyDown);
+    pwConfirmInput?.addEventListener('keydown', onKeyDown);
     nameInput?.addEventListener('keydown', onKeyDown);
   });
 }
