@@ -397,6 +397,92 @@ body {
   html:not(.light):not(.dark) .dash-filters input { background: #1f2937; color: var(--color-text); border-color: var(--color-border); }
 }
 
+/* ── 상호작용 분석 뷰 ─────────────────────────────────── */
+.ia-top-grid {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.ia-card {
+  background: var(--color-surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 16px;
+  margin-bottom: 16px;
+}
+.ia-card--heatmap { margin-bottom: 16px; }
+.ia-card--scatter { display: flex; flex-direction: column; gap: 8px; }
+.chart-sub {
+  font-size: 11px; font-weight: 400;
+  color: var(--color-muted); margin-left: 8px;
+}
+
+/* 패턴 요약 stats */
+.pattern-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 10px;
+}
+.pstat {
+  background: var(--color-bg);
+  border-radius: var(--radius);
+  padding: 12px;
+  text-align: center;
+}
+.pstat--danger { background: #fee2e2; }
+.pstat-value { font-size: 22px; font-weight: 700; color: var(--color-text); }
+.pstat--danger .pstat-value { color: var(--color-danger); }
+.pstat-label { font-size: 11px; color: var(--color-muted); margin-top: 2px; line-height: 1.4; }
+
+/* 산점도 범례 */
+.scatter-legend { display: flex; gap: 12px; font-size: 11px; }
+.sleg { display: flex; align-items: center; gap: 4px; color: var(--color-muted); }
+.sleg::before { content: ''; display: inline-block; width: 10px; height: 10px; border-radius: 50%; }
+.sleg--bad::before  { background: #ef4444; }
+.sleg--warn::before { background: #f59e0b; }
+.sleg--good::before { background: #10b981; }
+
+/* 히트맵 */
+.heatmap-scroll { overflow-x: auto; }
+.heatmap-table th, .heatmap-table td { white-space: nowrap; }
+.hm-concept-name {
+  max-width: 180px; overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap;
+  font-weight: 500;
+}
+.hm-cell { text-align: center; font-size: 12px; font-weight: 600; min-width: 40px; }
+.hm-cell--zero { background: transparent; }
+.hm-total { font-weight: 700; text-align: center; color: var(--color-muted); }
+
+/* 힌트 배지 */
+.hint-badge {
+  display: inline-block; font-size: 12px; font-weight: 600;
+  padding: 2px 8px; border-radius: 10px;
+}
+.hint-badge--high { background: #fee2e2; color: var(--color-danger); }
+.hint-badge--mid  { background: #fef3c7; color: #92400e; }
+.hint-badge--low  { background: #d1fae5; color: #065f46; }
+
+/* 반응형 */
+@media (max-width: 860px) {
+  .ia-top-grid { grid-template-columns: 1fr; }
+}
+
+/* 다크 모드 재정의 */
+.dark .pstat { background: #374151; }
+.dark .pstat--danger { background: #4b1c1c; }
+.dark .hint-badge--mid { background: #44300a; color: #fbbf24; }
+.dark .hint-badge--low { background: #064e2d; color: #34d399; }
+
+@media (prefers-color-scheme: dark) {
+  html:not(.light):not(.dark) .pstat { background: #374151; }
+  html:not(.light):not(.dark) .pstat--danger { background: #4b1c1c; }
+  html:not(.light):not(.dark) .hint-badge--mid { background: #44300a; color: #fbbf24; }
+  html:not(.light):not(.dark) .hint-badge--low { background: #064e2d; color: #34d399; }
+}
+
 /* ── 테마 토글 버튼 ─────────────────────────────────────── */
 .btn-theme {
   font-size: 16px; line-height: 1; cursor: pointer;
