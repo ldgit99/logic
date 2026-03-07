@@ -1,5 +1,6 @@
 import { showToast } from './main.js';
 import { generateFeedback } from './feedback.js';
+import { sendEvent } from './instrumentation.js';
 
 // ─── Worker URL 설정 ───
 // Cloudflare Worker 배포 후 아래 URL을 변경하세요
@@ -13,6 +14,7 @@ let conversationMessages = [];
 let chapterRef = null;
 let isStreaming = false;
 let assessmentComplete = false;
+let sessionId = null; // 계측용 세션 UUID
 
 // ─── 시스템 프롬프트 생성 ───
 function buildSystemPrompt(data) {
@@ -130,6 +132,15 @@ async function sendToAI(userText) {
   appendBubble('user', userText);
   saveSession();
 
+  // D1: 채팅 이벤트 계측 (student_id/name은 제출 전까지 미입력)
+  sendEvent('chat_message', {
+    chapterId: chapterRef?.id || '',
+    sessionId: sessionId || '',
+    studentId: '',
+    studentName: '',
+    payload: { role: 'user', length: userText.length },
+  });
+
   // 입력창 비활성화
   const input = document.getElementById('chat-input');
   const sendBtn = document.getElementById('chat-send');
@@ -217,13 +228,28 @@ function handleAssessmentComplete() {
   // 시스템 메시지
   appendBubble('system', '형성평가가 완료되었습니다. 아래 "형성평가 제출 (PDF)" 버튼을 눌러 결과를 제출하세요.');
 
+  // D1: 형성평가 완료 이벤트
+  sendEvent('assessment_completed', {
+    chapterId: chapterRef?.id || '',
+    sessionId: sessionId || '',
+    studentId: '',
+    studentName: '',
+    payload: { messageCount: conversationMessages.filter((m) => m.role === 'user').length },
+  });
+
   saveSession();
+}
+
+// ─── 세션 ID 접근자 (instrumentation에서 사용) ───
+export function getSessionId() {
+  return sessionId;
 }
 
 // ─── localStorage 세션 ───
 function saveSession() {
   const session = {
     chapterId: chapterRef?.id,
+    sessionId,
     messages: conversationMessages,
     assessmentComplete,
     savedAt: Date.now(),
@@ -244,6 +270,7 @@ function loadSession() {
 
     conversationMessages = session.messages || [];
     assessmentComplete = session.assessmentComplete || false;
+    sessionId = session.sessionId || crypto.randomUUID?.() || Date.now().toString(36);
     return true;
   } catch {
     return false;
@@ -301,8 +328,20 @@ export function initChatbot(chapterData) {
     restoreUIFromSession();
     appendBubble('system', '이전 세션이 복원되었습니다. 이어서 진행하세요.');
   } else {
+    // 새 세션 ID 생성
+    sessionId = crypto.randomUUID?.() || Date.now().toString(36);
+
     // 시스템 프롬프트 설정
     conversationMessages = [{ role: 'system', content: buildSystemPrompt(chapterData) }];
+
+    // D1: 세션 시작 이벤트
+    sendEvent('session_started', {
+      chapterId: chapterData.id || '',
+      sessionId,
+      studentId: '',
+      studentName: '',
+      payload: { chapterTitle: chapterData.title },
+    });
 
     // 웰컴 메시지
     const totalQ = chapterData.formativeAssessment?.totalQuestions

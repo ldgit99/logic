@@ -1,6 +1,7 @@
 import { showToast } from './main.js';
 import { generateFeedback } from './feedback.js';
-import { getConversationMessages, getChapterRef } from './chatbot.js';
+import { getConversationMessages, getChapterRef, getSessionId } from './chatbot.js';
+import { sendAssessment, sendFeedbackReport, sendEvent } from './instrumentation.js';
 
 let exportEventsBound = false;
 
@@ -188,6 +189,47 @@ async function handleConfirmSubmit() {
     const feedback = normalizeFeedback(rawFeedback, chapterData.formativeAssessment.totalQuestions);
     await savePdf(studentName, studentId, chapterData, messages, feedback);
     showToast('PDF \uC0DD\uC131\uC774 \uC644\uB8CC\uB418\uC5C8\uC2B5\uB2C8\uB2E4.', 'success');
+
+    // D2: 평가 결과 + 피드백 리포트를 서버로 전송 (PDF 성공 후 독립 실행)
+    const sessionId = getSessionId() || '';
+    const submittedAt = new Date().toISOString();
+
+    sendAssessment({
+      session_id: sessionId,
+      student_id: studentId,
+      student_name: studentName,
+      chapter_id: chapterData.id || '',
+      chapter_title: chapterData.title || '',
+      submitted_at: submittedAt,
+      correct_count: feedback.correctCount,
+      total_count: feedback.totalCount,
+      score: feedback.score,
+      weak_concepts: feedback.weakConcepts,
+      messages: messages.filter((m) => m.role !== 'system'),
+    });
+
+    sendFeedbackReport({
+      session_id: sessionId,
+      student_id: studentId,
+      student_name: studentName,
+      chapter_id: chapterData.id || '',
+      submitted_at: submittedAt,
+      feed_up: feedback.feedUp,
+      feed_back: feedback.feedBack,
+      feed_forward: feedback.feedForward,
+      score: feedback.score,
+      correct_count: feedback.correctCount,
+      total_count: feedback.totalCount,
+      weak_concepts: feedback.weakConcepts,
+    });
+
+    sendEvent('pdf_generated', {
+      chapterId: chapterData.id || '',
+      sessionId,
+      studentId,
+      studentName,
+      payload: { score: feedback.score },
+    });
   } catch (err) {
     console.error('PDF export error:', err);
     showToast('PDF \uC0DD\uC131\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4. \uC7A0\uC2DC \uD6C4 \uB2E4\uC2DC \uC2DC\uB3C4\uD574\uC8FC\uC138\uC694.', 'error');
