@@ -169,6 +169,9 @@
       }
 
       function looksStuck() {
+        const loginGate = document.getElementById('login-gate');
+        if (loginGate) return false;
+
         const loading = document.getElementById('loading-screen');
         const hasSections = document.querySelector('.content-section');
         return !!loading && !hasSections;
