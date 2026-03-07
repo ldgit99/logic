@@ -27,6 +27,8 @@ import { authenticate } from './services/auth.js';
 
 const ALLOWED_ORIGINS = [
   'https://ldgit99.github.io',
+  'https://logic.dongkuklee99.workers.dev',
+  'https://logic-proxy.dongkuklee99.workers.dev',
   'http://localhost:5500',
   'http://127.0.0.1:5500',
   'http://localhost:8000',
