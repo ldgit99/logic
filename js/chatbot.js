@@ -1,5 +1,6 @@
 import { showToast } from './main.js';
 import { sendEvent } from './instrumentation.js?v=20260308a';
+import { getStudentProfile } from './auth.js?v=20260308a';
 
 const WORKER_URLS = [
   'https://logic-proxy.dongkuklee99.workers.dev/',
@@ -29,6 +30,11 @@ let modelMessages = [];
 
 function getEl(id) {
   return document.getElementById(id);
+}
+
+function getStudentMeta() {
+  const profile = getStudentProfile() || {};
+  return { studentId: profile.studentId || '', studentName: profile.studentName || '' };
 }
 
 function nowIso() {
@@ -203,8 +209,8 @@ function pushLogMessage(role, content, mode = currentMode) {
     sendEvent('chat_message', {
       chapterId: msg.chapter_id,
       sessionId: msg.session_id,
-      studentId: '',
-      studentName: '',
+      studentId: getStudentMeta().studentId,
+      studentName: getStudentMeta().studentName,
       payload: {
         role,
         content,
@@ -324,8 +330,8 @@ function handleAssessmentComplete() {
   sendEvent('assessment_completed', {
     chapterId: chapterRef?.id || '',
     sessionId,
-    studentId: '',
-    studentName: '',
+      studentId: getStudentMeta().studentId,
+      studentName: getStudentMeta().studentName,
     payload: {
       total_messages: logMessages.filter((m) => m.role === 'user' || m.role === 'assistant').length,
       timestamp: nowIso(),
@@ -506,8 +512,8 @@ function createNewLearningSession() {
   sendEvent('session_started', {
     chapterId: chapterRef?.id || '',
     sessionId,
-    studentId: '',
-    studentName: '',
+      studentId: getStudentMeta().studentId,
+      studentName: getStudentMeta().studentName,
     payload: {
       mode: currentMode,
       timestamp: nowIso(),

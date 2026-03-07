@@ -1,6 +1,7 @@
 import { showToast } from './main.js';
 import { generateFeedback } from './feedback.js';
 import { getConversationMessages, getChapterRef, getSessionId } from './chatbot.js';
+import { getStudentProfile } from './auth.js?v=20260308a';
 import { sendAssessment, sendFeedbackReport } from './instrumentation.js?v=20260308a';
 
 let exportEventsBound = false;
@@ -29,6 +30,12 @@ function setLoading(visible, message = '\uD53C\uB4DC\uBC31\uC744 \uC0DD\uC131\uD
 
 function openModal() {
   const modal = getEl('student-modal');
+  const profile = getStudentProfile() || {};
+  const nameEl = getEl('input-name');
+  const idEl = getEl('input-student-id');
+
+  if (nameEl && !nameEl.value) nameEl.value = profile.studentName || '';
+  if (idEl && !idEl.value) idEl.value = profile.studentId || '';
   if (modal) modal.classList.remove('hidden');
 }
 
@@ -166,8 +173,9 @@ async function savePdf(studentName, studentId, chapterData, messages, feedback) 
 async function handleConfirmSubmit() {
   const nameEl = getEl('input-name');
   const idEl = getEl('input-student-id');
-  const studentName = (nameEl?.value || '').trim();
-  const studentId = (idEl?.value || '').trim();
+  const profile = getStudentProfile() || {};
+  const studentName = ((nameEl?.value || '').trim() || profile.studentName || '').trim();
+  const studentId = ((idEl?.value || '').trim() || profile.studentId || '').trim();
 
   if (!studentName || !studentId) {
     showToast('\uC774\uB984\uACFC \uD559\uBC88\uC744 \uC785\uB825\uD574\uC8FC\uC138\uC694.', 'error');

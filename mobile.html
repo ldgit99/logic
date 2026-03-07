@@ -23,6 +23,10 @@
       <span id="chapter-indicator">제01장. 들어가기</span>
     </div>
     <button id="chatbot-toggle" aria-label="챗봇 열기/닫기" title="AI 튜터">💬</button>
+    <div id="auth-user" class="auth-user">
+      <span id="auth-student-label" class="auth-student-label"></span>
+      <button id="auth-logout" class="auth-logout" type="button">로그아웃</button>
+    </div>
   </header>
 
   <!-- ─── 본문 3분할 ─── -->
@@ -89,6 +93,24 @@
   </div>
 
   <!-- ─── 학생 정보 입력 모달 ─── -->
+  <div id="login-gate" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="login-title">
+    <div class="modal-box">
+      <h2 id="login-title">학습 시작 로그인</h2>
+      <p class="modal-desc">학번과 이름을 입력하면 대화/평가 기록이 저장됩니다.</p>
+      <div class="form-group">
+        <label for="login-name">이름</label>
+        <input type="text" id="login-name" placeholder="홍길동" autocomplete="name" />
+      </div>
+      <div class="form-group">
+        <label for="login-student-id">학번</label>
+        <input type="text" id="login-student-id" placeholder="2024XXXXXX" inputmode="numeric" />
+      </div>
+      <div class="modal-actions">
+        <button id="login-start" class="btn-primary" type="button">학습 시작</button>
+      </div>
+    </div>
+  </div>
+
   <div id="student-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title">
     <div class="modal-box">
       <h2 id="modal-title">형성평가 제출</h2>
@@ -125,7 +147,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
   <!-- ─── 앱 진입점 (ES Module) ─── -->
-  <script type="module" src="js/main.js?v=20260307k"></script>
+  <script type="module" src="js/main.js?v=20260308b"></script>
   <script>
     (function () {
       function escapeHtml(str) {
