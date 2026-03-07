@@ -19,6 +19,7 @@ import { renderAchievement } from './views/achievement.js';
 import { renderConcepts } from './views/concepts.js';
 import { renderFeedbackQuality } from './views/feedbackQuality.js';
 import { renderInteractionAnalysis } from './views/interactionAnalysis.js';
+import { renderStudentReport } from './views/studentReport.js';
 import { openStudentModal } from './views/studentModal.js';
 import { exportCSV } from './utils/csv.js';
 
@@ -209,6 +210,12 @@ async function loadView(view) {
       case 'interaction-analysis': {
         const data = await fetchStudents(currentFilters);
         renderInteractionAnalysis(data.submissions || [], document.getElementById('interaction-analysis-wrap'));
+        break;
+      }
+
+      case 'student-report': {
+        const data = await fetchStudents(currentFilters);
+        renderStudentReport(data.submissions || [], document.getElementById('student-report-wrap'));
         break;
       }
     }

@@ -182,6 +182,9 @@ async function handleConfirmSubmit() {
     return;
   }
 
+  const emailEl = getEl('input-email');
+  const studentEmail = (emailEl?.value || '').trim();
+
   const chapterData = getChapterRef();
   const messages = getConversationMessages();
   if (!chapterData || !Array.isArray(messages) || messages.length === 0) {
@@ -207,6 +210,7 @@ async function handleConfirmSubmit() {
       student_id: studentId,
       student_name: studentName,
       chapter_id: chapterData.id,
+      chapter_title: chapterData.title || '',
       submitted_at: submittedAt,
       correct_count: feedback.correctCount,
       total_count: feedback.totalCount,
@@ -216,6 +220,7 @@ async function handleConfirmSubmit() {
       feed_back: feedback.feedBack,
       feed_forward: feedback.feedForward,
       messages: messages.filter((m) => m.role !== 'system'),
+      ...(studentEmail ? { student_email: studentEmail } : {}),
     });
     sendFeedbackReport({
       session_id: sessionId,

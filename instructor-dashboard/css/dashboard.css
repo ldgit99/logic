@@ -309,6 +309,89 @@ body {
 .modal-score-wrap { display: flex; flex-direction: column; gap: 2px; }
 .modal-score-bar { max-width: 120px; }
 
+/* ── 학생 개별 보고서 뷰 ─────────────────────────────── */
+.sr-layout {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 0;
+  height: calc(100vh - 180px);
+  min-height: 500px;
+}
+.sr-sidebar {
+  border-right: 1px solid var(--color-border);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+.sr-search-wrap { padding: 10px 12px; border-bottom: 1px solid var(--color-border); }
+.sr-search {
+  width: 100%; padding: 6px 10px;
+  border: 1px solid var(--color-border); border-radius: var(--radius);
+  font-size: 13px; background: var(--color-bg); color: var(--color-text);
+}
+.sr-search:focus { outline: none; border-color: var(--color-primary); }
+.sr-student-list { list-style: none; overflow-y: auto; flex: 1; }
+.sr-student-item {
+  padding: 10px 14px; cursor: pointer;
+  border-bottom: 1px solid var(--color-border);
+  transition: background .1s;
+}
+.sr-student-item:hover { background: var(--color-bg); }
+.sr-student-item.selected { background: #eff6ff; border-left: 3px solid var(--color-primary); }
+.sr-student-name { font-weight: 600; font-size: 14px; }
+.sr-student-meta { display: flex; justify-content: space-between; margin-top: 2px; }
+.sr-student-id { font-size: 11px; color: var(--color-muted); }
+.sr-student-score { font-size: 12px; font-weight: 600; }
+.sr-student-chapters { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 5px; }
+
+.sr-detail { overflow-y: auto; padding: 20px 24px; }
+.sr-detail-empty {
+  display: flex; align-items: center; justify-content: center;
+  height: 100%; color: var(--color-muted);
+}
+.sr-detail-header {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  margin-bottom: 16px; padding-bottom: 14px; border-bottom: 1px solid var(--color-border);
+}
+.sr-detail-name { font-size: 20px; font-weight: 700; }
+.sr-detail-id { font-size: 13px; color: var(--color-muted); }
+.sr-detail-summary { text-align: right; font-size: 13px; display: flex; flex-direction: column; gap: 4px; }
+.sr-avg-score { font-size: 18px; font-weight: 700; }
+
+.sr-chart-card {
+  background: var(--color-surface); border-radius: var(--radius);
+  box-shadow: var(--shadow); padding: 14px; margin-bottom: 14px;
+}
+.sr-chart-card canvas { width: 100%; display: block; }
+.sr-section { margin-bottom: 16px; }
+.sr-section .chart-title { margin-bottom: 10px; }
+
+.sr-sub-card {
+  background: var(--color-surface); border-radius: var(--radius);
+  box-shadow: var(--shadow); padding: 12px 14px; margin-bottom: 10px;
+}
+.sr-sub-header {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+.sr-sub-chapter { font-weight: 700; font-size: 13px; color: var(--color-primary); min-width: 50px; }
+.sr-sub-score { display: flex; align-items: center; gap: 6px; flex: 1; }
+.sr-sub-date { font-size: 11px; color: var(--color-muted); }
+.sr-sub-feedback { margin-top: 6px; }
+.sr-fb-label { font-size: 11px; font-weight: 700; color: var(--color-muted); margin-bottom: 2px; }
+.sr-fb-text { font-size: 12px; line-height: 1.5; color: var(--color-text); }
+.weak-cnt { font-size: 10px; opacity: .8; margin-left: 2px; }
+
+.dark .sr-student-item.selected { background: #1e3a5f; }
+.dark .sr-search { background: #1f2937; color: var(--color-text); border-color: var(--color-border); }
+@media (prefers-color-scheme: dark) {
+  html:not(.light):not(.dark) .sr-student-item.selected { background: #1e3a5f; }
+  html:not(.light):not(.dark) .sr-search { background: #1f2937; color: var(--color-text); border-color: var(--color-border); }
+}
+@media (max-width: 860px) {
+  .sr-layout { grid-template-columns: 1fr; height: auto; }
+  .sr-sidebar { border-right: none; border-bottom: 1px solid var(--color-border); max-height: 240px; }
+}
+
 /* ── 공통 ──────────────────────────────────────────────── */
 .empty-msg { color: var(--color-muted); font-size: 13px; padding: 24px 0; text-align: center; }
 
