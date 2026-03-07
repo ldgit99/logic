@@ -30,21 +30,28 @@ const ALLOWED_ORIGINS = [
   'https://ldgit99.github.io',
   'https://logic.dongkuklee99.workers.dev',
   'https://logic-proxy.dongkuklee99.workers.dev',
+  'https://logic-proxy.ldgit99.workers.dev',
   'http://localhost:5500',
   'http://127.0.0.1:5500',
   'http://localhost:8000',
 ];
 
+function isAllowedOrigin(origin) {
+  if (!origin) return false;
+  if (ALLOWED_ORIGINS.includes(origin)) return true;
+  if (/^https:\/\/[a-z0-9-]+\.workers\.dev$/i.test(origin)) return true;
+  return false;
+}
+
 function corsHeaders(origin) {
-  const allowed = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  const allowed = isAllowedOrigin(origin) ? origin : ALLOWED_ORIGINS[0];
   return {
     'Access-Control-Allow-Origin': allowed,
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, Accept, Origin',
     'Access-Control-Max-Age': '86400',
   };
 }
-
 function withCors(response, origin) {
   const headers = new Headers(response.headers);
   Object.entries(corsHeaders(origin)).forEach(([k, v]) => headers.set(k, v));

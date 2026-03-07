@@ -117,6 +117,9 @@ async function apiRequest(path, method = 'GET', body = null, token = '') {
     }
   }
 
+  if (lastErr && String(lastErr.message || '').includes('Failed to fetch')) {
+    throw new Error('네트워크/CORS 오류로 서버에 연결하지 못했습니다. 잠시 후 다시 시도하세요.');
+  }
   throw lastErr || new Error('network error');
 }
 
