@@ -1,6 +1,6 @@
-import { initChatbot } from './chatbot.js?v=20260308i';
-import { initExport } from './export.js?v=20260308i';
-import { initAuthGate } from './auth.js?v=20260308i';
+import { initChatbot } from './chatbot.js?v=20260308j';
+import { initExport } from './export.js?v=20260308j';
+import { initAuthGate } from './auth.js?v=20260308j';
 
 // ─── 챕터 모듈 레지스트리 (동적 임포트) ───
 const CHAPTER_MODULES = {
@@ -147,7 +147,7 @@ async function loadChapter(id) {
   document.getElementById('content-area').scrollTop = 0;
 
   try {
-    const chapterData = await fetchJsonWithTimeout(`./chapters/${id}.json?v=20260308i`);
+    const chapterData = await fetchJsonWithTimeout(`./chapters/${id}.json?v=20260308j`);
 
     document.getElementById('chapter-indicator').textContent = chapterData.title;
     updateTOCSections(id, chapterData);
@@ -207,7 +207,7 @@ async function init() {
       console.error('auth gate init failed:', e);
     });
 
-    const chapters = await fetchJsonWithTimeout('./chapters/index.json?v=20260308i');
+    const chapters = await fetchJsonWithTimeout('./chapters/index.json?v=20260308j');
 
     buildTOC(chapters);
     setupToggleHandlers();
@@ -224,5 +224,9 @@ async function init() {
   }
 }
 
-document.addEventListener('DOMContentLoaded', init);
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init, { once: true });
+} else {
+  init();
+}
 
