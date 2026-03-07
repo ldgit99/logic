@@ -5,6 +5,10 @@ import { initExport } from './export.js?v=20260307c';
 const CHAPTER_MODULES = {
   '01': () => import('./chapters/chapter01.js?v=20260307c'),
   '02': () => import('./chapters/chapter02.js?v=20260307c'),
+  '03': () => import('./chapters/chapter03.js'),
+  '04': () => import('./chapters/chapter04.js'),
+  '05': () => import('./chapters/chapter05.js'),
+  '06': () => import('./chapters/chapter06.js'),
 };
 
 let currentChapterId = null;

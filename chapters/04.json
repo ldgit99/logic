@@ -1,0 +1,184 @@
+{
+  "id": "04",
+  "title": "제04장. 논리 게이트",
+  "objectives": [
+    "논리 게이트와 논리 레벨의 기본 개념을 이해한다",
+    "각 논리 게이트의 동작 원리와 진리표를 이해하고 활용한다",
+    "게이트의 전기적 특성(전파지연, 잡음여유도, 팬아웃)을 이해한다"
+  ],
+  "sections": [
+    {
+      "id": "4-1",
+      "title": "4.1 논리 레벨",
+      "blocks": [
+        {
+          "type": "text",
+          "content": "디지털 회로에서 논리 레벨(Logic Level)은 전압으로 표현되는 0과 1의 이진 값입니다. TTL과 CMOS는 대표적인 디지털 IC 계열로, 각각 논리 High와 Low를 정의하는 전압 범위가 다릅니다."
+        },
+        {
+          "type": "comparison",
+          "title": "정논리 vs 부논리",
+          "left": { "label": "정논리 (Positive Logic)", "items": ["높은 전압 = 논리 1", "낮은 전압 = 논리 0", "일반적으로 많이 사용", "예: TTL, CMOS"] },
+          "right": { "label": "부논리 (Negative Logic)", "items": ["낮은 전압 = 논리 1", "높은 전압 = 논리 0", "특수 목적 사용", "AND ↔ OR 기능 교환"] }
+        },
+        {
+          "type": "definition",
+          "term": "트랜지스터와 NOT 게이트",
+          "definition": "게이트는 스위치 역할을 하는 트랜지스터(Transistor)로 구성됩니다. 입력 전압이 임계값보다 낮으면 출력은 High, 높으면 출력은 Low가 됩니다. 이는 논리 부정(NOT)으로 동작합니다."
+        }
+      ]
+    },
+    {
+      "id": "4-2",
+      "title": "4.2 NOT 게이트와 버퍼",
+      "blocks": [
+        {
+          "type": "definition",
+          "term": "NOT 게이트 (인버터)",
+          "definition": "1개의 입력과 1개의 출력을 갖는 게이트로 논리 부정을 수행합니다. 입력이 0이면 출력은 1, 입력이 1이면 출력은 0이 됩니다. 논리식: F = Ā"
+        },
+        {
+          "type": "definition",
+          "term": "버퍼 (Buffer)",
+          "definition": "입력 신호를 변경하지 않고 그대로 출력하는 게이트입니다. 신호 구동 능력(드라이빙)을 강화할 때 사용합니다. 논리식: F = A"
+        },
+        {
+          "type": "definition",
+          "term": "3상태 버퍼 (Tri-State Buffer)",
+          "definition": "출력이 High, Low, 하이 임피던스(Hi-Z) 세 가지 상태 중 하나를 갖는 소자입니다. 제어 단자(Enable)로 출력을 연결하거나 분리할 수 있습니다."
+        },
+        {
+          "type": "simulation",
+          "simKey": "gateSimulator",
+          "title": "논리 게이트 인터랙티브 시뮬레이터"
+        }
+      ]
+    },
+    {
+      "id": "4-3",
+      "title": "4.3 AND 게이트",
+      "blocks": [
+        {
+          "type": "definition",
+          "term": "AND 게이트",
+          "definition": "모든 입력이 1일 때만 출력이 1이 되는 게이트입니다. 논리곱(Logical Product)이라 하며 논리식은 F = A·B 입니다. 마스크(Mask) 연산에 활용됩니다."
+        },
+        {
+          "type": "list",
+          "title": "AND 게이트 활용 예",
+          "items": [
+            "자동차 좌석벨트 경보 시스템: 점화 스위치 AND 벨트 미착용 AND 타이머",
+            "마스크 연산: 특정 비트를 0으로 만들기 위해 AND 사용",
+            "조건부 데이터 통과: Enable 신호로 데이터 흐름 제어"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "4-4",
+      "title": "4.4 OR 게이트",
+      "blocks": [
+        {
+          "type": "definition",
+          "term": "OR 게이트",
+          "definition": "입력 중 하나라도 1이면 출력이 1이 되는 게이트입니다. 논리합(Logical Sum)이라 하며 논리식은 F = A+B 입니다."
+        },
+        {
+          "type": "list",
+          "title": "OR 게이트 활용 예",
+          "items": [
+            "침입 탐지 시스템: 출입문 OR 창문1 OR 창문2 열림 감지",
+            "비트 삽입 연산: 특정 비트를 1로 강제 설정",
+            "다중 인터럽트: 여러 소스 중 하나라도 인터럽트 발생 시 처리"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "4-5",
+      "title": "4.5 NAND / 4.6 NOR 게이트",
+      "blocks": [
+        {
+          "type": "comparison",
+          "title": "NAND vs NOR 게이트",
+          "left": { "label": "NAND 게이트", "items": ["AND + NOT 결합", "모든 입력이 1일 때만 출력 0", "F = (A·B)̄", "범용 게이트: 모든 게이트 구현 가능"] },
+          "right": { "label": "NOR 게이트", "items": ["OR + NOT 결합", "모든 입력이 0일 때만 출력 1", "F = (A+B)̄", "범용 게이트: 모든 게이트 구현 가능"] }
+        }
+      ]
+    },
+    {
+      "id": "4-6",
+      "title": "4.7 XOR / 4.8 XNOR 게이트",
+      "blocks": [
+        {
+          "type": "comparison",
+          "title": "XOR vs XNOR 게이트",
+          "left": { "label": "XOR (배타적 OR)", "items": ["홀수 개의 입력이 1일 때 출력 1", "두 입력이 다를 때 1", "F = A⊕B", "비교 연산, 패리티 체크에 활용"] },
+          "right": { "label": "XNOR (배타적 NOR)", "items": ["짝수 개의 입력이 1일 때 출력 1", "두 입력이 같을 때 1", "F = (A⊕B)̄", "동치 비교(Equivalence)에 활용"] }
+        },
+        {
+          "type": "simulation",
+          "simKey": "timingDiagram",
+          "title": "게이트 타이밍 다이어그램 시뮬레이터"
+        }
+      ]
+    },
+    {
+      "id": "4-7",
+      "title": "4.9 게이트의 전기적 특성",
+      "blocks": [
+        {
+          "type": "list",
+          "title": "주요 전기적 특성",
+          "items": [
+            "전파 지연 시간(Propagation Delay): 입력 → 출력까지 걸리는 시간. 게이트 속도를 나타냄",
+            "전력 소모(Power Dissipation): 게이트가 동작할 때 소모하는 전력",
+            "잡음 여유도(Noise Margin): 데이터 값 변경 없이 허용되는 최대 잡음",
+            "팬-인(Fan-in): 게이트에 연결 가능한 최대 입력 수",
+            "팬-아웃(Fan-out): 하나의 출력에 연결 가능한 최대 게이트 수"
+          ]
+        },
+        {
+          "type": "comparison",
+          "title": "TTL vs CMOS 특성 비교",
+          "left": { "label": "TTL (74계열)", "items": ["BJT와 다이오드로 구성", "동작전압: 5V", "빠른 속도", "소비전력 비교적 큼", "동작온도: 0~70°C (74계열)"] },
+          "right": { "label": "CMOS", "items": ["NMOS + PMOS FET로 구성", "동작전압: 넓은 범위(3~18V)", "상대적으로 느린 속도", "소비전력 매우 작음", "정전기에 취약"] }
+        },
+        {
+          "type": "simulation",
+          "simKey": "electricalProps",
+          "title": "전기적 특성 계산기 (전파지연, 팬아웃, 잡음여유도)"
+        }
+      ]
+    }
+  ],
+  "formativeAssessment": {
+    "questions": [
+      {
+        "id": "Q1",
+        "bloom": "기억",
+        "question": "AND 게이트의 진리표를 2입력 기준으로 작성하고, 출력이 1이 되는 조건을 설명하시오."
+      },
+      {
+        "id": "Q2",
+        "bloom": "이해",
+        "question": "NAND 게이트가 '범용 게이트(Universal Gate)'라고 불리는 이유를 설명하시오. NAND만으로 NOT, AND, OR을 어떻게 구현할 수 있는지 논리식으로 나타내시오."
+      },
+      {
+        "id": "Q3",
+        "bloom": "적용",
+        "question": "8비트 데이터 10110101을 마스크 01001010과 AND 연산한 결과는? 그리고 OR 연산하면? 계산 결과를 구하고 각 연산의 의미를 설명하시오."
+      },
+      {
+        "id": "Q4",
+        "bloom": "분석",
+        "question": "게이트 X의 tPHL=5ns, tPLH=4.5ns이고, 게이트 Y의 tPHL=8ns, tPLH=7.5ns일 때, 두 게이트의 최대 동작 주파수를 각각 계산하고 비교하시오."
+      },
+      {
+        "id": "Q5",
+        "bloom": "평가",
+        "question": "CMOS 게이트와 TTL 게이트 중 배터리 구동 IoT 기기에 더 적합한 것을 선택하고, 전력 소모, 잡음 여유도, 동작 전압 범위 관점에서 근거를 제시하시오."
+      }
+    ]
+  }
+}
