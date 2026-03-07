@@ -204,6 +204,10 @@ async function handleConfirmSubmit() {
       total_count: feedback.totalCount,
       score: feedback.score,
       weak_concepts: feedback.weakConcepts,
+      feed_up: feedback.feedUp,
+      feed_back: feedback.feedBack,
+      feed_forward: feedback.feedForward,
+      messages: messages.filter((m) => m.role !== 'system'),
     });
     sendFeedbackReport({
       session_id: sessionId,
