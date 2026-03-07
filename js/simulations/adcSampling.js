@@ -1,109 +1,115 @@
-// ADC sampling + quantization error simulator
+﻿// ADC digital sampling simulator (sampling-focused)
 
-function clamp(v, min, max) {
-  return Math.max(min, Math.min(max, v));
-}
-
-function quantizeNormalized(x, bits) {
-  const levels = Math.pow(2, bits);
-  const idx = Math.round(((x + 1) * 0.5) * (levels - 1));
-  const q = (idx / (levels - 1)) * 2 - 1;
-  return clamp(q, -1, 1);
-}
-
-function fmt(num, digits = 3) {
+function fmt(num, digits = 2) {
   return Number(num).toFixed(digits);
 }
 
 export function mountAdcSampling(container) {
   container.innerHTML = `
     <div class="sim-canvas-wrap">
-      <canvas id="canvas-adc" height="170" style="width:100%;display:block;"></canvas>
+      <canvas id="canvas-adc" height="190" style="width:100%;display:block;"></canvas>
     </div>
 
     <div class="sim-controls">
       <div class="sim-control-row">
-        <span class="sim-label">\uC2E0\uD638 \uC8FC\uD30C\uC218</span>
-        <input type="range" class="sim-slider" id="adc-sig" min="1" max="10" step="0.5" value="2" />
+        <span class="sim-label">\uC785\uB825 \uC2E0\uD638 \uC8FC\uD30C\uC218</span>
+        <input type="range" class="sim-slider" id="adc-sig" min="0.5" max="12" step="0.1" value="2.0" />
         <span class="sim-value" id="adc-sig-val">2.0 Hz</span>
       </div>
 
       <div class="sim-control-row">
         <span class="sim-label">\uC0D8\uD50C\uB9C1 \uC8FC\uD30C\uC218</span>
-        <input type="range" class="sim-slider" id="adc-samp" min="4" max="80" step="1" value="20" />
+        <input type="range" class="sim-slider" id="adc-samp" min="2" max="80" step="1" value="20" />
         <span class="sim-value" id="adc-samp-val">20 Hz</span>
       </div>
 
       <div class="sim-control-row">
-        <span class="sim-label">ADC \uBE44\uD2B8 \uC218</span>
-        <input type="range" class="sim-slider" id="adc-bits" min="2" max="12" step="1" value="8" />
-        <span class="sim-value" id="adc-bits-val">8 bit</span>
+        <span class="sim-label">\uD45C\uC2DC \uC2DC\uAC04 \uAD6C\uAC04</span>
+        <input type="range" class="sim-slider" id="adc-window" min="0.5" max="2.0" step="0.1" value="1.0" />
+        <span class="sim-value" id="adc-window-val">1.0 s</span>
       </div>
     </div>
 
     <div class="sim-info">
       <div class="sim-info-item">
-        <span class="sim-info-label">\uC591\uC790\uD654 \uB2E8\uACC4 \uC218</span>
-        <span class="sim-info-val" id="adc-levels">256</span>
+        <span class="sim-info-label">\uC0D8\uD50C \uAC04\uACA9 (T<sub>s</sub>)</span>
+        <span class="sim-info-val" id="adc-ts">0.050 s</span>
       </div>
       <div class="sim-info-item">
-        <span class="sim-info-label">\uC591\uC790\uD654 \uAC04\uACA9 (LSB)</span>
-        <span class="sim-info-val" id="adc-lsb">0.0078</span>
+        <span class="sim-info-label">\uCD1D \uC0D8\uD50C \uC218</span>
+        <span class="sim-info-val" id="adc-count">21</span>
       </div>
       <div class="sim-info-item">
-        <span class="sim-info-label">\uD3C9\uADE0 \uC808\uB300 \uC624\uCC28</span>
-        <span class="sim-info-val" id="adc-mae">0.0000</span>
-      </div>
-      <div class="sim-info-item">
-        <span class="sim-info-label">\uB098\uC774\uD034\uC2A4\uD2B8</span>
+        <span class="sim-info-label">\uB098\uC774\uD034\uC2A4\uD2B8 \uAE30\uC900</span>
         <span class="sim-info-val" id="adc-nyq">\uC815\uC0C1</span>
+      </div>
+      <div class="sim-info-item">
+        <span class="sim-info-label">\uCD94\uC815 \uC5D8\uB9AC\uC5B4\uC2F1 \uC8FC\uD30C\uC218</span>
+        <span class="sim-info-val" id="adc-alias">-</span>
       </div>
     </div>
 
     <div class="sim-warning" id="adc-warning">
-      Sampling frequency is below \uB098\uC774\uD034\uC2A4\uD2B8 (f_s &lt; 2f_signal). Aliasing may dominate the error.
+      \uC0D8\uD50C\uB9C1 \uC8FC\uD30C\uC218\uAC00 \uB098\uC774\uD034\uC2A4\uD2B8 \uC870\uAC74\uC744 \uB9CC\uC871\uD558\uC9C0 \uBABB\uD569\uB2C8\uB2E4. (f<sub>s</sub> &lt; 2f<sub>in</sub>)<br>
+      \uD45C\uBCF8\uD654\uB41C \uC2E0\uD638\uAC00 \uB2E4\uB978 \uB0AE\uC740 \uC8FC\uD30C\uC218\uB85C \uBCF4\uC77C \uC218 \uC788\uC2B5\uB2C8\uB2E4 (\uC5D8\uB9AC\uC5B4\uC2F1).
     </div>
   `;
 
-  const canvas = document.getElementById('canvas-adc');
-  const sigSlider = document.getElementById('adc-sig');
-  const sampSlider = document.getElementById('adc-samp');
-  const bitsSlider = document.getElementById('adc-bits');
+  const canvas = container.querySelector('#canvas-adc');
+  const sigSlider = container.querySelector('#adc-sig');
+  const sampSlider = container.querySelector('#adc-samp');
+  const windowSlider = container.querySelector('#adc-window');
 
-  const sigVal = document.getElementById('adc-sig-val');
-  const sampVal = document.getElementById('adc-samp-val');
-  const bitsVal = document.getElementById('adc-bits-val');
-  const levelsVal = document.getElementById('adc-levels');
-  const lsbVal = document.getElementById('adc-lsb');
-  const maeVal = document.getElementById('adc-mae');
-  const nyqVal = document.getElementById('adc-nyq');
-  const warning = document.getElementById('adc-warning');
+  const sigVal = container.querySelector('#adc-sig-val');
+  const sampVal = container.querySelector('#adc-samp-val');
+  const windowVal = container.querySelector('#adc-window-val');
+  const tsVal = container.querySelector('#adc-ts');
+  const countVal = container.querySelector('#adc-count');
+  const nyqVal = container.querySelector('#adc-nyq');
+  const aliasVal = container.querySelector('#adc-alias');
+  const warning = container.querySelector('#adc-warning');
+
+  function nearestAlias(fin, fs) {
+    const k = Math.round(fin / fs);
+    const fa = Math.abs(fin - k * fs);
+    return fa;
+  }
 
   function draw() {
-    const fSig = parseFloat(sigSlider.value);
-    const fSamp = parseInt(sampSlider.value, 10);
-    const bits = parseInt(bitsSlider.value, 10);
+    const fin = parseFloat(sigSlider.value);
+    const fs = parseFloat(sampSlider.value);
+    const windowSec = parseFloat(windowSlider.value);
 
-    sigVal.textContent = `${fmt(fSig, 1)} Hz`;
-    sampVal.textContent = `${fSamp} Hz`;
-    bitsVal.textContent = `${bits} bit`;
+    sigVal.textContent = `${fmt(fin, 1)} Hz`;
+    sampVal.textContent = `${fmt(fs, 0)} Hz`;
+    windowVal.textContent = `${fmt(windowSec, 1)} s`;
 
-    const levels = Math.pow(2, bits);
-    const lsb = 2 / (levels - 1);
-    levelsVal.textContent = `${levels}`;
-    lsbVal.textContent = fmt(lsb, 4);
+    const ts = 1 / fs;
+    const sampleCount = Math.floor(windowSec * fs) + 1;
+    tsVal.textContent = `${fmt(ts, 3)} s`;
+    countVal.textContent = `${sampleCount}`;
 
-    const nyquistOk = fSamp >= 2 * fSig;
+    const nyquistOk = fs >= 2 * fin;
     nyqVal.textContent = nyquistOk ? '\uC815\uC0C1' : '\uC704\uBC18';
     nyqVal.style.color = nyquistOk ? 'var(--accent-green)' : 'var(--accent-red)';
     warning.classList.toggle('visible', !nyquistOk);
 
+    if (nyquistOk) {
+      aliasVal.textContent = '-';
+      aliasVal.style.color = 'var(--text-primary)';
+    } else {
+      const fa = nearestAlias(fin, fs);
+      aliasVal.textContent = `${fmt(fa, 2)} Hz`;
+      aliasVal.style.color = 'var(--accent-yellow)';
+    }
+
     const w = Math.max(320, container.clientWidth - 24);
-    const h = 170;
+    const h = 190;
     canvas.width = w;
     canvas.height = h;
 
     const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, w, h);
     ctx.fillStyle = '#0a0e1a';
     ctx.fillRect(0, 0, w, h);
 
@@ -116,7 +122,7 @@ export function mountAdcSampling(container) {
     const midY = top + plotH / 2;
     const amp = plotH * 0.42;
 
-    // Axis
+    // axis
     ctx.strokeStyle = '#2a3142';
     ctx.lineWidth = 1;
     ctx.beginPath();
@@ -124,78 +130,71 @@ export function mountAdcSampling(container) {
     ctx.lineTo(w - right, midY);
     ctx.stroke();
 
-    // Analog reference signal (continuous)
-    ctx.strokeStyle = 'rgba(56, 189, 248, 0.8)';
-    ctx.lineWidth = 1.6;
+    // original analog signal
+    ctx.strokeStyle = 'rgba(56, 189, 248, 0.9)';
+    ctx.lineWidth = 1.7;
     ctx.beginPath();
     for (let px = 0; px <= plotW; px++) {
-      const t = px / plotW; // 0..1 sec
-      const x = Math.sin(2 * Math.PI * fSig * t);
+      const t = (px / plotW) * windowSec;
+      const x = Math.sin(2 * Math.PI * fin * t);
       const y = midY - amp * x;
       if (px === 0) ctx.moveTo(left + px, y);
       else ctx.lineTo(left + px, y);
     }
     ctx.stroke();
 
-    // Sample points + quantized staircase
+    // sample points
     const samples = [];
-    for (let i = 0; i <= fSamp; i++) {
-      const t = i / fSamp;
-      const x = Math.sin(2 * Math.PI * fSig * t);
-      const q = quantizeNormalized(x, bits);
-      const px = left + t * plotW;
-      const yQ = midY - amp * q;
-      const yX = midY - amp * x;
-      samples.push({ t, px, x, q, yQ, yX });
+    for (let i = 0; i < sampleCount; i++) {
+      const t = i / fs;
+      const x = Math.sin(2 * Math.PI * fin * t);
+      const px = left + (t / windowSec) * plotW;
+      const py = midY - amp * x;
+      samples.push({ t, px, py, x });
     }
 
-    // Quantized reconstructed staircase
+    // sampling vertical stems
+    ctx.strokeStyle = 'rgba(148,163,184,0.4)';
+    ctx.lineWidth = 1;
+    for (const s of samples) {
+      ctx.beginPath();
+      ctx.moveTo(s.px, midY);
+      ctx.lineTo(s.px, s.py);
+      ctx.stroke();
+    }
+
+    // sample-and-hold reconstruction (stair)
     ctx.strokeStyle = '#10b981';
     ctx.lineWidth = 2;
     ctx.beginPath();
     for (let i = 0; i < samples.length - 1; i++) {
       const a = samples[i];
       const b = samples[i + 1];
-      if (i === 0) ctx.moveTo(a.px, a.yQ);
-      ctx.lineTo(b.px, a.yQ);
-      ctx.lineTo(b.px, b.yQ);
+      if (i === 0) ctx.moveTo(a.px, a.py);
+      ctx.lineTo(b.px, a.py);
+      ctx.lineTo(b.px, b.py);
     }
     ctx.stroke();
 
-    // Error stems + sample dots
-    let errSum = 0;
+    // sample dots
     for (const s of samples) {
-      const e = Math.abs(s.x - s.q);
-      errSum += e;
-
-      ctx.strokeStyle = 'rgba(245, 158, 11, 0.55)';
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(s.px, s.yX);
-      ctx.lineTo(s.px, s.yQ);
-      ctx.stroke();
-
       ctx.fillStyle = '#f59e0b';
       ctx.beginPath();
-      ctx.arc(s.px, s.yQ, 2.8, 0, Math.PI * 2);
+      ctx.arc(s.px, s.py, 3, 0, Math.PI * 2);
       ctx.fill();
     }
 
-    const mae = errSum / samples.length;
-    maeVal.textContent = fmt(mae, 4);
-
-    // Legend
+    // legend
     const legend = [
-      { c: 'rgba(56, 189, 248, 0.8)', t: '\uC6D0 \uC2E0\uD638' },
-      { c: '#10b981', t: '\uC591\uC790\uD654 \uC2E0\uD638' },
-      { c: 'rgba(245, 158, 11, 0.9)', t: '\uC624\uCC28' },
+      { c: 'rgba(56, 189, 248, 0.9)', t: '\uC6D0 \uC2E0\uD638(\uC544\uB0A0\uB85C\uADF8)' },
+      { c: '#f59e0b', t: '\uC0D8\uD50C \uD3EC\uC778\uD2B8' },
+      { c: '#10b981', t: '\uC0D8\uD50C-\uC564-\uD640\uB4DC \uC7AC\uAD6C\uC131' },
     ];
 
     ctx.font = '10px monospace';
-    ctx.textAlign = 'left';
     legend.forEach((l, i) => {
-      const x = left + i * 90;
-      const y = h - 11;
+      const x = left + i * 130;
+      const y = h - 10;
       ctx.fillStyle = l.c;
       ctx.fillRect(x, y - 8, 9, 9);
       ctx.fillStyle = '#8b949e';
@@ -206,7 +205,7 @@ export function mountAdcSampling(container) {
   draw();
   sigSlider.addEventListener('input', draw);
   sampSlider.addEventListener('input', draw);
-  bitsSlider.addEventListener('input', draw);
+  windowSlider.addEventListener('input', draw);
 
   const ro = new ResizeObserver(draw);
   ro.observe(container);
