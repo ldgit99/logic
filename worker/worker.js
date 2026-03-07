@@ -44,9 +44,8 @@ function isAllowedOrigin(origin) {
 }
 
 function corsHeaders(origin) {
-  const allowed = isAllowedOrigin(origin) ? origin : ALLOWED_ORIGINS[0];
   return {
-    'Access-Control-Allow-Origin': allowed,
+    'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization, Accept, Origin',
     'Access-Control-Max-Age': '86400',
