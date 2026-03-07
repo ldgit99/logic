@@ -3,8 +3,9 @@ import { sendEvent } from './instrumentation.js?v=20260308a';
 import { getStudentProfile } from './auth.js?v=20260308a';
 
 const WORKER_URLS = [
+  window.location.origin,
   'https://logic-proxy.dongkuklee99.workers.dev/',
-  'https://logic-proxy.ldgit99.workers.dev/',
+  'https://logic.dongkuklee99.workers.dev/',
 ];
 
 const COMPLETION_MARKER = '===형성평가완료===';
