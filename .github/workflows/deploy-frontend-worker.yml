@@ -1,4 +1,4 @@
-﻿name: Deploy Frontend Worker
+name: Deploy Frontend Worker
 
 on:
   push:
@@ -18,7 +18,7 @@ jobs:
           node-version: 20
 
       - name: Install Wrangler
-        run: npm i -g wrangler@3
+        run: npm i -g wrangler@4
 
       - name: Deploy frontend to Cloudflare Worker
         run: wrangler deploy --config wrangler.frontend.toml

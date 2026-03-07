@@ -1,6 +1,6 @@
-import { initChatbot } from './chatbot.js?v=20260308h';
-import { initExport } from './export.js?v=20260308h';
-import { initAuthGate } from './auth.js?v=20260308h';
+import { initChatbot } from './chatbot.js?v=20260308i';
+import { initExport } from './export.js?v=20260308i';
+import { initAuthGate } from './auth.js?v=20260308i';
 
 // ─── 챕터 모듈 레지스트리 (동적 임포트) ───
 const CHAPTER_MODULES = {
@@ -20,6 +20,19 @@ const CHAPTER_MODULES = {
 let currentChapterId = null;
 let scrollObserver = null;
 
+const FETCH_TIMEOUT_MS = 10000;
+
+async function fetchJsonWithTimeout(url, timeoutMs = FETCH_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, { cache: 'no-store', signal: controller.signal });
+    if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
+    return await res.json();
+  } finally {
+    clearTimeout(timer);
+  }
+}
 // ─── 토스트 알림 ───
 export function showToast(message, type = 'info') {
   let container = document.getElementById('toast-container');
@@ -134,9 +147,7 @@ async function loadChapter(id) {
   document.getElementById('content-area').scrollTop = 0;
 
   try {
-    const res = await fetch(`./chapters/${id}.json`);
-    if (!res.ok) throw new Error(`chapters/${id}.json not found`);
-    const chapterData = await res.json();
+    const chapterData = await fetchJsonWithTimeout(`./chapters/${id}.json?v=20260308i`);
 
     document.getElementById('chapter-indicator').textContent = chapterData.title;
     updateTOCSections(id, chapterData);
@@ -196,9 +207,7 @@ async function init() {
       console.error('auth gate init failed:', e);
     });
 
-    const res = await fetch('./chapters/index.json?v=20260307j');
-    if (!res.ok) throw new Error('index.json not found');
-    const chapters = await res.json();
+    const chapters = await fetchJsonWithTimeout('./chapters/index.json?v=20260308i');
 
     buildTOC(chapters);
     setupToggleHandlers();

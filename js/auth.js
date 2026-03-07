@@ -179,7 +179,7 @@ function getInputValues() {
 
 function validateForSignup({ studentName, studentId, email, password, passwordConfirm }) {
   if (!studentName || !studentId || !email || !password) return '이름, 학번, 이메일, 비밀번호를 입력하세요.';
-  if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) return '유효한 이메일 형식을 입력하세요.';
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return '유효한 이메일 형식을 입력하세요.';
   if (password.length < 8) return '비밀번호는 8자 이상이어야 합니다.';
   if (password !== passwordConfirm) return '비밀번호와 비밀번호 확인이 일치하지 않습니다.';
   return '';
