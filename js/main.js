@@ -1,10 +1,10 @@
-import { initChatbot } from './chatbot.js?v=20260307c';
-import { initExport } from './export.js?v=20260307c';
+import { initChatbot } from './chatbot.js?v=20260307h';
+import { initExport } from './export.js?v=20260307h';
 
-// ??? 梨뺥꽣 紐⑤뱢 ?덉??ㅽ듃由?(?숈쟻 ?꾪룷?? ???
+// ─── 챕터 모듈 레지스트리 (동적 임포트) ───
 const CHAPTER_MODULES = {
-  '01': () => import('./chapters/chapter01.js?v=20260307c'),
-  '02': () => import('./chapters/chapter02.js?v=20260307c'),
+  '01': () => import('./chapters/chapter01.js?v=20260307h'),
+  '02': () => import('./chapters/chapter02.js?v=20260307h'),
   '03': () => import('./chapters/chapter03.js'),
   '04': () => import('./chapters/chapter04.js'),
   '05': () => import('./chapters/chapter05.js'),
@@ -19,7 +19,7 @@ const CHAPTER_MODULES = {
 let currentChapterId = null;
 let scrollObserver = null;
 
-// ??? ?좎뒪???뚮┝ ???
+// ─── 토스트 알림 ───
 export function showToast(message, type = 'info') {
   let container = document.getElementById('toast-container');
   if (!container) {
@@ -34,7 +34,7 @@ export function showToast(message, type = 'info') {
   setTimeout(() => toast.remove(), 4000);
 }
 
-// ??? TOC ?꾩껜 鍮뚮뱶 (index.json 湲곕컲) ???
+// ─── TOC 전체 빌드 (index.json 기반) ───
 function buildTOC(chapters) {
   const tocList = document.getElementById('toc-list');
   tocList.innerHTML = '';
@@ -62,7 +62,7 @@ function buildTOC(chapters) {
   });
 }
 
-// ??? ?쒖꽦 梨뺥꽣???뱀뀡 紐⑸줉 ?낅뜲?댄듃 ???
+// ─── 활성 챕터의 섹션 목록 업데이트 ───
 function updateTOCSections(chapterId, chapterData) {
   document.querySelectorAll('.toc-chapter').forEach(el => {
     el.classList.add('collapsed');
@@ -96,13 +96,13 @@ function updateTOCSections(chapterId, chapterData) {
   const footer = document.getElementById('sidebar-footer');
   if (footer && chapterData.objectives) {
     footer.innerHTML = `
-      <div class="objectives-title">?숈뒿紐⑺몴</div>
+      <div class="objectives-title">학습목표</div>
       ${chapterData.objectives.map(o => `<div class="objective-item">${o}</div>`).join('')}
     `;
   }
 }
 
-// ??? ?ㅽ겕濡??ㅽ뙆?????
+// ─── 스크롤 스파이 ───
 function setupScrollSpy() {
   if (scrollObserver) scrollObserver.disconnect();
   const sections = document.querySelectorAll('.content-section');
@@ -123,13 +123,13 @@ function setupScrollSpy() {
   sections.forEach(el => scrollObserver.observe(el));
 }
 
-// ??? 梨뺥꽣 濡쒕뱶 ???
+// ─── 챕터 로드 ───
 async function loadChapter(id) {
   if (id === currentChapterId) return;
   currentChapterId = id;
 
   document.getElementById('content-inner').innerHTML =
-    '<div id="loading-screen"><div class="spinner"></div><p>肄섑뀗痢좊? 遺덈윭?ㅻ뒗 以?..</p></div>';
+    '<div id="loading-screen"><div class="spinner"></div><p>콘텐츠를 불러오는 중...</p></div>';
   document.getElementById('content-area').scrollTop = 0;
 
   try {
@@ -146,13 +146,13 @@ async function loadChapter(id) {
     initChatbot(chapterData);
     setTimeout(setupScrollSpy, 150);
   } catch (err) {
-    console.error(`梨뺥꽣 ${id} 濡쒕뱶 ?ㅽ뙣:`, err);
+    console.error(`챕터 ${id} 로드 실패:`, err);
     document.getElementById('content-inner').innerHTML =
-      `<p style="color:var(--accent-red);padding:32px;">梨뺥꽣 ${id} 濡쒕뱶???ㅽ뙣?덉뒿?덈떎.</p>`;
+      `<p style="color:var(--accent-red);padding:32px;">챕터 ${id} 로드에 실패했습니다.</p>`;
   }
 }
 
-// ??? ?ъ씠?쒕컮 / 梨쀫큸 ?좉? ???
+// ─── 사이드바 / 챗봇 토글 ───
 function setupToggleHandlers() {
   const appBody = document.getElementById('app-body');
   const sidebar = document.getElementById('sidebar');
@@ -188,10 +188,10 @@ function setupToggleHandlers() {
   });
 }
 
-// ??? ??珥덇린?????
+// ─── 앱 초기화 ───
 async function init() {
   try {
-    const res = await fetch('./chapters/index.json?v=20260307d');
+    const res = await fetch('./chapters/index.json?v=20260307h');
     if (!res.ok) throw new Error('index.json not found');
     const chapters = await res.json();
 
@@ -201,14 +201,13 @@ async function init() {
 
     await loadChapter(chapters[0].id);
   } catch (err) {
-    console.error('??珥덇린???ㅽ뙣:', err);
+    console.error('앱 초기화 실패:', err);
     document.getElementById('loading-screen').innerHTML = `
       <p style="color:var(--accent-red);text-align:center;">
-        肄섑뀗痢?濡쒕뱶 ?ㅽ뙣.<br>
-        <small>濡쒖뺄?먯꽌 ?ㅽ뻾 ??<code>python -m http.server</code> ?먮뒗 Live Server瑜??ъ슜?섏꽭??</small>
+        콘텐츠 로드 실패.<br>
+        <small>로컬에서 실행 시 <code>python -m http.server</code> 또는 Live Server를 사용하세요.</small>
       </p>`;
   }
 }
 
 document.addEventListener('DOMContentLoaded', init);
-
