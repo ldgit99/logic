@@ -1,6 +1,7 @@
-import { initChatbot } from './chatbot.js?v=20260308j';
-import { initExport } from './export.js?v=20260308j';
-import { initAuthGate } from './auth.js?v=20260308j';
+let initChatbot = () => {};
+let initExport = () => {};
+let initAuthGate = async () => null;
+let authModuleLoaded = false;
 
 // ─── 챕터 모듈 레지스트리 (동적 임포트) ───
 const CHAPTER_MODULES = {
@@ -21,6 +22,7 @@ let currentChapterId = null;
 let scrollObserver = null;
 
 const FETCH_TIMEOUT_MS = 10000;
+const AUTH_FALLBACK_KEY = 'logic_basic_auth_v1';
 
 async function fetchJsonWithTimeout(url, timeoutMs = FETCH_TIMEOUT_MS) {
   const controller = new AbortController();
@@ -31,6 +33,107 @@ async function fetchJsonWithTimeout(url, timeoutMs = FETCH_TIMEOUT_MS) {
     return await res.json();
   } finally {
     clearTimeout(timer);
+  }
+}
+
+async function loadRuntimeModules() {
+  try {
+    const authMod = await import('./auth.js?v=20260308l');
+    if (typeof authMod.initAuthGate === 'function') {
+      initAuthGate = authMod.initAuthGate;
+      authModuleLoaded = true;
+    }
+  } catch (e) {
+    console.error('auth module load failed:', e);
+  }
+
+  try {
+    const exportMod = await import('./export.js?v=20260308l');
+    if (typeof exportMod.initExport === 'function') {
+      initExport = exportMod.initExport;
+    }
+  } catch (e) {
+    console.error('export module load failed:', e);
+  }
+
+  try {
+    const chatbotMod = await import('./chatbot.js?v=20260308l');
+    if (typeof chatbotMod.initChatbot === 'function') {
+      initChatbot = chatbotMod.initChatbot;
+    }
+  } catch (e) {
+    console.error('chatbot module load failed:', e);
+  }
+}
+
+function initBasicLoginGateFallback() {
+  const gate = document.getElementById('login-gate');
+  if (!gate) return;
+
+  const nameInput = document.getElementById('login-name');
+  const idInput = document.getElementById('login-student-id');
+  const errorEl = document.getElementById('login-error');
+  const loginBtn = document.getElementById('login-submit');
+  const signupBtn = document.getElementById('signup-submit');
+  const logoutBtn = document.getElementById('auth-logout');
+  const labelEl = document.getElementById('auth-student-label');
+
+  const emailGroup = document.getElementById('login-email')?.closest('.form-group');
+  const pwGroup = document.getElementById('login-password')?.closest('.form-group');
+  const pw2Group = document.getElementById('login-password-confirm')?.closest('.form-group');
+  if (emailGroup) emailGroup.style.display = 'none';
+  if (pwGroup) pwGroup.style.display = 'none';
+  if (pw2Group) pw2Group.style.display = 'none';
+
+  function setError(msg) {
+    if (!errorEl) return;
+    errorEl.textContent = msg || '';
+    errorEl.classList.toggle('hidden', !msg);
+  }
+
+  function applyProfile(profile) {
+    if (!profile) return;
+    if (labelEl) labelEl.textContent = `${profile.studentName} (${profile.studentId})`;
+    gate.classList.add('hidden');
+    localStorage.setItem(AUTH_FALLBACK_KEY, JSON.stringify(profile));
+  }
+
+  try {
+    const saved = JSON.parse(localStorage.getItem(AUTH_FALLBACK_KEY) || 'null');
+    if (saved?.studentName && saved?.studentId) {
+      applyProfile(saved);
+    } else {
+      gate.classList.remove('hidden');
+    }
+  } catch {
+    gate.classList.remove('hidden');
+  }
+
+  const onSubmit = () => {
+    const studentName = String(nameInput?.value || '').trim();
+    const studentId = String(idInput?.value || '').trim();
+    if (!studentName || !studentId) {
+      setError('이름과 학번을 입력하세요.');
+      return;
+    }
+    setError('');
+    applyProfile({ studentName, studentId });
+  };
+
+  if (loginBtn && !loginBtn.dataset.fallbackBound) {
+    loginBtn.dataset.fallbackBound = 'true';
+    loginBtn.addEventListener('click', onSubmit);
+  }
+  if (signupBtn && !signupBtn.dataset.fallbackBound) {
+    signupBtn.dataset.fallbackBound = 'true';
+    signupBtn.addEventListener('click', onSubmit);
+  }
+  if (logoutBtn && !logoutBtn.dataset.fallbackBound) {
+    logoutBtn.dataset.fallbackBound = 'true';
+    logoutBtn.addEventListener('click', () => {
+      localStorage.removeItem(AUTH_FALLBACK_KEY);
+      location.reload();
+    });
   }
 }
 // ─── 토스트 알림 ───
@@ -147,7 +250,7 @@ async function loadChapter(id) {
   document.getElementById('content-area').scrollTop = 0;
 
   try {
-    const chapterData = await fetchJsonWithTimeout(`./chapters/${id}.json?v=20260308j`);
+    const chapterData = await fetchJsonWithTimeout(`./chapters/${id}.json?v=20260308l`);
 
     document.getElementById('chapter-indicator').textContent = chapterData.title;
     updateTOCSections(id, chapterData);
@@ -155,7 +258,11 @@ async function loadChapter(id) {
     const mod = await CHAPTER_MODULES[id]();
     await mod.renderChapter(chapterData);
 
-    initChatbot(chapterData);
+    try {
+      initChatbot(chapterData);
+    } catch (e) {
+      console.error('chatbot init failed:', e);
+    }
     setTimeout(setupScrollSpy, 150);
   } catch (err) {
     console.error(`챕터 ${id} 로드 실패:`, err);
@@ -203,11 +310,17 @@ function setupToggleHandlers() {
 // ─── 앱 초기화 ───
 async function init() {
   try {
-    initAuthGate().catch((e) => {
-      console.error('auth gate init failed:', e);
-    });
+    await loadRuntimeModules();
 
-    const chapters = await fetchJsonWithTimeout('./chapters/index.json?v=20260308j');
+    if (authModuleLoaded) {
+      initAuthGate().catch((e) => {
+        console.error('auth gate init failed:', e);
+      });
+    } else {
+      initBasicLoginGateFallback();
+    }
+
+    const chapters = await fetchJsonWithTimeout('./chapters/index.json?v=20260308l');
 
     buildTOC(chapters);
     setupToggleHandlers();
