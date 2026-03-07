@@ -157,7 +157,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
   <!-- ─── 앱 진입점 (ES Module) ─── -->
-  <script type="module" src="js/main.js?v=20260308d"></script>
+  <script type="module" src="js/main.js?v=20260308f"></script>
   <script>
     (function () {
       function escapeHtml(str) {
@@ -170,7 +170,7 @@
 
       function looksStuck() {
         const loginGate = document.getElementById('login-gate');
-        if (loginGate) return false;
+        if (loginGate && !loginGate.classList.contains('hidden')) return false;
 
         const loading = document.getElementById('loading-screen');
         const hasSections = document.querySelector('.content-section');
