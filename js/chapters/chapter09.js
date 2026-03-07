@@ -1,4 +1,4 @@
-import { renderChapterWith } from '../chapterBase.js';
+import { renderChapterWith } from './chapterBase.js';
 import { mountStateMachine } from '../simulations/stateMachine.js';
 
 const SIM_MOUNTS = {

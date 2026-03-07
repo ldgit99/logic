@@ -1,4 +1,4 @@
-import { renderChapterWith } from '../chapterBase.js';
+import { renderChapterWith } from './chapterBase.js';
 import { mountHalfFullAdder } from '../simulations/halfFullAdder.js';
 import { mountDecoderSim } from '../simulations/decoderSim.js';
 import { mountMultiplexerSim } from '../simulations/multiplexerSim.js';

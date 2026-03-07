@@ -1,4 +1,4 @@
-import { renderChapterWith } from '../chapterBase.js';
+import { renderChapterWith } from './chapterBase.js';
 import { mountCounterSim } from '../simulations/counterSim.js';
 import { mountShiftRegister } from '../simulations/shiftRegister.js';
 

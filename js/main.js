@@ -191,7 +191,7 @@ function setupToggleHandlers() {
 // ─── 앱 초기화 ───
 async function init() {
   try {
-    const res = await fetch('./chapters/index.json');
+    const res = await fetch('./chapters/index.json?v=20260307d');
     if (!res.ok) throw new Error('index.json not found');
     const chapters = await res.json();
 

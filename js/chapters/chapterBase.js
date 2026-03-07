@@ -3,6 +3,14 @@
 
 let exampleCounter = 0;
 
+// JSON 구조 호환: 섹션 블록 배열은 'blocks' 또는 'content', 시뮬레이션 ID는 'simKey' 또는 'simId'
+function getSectionBlocks(section) {
+  return section.blocks || section.content || [];
+}
+function getSimId(block) {
+  return block.simKey || block.simId;
+}
+
 function escapeHtml(str) {
   if (!str) return '';
   return String(str)
@@ -80,12 +88,13 @@ function renderExample(block) {
 }
 
 function renderSimPlaceholder(block) {
-  return `<div class="content-block block-simulation" id="sim-${block.simId}">
+  const simId = getSimId(block);
+  return `<div class="content-block block-simulation" id="sim-${simId}">
     <div class="sim-header">
       <span class="sim-badge">시뮬레이션</span>
       <span class="sim-title">${escapeHtml(block.title)}</span>
     </div>
-    <div class="sim-body" id="sim-body-${block.simId}">
+    <div class="sim-body" id="sim-body-${simId}">
     </div>
   </div>`;
 }
@@ -104,7 +113,7 @@ function renderBlock(block) {
 }
 
 function renderSection(section) {
-  const blocksHtml = section.content.map(renderBlock).join('\n');
+  const blocksHtml = getSectionBlocks(section).map(renderBlock).join('\n');
   return `<div class="content-section" id="section-${section.id}">
     <h3 class="section-title">${escapeHtml(section.title)}</h3>
     ${blocksHtml}
@@ -138,14 +147,15 @@ function bindExampleToggles(container) {
 
 function mountSimulations(data, simMounts) {
   data.sections.forEach(section => {
-    section.content
+    getSectionBlocks(section)
       .filter(b => b.type === 'simulation')
       .forEach(b => {
-        const mountFn = simMounts[b.simId];
-        const mountEl = document.getElementById(`sim-body-${b.simId}`);
+        const simId = getSimId(b);
+        const mountFn = simMounts[simId];
+        const mountEl = document.getElementById(`sim-body-${simId}`);
         if (mountFn && mountEl) {
           try { mountFn(mountEl); }
-          catch (e) { console.error(`시뮬레이션 마운트 실패 (${b.simId}):`, e); }
+          catch (e) { console.error(`시뮬레이션 마운트 실패 (${simId}):`, e); }
         }
       });
   });
