@@ -52,11 +52,15 @@ export async function listAssessments(env, filters = {}) {
   const keys = listed.keys.map((k) => k.name);
 
   // 필터링: assessmentidx:{submitted_at}:{student_id}:{chapter_id}
+  // submitted_at은 ISO 형식(HH:MM:SS)에 콜론이 포함되므로 뒤에서부터 파싱한다.
   const filteredKeys = keys.filter((k) => {
-    const parts = k.split(':');
-    const ts = parts[1] || '';
-    const studentId = parts[2] || '';
-    const chapterId = parts[3] || '';
+    // k = "assessmentidx:2026-03-07T23:45:00.000Z:251010:02"
+    const withoutPrefix = k.slice('assessmentidx:'.length); // "2026-03-07T23:45:00.000Z:251010:02"
+    const lastColon2 = withoutPrefix.lastIndexOf(':');       // 위치: 02 앞
+    const lastColon1 = withoutPrefix.lastIndexOf(':', lastColon2 - 1); // 위치: student_id 앞
+    const ts = withoutPrefix.slice(0, lastColon1);           // "2026-03-07T23:45:00.000Z"
+    const studentId = withoutPrefix.slice(lastColon1 + 1, lastColon2); // "251010"
+    const chapterId = withoutPrefix.slice(lastColon2 + 1);             // "02"
 
     if (filters.chapter && chapterId !== filters.chapter) return false;
     if (filters.studentId && !studentId.includes(filters.studentId)) return false;
