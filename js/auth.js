@@ -85,8 +85,19 @@ function parseError(data, fallback) {
   return fallback;
 }
 
+function normalizeApiError(message) {
+  const m = String(message || '');
+  if (m.includes('invalid student_id length')) return '학번은 4~32자로 입력하세요.';
+  if (m.includes('invalid student_name length')) return '이름은 2~30자로 입력하세요.';
+  if (m.includes('invalid password length')) return '비밀번호는 8~64자로 입력하세요.';
+  if (m.includes('invalid email format')) return '유효한 이메일 형식을 입력하세요.';
+  if (m.includes('student already exists')) return '이미 가입된 학번입니다.';
+  if (m.includes('invalid credentials')) return '학번 또는 비밀번호가 올바르지 않습니다.';
+  return m;
+}
+
 async function apiRequest(path, method = 'GET', body = null, token = '') {
-  let lastErr = null;
+  let lastNetworkErr = null;
 
   for (const base of WORKER_URLS) {
     try {
@@ -107,21 +118,24 @@ async function apiRequest(path, method = 'GET', body = null, token = '') {
       }
 
       if (!res.ok) {
-        const e = new Error(parseError(data, `request failed: ${res.status}`));
+        const e = new Error(normalizeApiError(parseError(data, `request failed: ${res.status}`)));
         e.status = res.status;
+        e.isHttpError = true;
         throw e;
       }
 
       return data;
     } catch (err) {
-      lastErr = err;
+      // HTTP 응답 에러는 즉시 반환하고, 네트워크 실패만 다음 URL로 fallback.
+      if (err?.isHttpError) throw err;
+      lastNetworkErr = err;
     }
   }
 
-  if (lastErr && String(lastErr.message || '').includes('Failed to fetch')) {
+  if (lastNetworkErr && String(lastNetworkErr.message || '').includes('Failed to fetch')) {
     throw new Error('네트워크/CORS 오류로 서버에 연결하지 못했습니다. 잠시 후 다시 시도하세요.');
   }
-  throw lastErr || new Error('network error');
+  throw lastNetworkErr || new Error('network error');
 }
 
 async function signup(studentName, studentId, password, email) {
@@ -179,6 +193,8 @@ function getInputValues() {
 
 function validateForSignup({ studentName, studentId, email, password, passwordConfirm }) {
   if (!studentName || !studentId || !email || !password) return '이름, 학번, 이메일, 비밀번호를 입력하세요.';
+  if (studentId.length < 4 || studentId.length > 32) return '학번은 4~32자로 입력하세요.';
+  if (studentName.length < 2 || studentName.length > 30) return '이름은 2~30자로 입력하세요.';
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return '유효한 이메일 형식을 입력하세요.';
   if (password.length < 8) return '비밀번호는 8자 이상이어야 합니다.';
   if (password !== passwordConfirm) return '비밀번호와 비밀번호 확인이 일치하지 않습니다.';
@@ -187,6 +203,7 @@ function validateForSignup({ studentName, studentId, email, password, passwordCo
 
 function validateForLogin({ studentId, password }) {
   if (!studentId || !password) return '학번과 비밀번호를 입력하세요.';
+  if (studentId.length < 4 || studentId.length > 32) return '학번은 4~32자로 입력하세요.';
   return '';
 }
 
