@@ -1,0 +1,131 @@
+{
+  "id": "11",
+  "title": "제11장. 메모리",
+  "objectives": [
+    "메모리의 종류와 분류 방법을 이해할 수 있다",
+    "ROM의 구조 및 동작 원리를 이해할 수 있다",
+    "RAM(SRAM, DRAM)의 구조 및 동작 원리를 이해할 수 있다",
+    "플래시 메모리의 종류와 특성, 응용 분야를 설명할 수 있다",
+    "메모리 확장(워드 길이/용량) 방법을 이해할 수 있다"
+  ],
+  "sections": [
+    {
+      "id": "11-1",
+      "title": "11.1 메모리 개요",
+      "blocks": [
+        {
+          "type": "definition",
+          "term": "메모리 구조 기본 개념",
+          "definition": "• MAR(Memory Address Register): n비트로 최대 2ⁿ개 주소 표시 = 주소 버스\n• MBR(Memory Buffer Register): 데이터의 통로 = 데이터 버스 = 워드 길이\n• 예: 1024×8 메모리 → MAR=10비트, MBR=8비트\n• 1GiB = 2³⁰ × 8 → 주소 버스=30비트, 데이터 버스=8비트"
+        },
+        {
+          "type": "list",
+          "title": "메모리 분류",
+          "items": [
+            "접근 방법: 순차(Sequential), 직접(Direct), 임의(Random, RAM) 접근",
+            "기록 기능: ROM(읽기 전용), RAM(읽기/쓰기 가능)",
+            "휘발성: 비휘발성(ROM, Flash), 휘발성(SRAM, DRAM)",
+            "기억 방식: 정적(플립플롭, SRAM), 동적(캐패시터, DRAM)"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "11-2",
+      "title": "11.2 ROM",
+      "blocks": [
+        {
+          "type": "definition",
+          "term": "ROM (Read Only Memory) 구조",
+          "definition": "AND 게이트(디코더) + OR 게이트(SOP 구현) 조합논리회로입니다.\n32×4 ROM: 주소 입력 5비트(2⁵=32 최소항), 데이터 출력 4비트\n퓨즈 절단으로 원하는 논리 구현\n펌웨어(Firmware): ROM에 저장된 소프트웨어"
+        },
+        {
+          "type": "table",
+          "title": "ROM 종류 비교",
+          "headers": ["종류", "특징", "프로그래밍"],
+          "rows": [
+            ["Mask ROM", "제조 시 영구 기록", "공장에서만"],
+            ["PROM", "한 번만 쓰기 가능", "사용자 1회"],
+            ["EPROM", "UV 광선으로 지우기", "여러 번 가능"],
+            ["EEPROM", "전기적으로 지우기", "바이트 단위"],
+            ["Flash", "블록 단위 지우기", "빠른 쓰기/지우기"]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "11-3",
+      "title": "11.3 RAM (SRAM / DRAM)",
+      "blocks": [
+        {
+          "type": "comparison",
+          "title": "SRAM vs DRAM",
+          "left": { "label": "SRAM (정적 RAM)", "items": ["6개 트랜지스터로 구성된 셀", "플립플롭으로 데이터 저장", "리프레시 불필요", "빠른 속도 (L1/L2 캐시)", "고가, 대용량 어려움"] },
+          "right": { "label": "DRAM (동적 RAM)", "items": ["1 트랜지스터 + 1 캐패시터", "전하로 데이터 저장", "주기적 리프레시 필요 (누설)", "저속이지만 고집적", "저가, 주기억장치에 사용"] }
+        },
+        {
+          "type": "simulation",
+          "simKey": "memorySim",
+          "title": "메모리 읽기/쓰기 시뮬레이터 (주소·데이터 인터랙티브)"
+        }
+      ]
+    },
+    {
+      "id": "11-4",
+      "title": "11.4 플래시 메모리 / 11.5 메모리 확장",
+      "blocks": [
+        {
+          "type": "definition",
+          "term": "플래시 메모리 셀 (FGMOS)",
+          "definition": "Floating Gate MOSFET(FGMOS)에 전하를 축적하여 데이터 저장합니다. 전원 없이 2~10년 보존 가능합니다.\n• 플로팅 게이트 전자 많음 → 논리 0 / 적거나 없음 → 논리 1\n• NAND Flash: 대용량, 쓰기/지우기 빠름 (SSD, USB)\n• NOR Flash: 읽기 빠름 (펌웨어 저장)"
+        },
+        {
+          "type": "table",
+          "title": "SLC/MLC/TLC/QLC 비교",
+          "headers": ["방식", "셀당 비트", "내구성", "속도", "가격"],
+          "rows": [
+            ["SLC", "1bit", "최고", "최고", "최고가"],
+            ["MLC", "2bit", "높음", "높음", "고가"],
+            ["TLC", "3bit", "보통", "보통", "저가"],
+            ["QLC", "4bit", "낮음", "낮음", "최저가"]
+          ]
+        },
+        {
+          "type": "comparison",
+          "title": "메모리 확장 방법",
+          "left": { "label": "워드 길이 확장 (비트 확장)", "items": ["데이터 버스 폭 늘리기", "예: 16×4 RAM 2개 → 16×8 RAM", "주소선 동일, 데이터선 병렬 연결", "OE(출력 인에이블) 공통 연결"] },
+          "right": { "label": "워드 용량 확장 (주소 확장)", "items": ["저장 가능한 주소 수 늘리기", "예: 16×4 RAM 2개 → 32×4 RAM", "주소선 1비트 추가 (디코더로 선택)", "상위 주소 비트로 RAM 선택"] }
+        }
+      ]
+    }
+  ],
+  "formativeAssessment": {
+    "questions": [
+      {
+        "id": "Q1",
+        "bloom": "기억",
+        "question": "ROM의 기본 구조(AND-OR)를 설명하고, 32×4 ROM의 주소 버스와 데이터 버스 크기를 구하시오. 펌웨어(Firmware)란 무엇인지도 설명하시오."
+      },
+      {
+        "id": "Q2",
+        "bloom": "이해",
+        "question": "SRAM과 DRAM의 셀 구조를 비교하시오. DRAM이 주기적으로 리프레시가 필요한 이유와 이것이 성능에 미치는 영향을 설명하시오."
+      },
+      {
+        "id": "Q3",
+        "bloom": "적용",
+        "question": "256MB 용량의 메모리를 구성하기 위해 16MB×8 DRAM 칩을 몇 개 사용해야 하는가? 연결 방법(워드 확장/비트 확장)을 설명하시오."
+      },
+      {
+        "id": "Q4",
+        "bloom": "분석",
+        "question": "NAND 플래시와 NOR 플래시를 비교하시오. SSD에는 왜 NAND 플래시가, 마이크로컨트롤러 펌웨어 저장에는 NOR 플래시가 주로 사용되는지 분석하시오."
+      },
+      {
+        "id": "Q5",
+        "bloom": "평가",
+        "question": "스마트폰 설계 시 메모리 계층(Register→Cache→RAM→Flash Storage)을 어떻게 구성할 것인가? SRAM, DRAM, NAND Flash의 특성을 고려하여 각 용도와 용량을 결정하고 근거를 제시하시오."
+      }
+    ]
+  }
+}

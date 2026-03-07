@@ -9,6 +9,11 @@ const CHAPTER_MODULES = {
   '04': () => import('./chapters/chapter04.js'),
   '05': () => import('./chapters/chapter05.js'),
   '06': () => import('./chapters/chapter06.js'),
+  '07': () => import('./chapters/chapter07.js'),
+  '08': () => import('./chapters/chapter08.js'),
+  '09': () => import('./chapters/chapter09.js'),
+  '10': () => import('./chapters/chapter10.js'),
+  '11': () => import('./chapters/chapter11.js'),
 };
 
 let currentChapterId = null;
