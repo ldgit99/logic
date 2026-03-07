@@ -1,4 +1,4 @@
-﻿import { showToast } from './main.js';
+import { showToast } from './main.js';
 import { sendEvent } from './instrumentation.js?v=20260308a';
 
 const WORKER_URLS = [

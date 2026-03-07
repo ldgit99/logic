@@ -1,11 +1,11 @@
 /**
  * instrumentation.js
- * 학생 앱 이벤트 전송 유틸리티 (D 태스크)
+ * ?숈깮 ???대깽???꾩넚 ?좏떥由ы떚 (D ?쒖뒪??
  *
- * 기능:
- *  - Worker /events, /assessment, /feedback-report 엔드포인트로 전송
- *  - 전송 실패 시 localStorage 큐에 저장 → 재시도 (지수 백오프)
- *  - 멱등키(event_id) 생성으로 중복 저장 방지
+ * 湲곕뒫:
+ *  - Worker /events, /assessment, /feedback-report ?붾뱶?ъ씤?몃줈 ?꾩넚
+ *  - ?꾩넚 ?ㅽ뙣 ??localStorage ?먯뿉 ??????ъ떆??(吏??諛깆삤??
+ *  - 硫깅벑??event_id) ?앹꽦?쇰줈 以묐났 ???諛⑹?
  */
 
 const WORKER_URLS = [
@@ -17,7 +17,7 @@ const QUEUE_KEY = 'logic_event_queue';
 const MAX_RETRIES = 4;
 const BACKOFF_BASE_MS = 2000;
 
-// ── UUID 생성 ─────────────────────────────────────────────────────
+// ?? UUID ?앹꽦 ?????????????????????????????????????????????????????
 
 function uuid() {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
@@ -27,10 +27,10 @@ function uuid() {
   });
 }
 
-// ── 이벤트 전송 ───────────────────────────────────────────────────
+// ?? ?대깽???꾩넚 ???????????????????????????????????????????????????
 
 /**
- * 학생 앱 이벤트를 전송한다.
+ * ?숈깮 ???대깽?몃? ?꾩넚?쒕떎.
  * @param {'chat_message'|'hint_used'|'question_advanced'|'assessment_completed'|'pdf_generated'|'session_started'|'session_ended'} eventType
  * @param {{ chapterId?: string, sessionId?: string, studentId?: string, studentName?: string, payload?: object }} meta
  */
@@ -50,7 +50,7 @@ export function sendEvent(eventType, meta = {}) {
 }
 
 /**
- * 형성평가 결과를 전송한다.
+ * ?뺤꽦?됯? 寃곌낵瑜??꾩넚?쒕떎.
  * @param {object} assessmentData
  */
 export function sendAssessment(assessmentData) {
@@ -58,14 +58,14 @@ export function sendAssessment(assessmentData) {
 }
 
 /**
- * 피드백 리포트를 전송한다.
+ * ?쇰뱶諛?由ы룷?몃? ?꾩넚?쒕떎.
  * @param {object} feedbackData
  */
 export function sendFeedbackReport(feedbackData) {
   postWithFallback('/feedback-report', feedbackData);
 }
 
-// ── 전송 + 실패 큐 ────────────────────────────────────────────────
+// ?? ?꾩넚 + ?ㅽ뙣 ??????????????????????????????????????????????????
 
 async function postWithFallback(path, body) {
   const ok = await tryPost(path, body);
@@ -82,17 +82,17 @@ async function tryPost(path, body) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
-        keepalive: true, // 페이지 종료 직전에도 전송 시도
+        keepalive: true, // ?섏씠吏 醫낅즺 吏곸쟾?먮룄 ?꾩넚 ?쒕룄
       });
       if (res.ok || res.status === 201 || res.status === 200) return true;
     } catch {
-      // 다음 URL 시도
+      // ?ㅼ쓬 URL ?쒕룄
     }
   }
   return false;
 }
 
-// ── 로컬 큐 ──────────────────────────────────────────────────────
+// ?? 濡쒖뺄 ????????????????????????????????????????????????????????
 
 function enqueue(item) {
   const queue = loadQueue();
@@ -110,13 +110,13 @@ function loadQueue() {
 
 function saveQueue(queue) {
   try {
-    localStorage.setItem(QUEUE_KEY, JSON.stringify(queue.slice(-200))); // 최대 200개
+    localStorage.setItem(QUEUE_KEY, JSON.stringify(queue.slice(-200))); // 理쒕? 200媛?
   } catch {
-    // localStorage 용량 초과 시 무시
+    // localStorage ?⑸웾 珥덇낵 ??臾댁떆
   }
 }
 
-// ── 재시도 (지수 백오프) ──────────────────────────────────────────
+// ?? ?ъ떆??(吏??諛깆삤?? ??????????????????????????????????????????
 
 let flushTimer = null;
 
@@ -140,9 +140,9 @@ async function flushQueue() {
     }
 
     const ok = await tryPost(item.path, item.body);
-    if (ok) continue; // 성공: 큐에서 제거
+    if (ok) continue; // ?깃났: ?먯뿉???쒓굅
 
-    if (item.retries >= MAX_RETRIES) continue; // 최대 재시도 초과: 버림
+    if (item.retries >= MAX_RETRIES) continue; // 理쒕? ?ъ떆??珥덇낵: 踰꾨┝
 
     remaining.push({
       ...item,
@@ -159,7 +159,7 @@ async function flushQueue() {
   }
 }
 
-// 페이지 로드 시 큐에 남은 항목 재전송 시도
+// ?섏씠吏 濡쒕뱶 ???먯뿉 ?⑥? ??ぉ ?ъ쟾???쒕룄
 if (typeof window !== 'undefined') {
   window.addEventListener('load', () => {
     const queue = loadQueue();

@@ -1,4 +1,4 @@
-﻿import { showToast } from './main.js';
+import { showToast } from './main.js';
 import { generateFeedback } from './feedback.js';
 import { getConversationMessages, getChapterRef, getSessionId } from './chatbot.js';
 import { sendAssessment, sendFeedbackReport } from './instrumentation.js?v=20260308a';
