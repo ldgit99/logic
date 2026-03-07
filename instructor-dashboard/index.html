@@ -70,20 +70,28 @@
           <option value="11">Ch.11 기억장치</option>
         </select>
       </label>
-      <label>
-        시작일
-        <input type="date" id="filter-from" />
-      </label>
-      <label>
-        종료일
-        <input type="date" id="filter-to" />
-      </label>
+      <div class="filter-date-group">
+        <label>
+          시작일
+          <input type="date" id="filter-from" />
+        </label>
+        <label>
+          종료일
+          <input type="date" id="filter-to" />
+        </label>
+        <div class="date-presets">
+          <button class="btn-preset" data-preset="today">오늘</button>
+          <button class="btn-preset" data-preset="week">이번 주</button>
+          <button class="btn-preset" data-preset="all">전체</button>
+        </div>
+      </div>
       <label>
         학번
         <input type="text" id="filter-student-id" placeholder="학번 검색" maxlength="20" />
       </label>
       <button id="btn-filter-apply" class="btn-primary">조회</button>
       <button id="btn-export-csv" class="btn-secondary">CSV 내보내기</button>
+      <span id="filter-result-count" class="filter-result-count"></span>
     </div>
 
     <!-- 뷰 컨테이너 -->

@@ -40,6 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
   bindAuthForm();
   bindNavTabs();
   bindFilters();
+  bindDatePresets();
   bindLogout();
   bindModal();
 });
@@ -107,6 +108,38 @@ function bindFilters() {
   });
 }
 
+function bindDatePresets() {
+  document.querySelectorAll('.btn-preset').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const today = new Date();
+      const fmt = (d) => d.toISOString().slice(0, 10);
+      const fromEl = document.getElementById('filter-from');
+      const toEl = document.getElementById('filter-to');
+
+      if (btn.dataset.preset === 'today') {
+        fromEl.value = fmt(today);
+        toEl.value = fmt(today);
+      } else if (btn.dataset.preset === 'week') {
+        const mon = new Date(today);
+        mon.setDate(today.getDate() - today.getDay() + (today.getDay() === 0 ? -6 : 1));
+        fromEl.value = fmt(mon);
+        toEl.value = fmt(today);
+      } else {
+        fromEl.value = '';
+        toEl.value = '';
+      }
+
+      document.querySelectorAll('.btn-preset').forEach((b) => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  });
+}
+
+function updateResultCount(count) {
+  const el = document.getElementById('filter-result-count');
+  if (el) el.textContent = count != null ? `${count}건 검색됨` : '';
+}
+
 function readFilters() {
   return {
     chapter: document.getElementById('filter-chapter').value,
@@ -137,6 +170,7 @@ async function loadView(view) {
           onRowClick: (submission) => openStudentModal(submission),
         });
         document.getElementById('summary-empty').classList.toggle('hidden', allSubmissions.length > 0);
+        updateResultCount(allSubmissions.length);
         break;
       }
 

@@ -31,35 +31,55 @@ export function openStudentModal(submission) {
     ? weakConcepts.map((w) => `<span class="weak-tag">${escapeHtml(w)}</span>`).join('')
     : '<span class="empty-msg">없음</span>';
 
+  const score = submission.score ?? '-';
+  const correct = submission.correctCount ?? submission.correct_count ?? '-';
+  const total = submission.totalCount ?? submission.total_count ?? '-';
+  const scoreBarWidth = submission.score != null ? Math.min(submission.score, 100) : 0;
+  const scoreColorClass = submission.score >= 80 ? 'score-good' : submission.score >= 60 ? 'score-warn' : 'score-bad';
+
   body.innerHTML = `
-    <div class="modal-meta">
-      <table class="meta-table">
-        <tr><th>학번</th><td>${escapeHtml(id)}</td></tr>
-        <tr><th>이름</th><td>${escapeHtml(name)}</td></tr>
-        <tr><th>챕터</th><td>Ch.${escapeHtml(ch)}</td></tr>
-        <tr><th>점수</th><td>${submission.score ?? '-'}점 (${submission.correctCount ?? submission.correct_count ?? '-'}/${submission.totalCount ?? submission.total_count ?? '-'})</td></tr>
-        <tr><th>제출시간</th><td>${formatDate(submission.submitted_at || submission.submittedAt || submission.timestamp)}</td></tr>
-      </table>
-    </div>
+    <div class="modal-split">
+      <div class="modal-split-left">
+        <div class="modal-meta">
+          <table class="meta-table">
+            <tr><th>학번</th><td>${escapeHtml(id)}</td></tr>
+            <tr><th>이름</th><td>${escapeHtml(name)}</td></tr>
+            <tr><th>챕터</th><td>Ch.${escapeHtml(ch)}</td></tr>
+            <tr><th>점수</th><td>
+              <div class="modal-score-wrap">
+                <div class="score-bar-wrap modal-score-bar"><div class="score-bar ${scoreColorClass}-bar" style="width:${scoreBarWidth}%"></div></div>
+                <span class="${scoreColorClass}">${score}점 (${correct}/${total})</span>
+              </div>
+            </td></tr>
+            <tr><th>제출시간</th><td>${formatDate(submission.submitted_at || submission.submittedAt || submission.timestamp)}</td></tr>
+          </table>
+        </div>
 
-    <div class="modal-section">
-      <h3>취약개념</h3>
-      <div class="weak-tags">${weakHtml}</div>
-    </div>
+        <div class="modal-section">
+          <h3>취약개념</h3>
+          <div class="weak-tags">${weakHtml}</div>
+        </div>
 
-    <div class="modal-section">
-      <h3>Feed Back</h3>
-      <pre class="feedback-text">${escapeHtml(submission.feedBack || submission.feed_back || '-')}</pre>
-    </div>
+        <div class="modal-section">
+          <h3>Feed Up</h3>
+          <pre class="feedback-text">${escapeHtml(submission.feedUp || submission.feed_up || '-')}</pre>
+        </div>
 
-    <div class="modal-section">
-      <h3>Feed Forward</h3>
-      <pre class="feedback-text">${escapeHtml(submission.feedForward || submission.feed_forward || '-')}</pre>
-    </div>
+        <div class="modal-section">
+          <h3>Feed Back</h3>
+          <pre class="feedback-text">${escapeHtml(submission.feedBack || submission.feed_back || '-')}</pre>
+        </div>
 
-    <div class="modal-section">
-      <h3>전체 대화 로그</h3>
-      <div class="chat-log">${chatHtml}</div>
+        <div class="modal-section">
+          <h3>Feed Forward</h3>
+          <pre class="feedback-text">${escapeHtml(submission.feedForward || submission.feed_forward || '-')}</pre>
+        </div>
+      </div>
+
+      <div class="modal-split-right">
+        <h3 class="chat-log-title">대화 로그 <span class="chat-count">${messages.length}개</span></h3>
+        <div class="chat-log">${chatHtml}</div>
+      </div>
     </div>
   `;
 

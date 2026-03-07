@@ -60,18 +60,26 @@ export function renderSummaryTable(submissions, tbody, { onRowClick } = {}) {
   }
 
   tbody.innerHTML = submissions.map((s) => {
-    const weak = (s.weak_concepts || s.weakConcepts || []).slice(0, 2).join(', ') || '-';
+    const weakArr = s.weak_concepts || s.weakConcepts || [];
     const scoreClass = scoreColor(s.score);
+    const score = s.score ?? null;
+    const scoreBar = score !== null
+      ? `<div class="score-bar-wrap"><div class="score-bar ${scoreClass}-bar" style="width:${Math.min(score, 100)}%"></div></div>`
+      : '';
+    const weakTagsHtml = weakArr.length
+      ? weakArr.slice(0, 3).map((w) => `<span class="concept-tag">${escapeHtml(w)}</span>`).join('')
+      : '<span class="concept-tag concept-tag--none">없음</span>';
 
     return `
       <tr data-session="${escapeHtml(s.session_id || '')}">
         <td>${escapeHtml(s.student_id || s.studentId || '')}</td>
         <td>${escapeHtml(s.student_name || s.studentName || '')}</td>
         <td>Ch.${escapeHtml(s.chapter_id || s.chapterId || '')}</td>
-        <td class="score-cell ${scoreClass}">${s.score ?? '-'}점</td>
-        <td class="concept-cell" title="${escapeHtml((s.weak_concepts || s.weakConcepts || []).join(', '))}">
-          ${escapeHtml(weak)}
+        <td class="score-cell">
+          ${scoreBar}
+          <span class="${scoreClass}">${score !== null ? score + '점' : '-'}</span>
         </td>
+        <td class="concept-cell">${weakTagsHtml}</td>
         <td>${formatDate(s.submitted_at || s.submittedAt || s.timestamp)}</td>
         <td>
           <button class="btn-detail" data-idx="${submissions.indexOf(s)}">상세보기</button>

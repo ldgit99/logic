@@ -259,13 +259,96 @@ body {
 .msg-label { font-size: 11px; font-weight: 700; color: var(--color-muted); margin-bottom: 4px; }
 .msg-content { white-space: pre-wrap; word-break: break-word; }
 
-/* ── 공통 ──────────────────────────────────────────────────── */
+/* ── 점수 프로그레스 바 ──────────────────────────────────────── */
+.score-bar-wrap {
+  height: 5px; background: #e5e7eb; border-radius: 3px;
+  margin-bottom: 3px; overflow: hidden;
+}
+.score-bar { height: 100%; border-radius: 3px; transition: width .3s; }
+.score-good-bar { background: var(--color-ok); }
+.score-warn-bar { background: var(--color-warn); }
+.score-bad-bar  { background: var(--color-danger); }
+
+/* ── 취약개념 태그 ────────────────────────────────────────── */
+.concept-cell { max-width: 200px; }
+.concept-tag {
+  display: inline-block; font-size: 11px; padding: 2px 7px;
+  background: #eff6ff; color: var(--color-primary);
+  border-radius: 10px; margin: 1px 2px;
+}
+.concept-tag--none { background: #f3f4f6; color: var(--color-muted); }
+
+/* ── 날짜 프리셋 ─────────────────────────────────────────── */
+.filter-date-group { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; }
+.date-presets { display: flex; gap: 4px; }
+.btn-preset {
+  font-size: 12px; padding: 4px 10px; cursor: pointer;
+  border: 1px solid var(--color-border); border-radius: var(--radius);
+  background: transparent; color: var(--color-muted); transition: all .15s;
+}
+.btn-preset:hover { border-color: var(--color-primary); color: var(--color-primary); }
+.btn-preset.active { background: var(--color-primary); color: #fff; border-color: var(--color-primary); }
+.filter-result-count { font-size: 12px; color: var(--color-muted); align-self: center; margin-left: 4px; }
+
+/* ── 모달 2분할 ──────────────────────────────────────────── */
+.modal-split { display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
+.modal-split-left {
+  padding-right: 20px; border-right: 1px solid var(--color-border); overflow-y: auto;
+}
+.modal-split-right {
+  padding-left: 20px; overflow-y: auto; display: flex; flex-direction: column;
+}
+.chat-log-title {
+  font-size: 13px; font-weight: 700; margin-bottom: 10px;
+  display: flex; align-items: center; gap: 8px;
+}
+.chat-count {
+  font-size: 11px; font-weight: 600; padding: 2px 8px;
+  background: #eff6ff; color: var(--color-primary); border-radius: 10px;
+}
+.modal-score-wrap { display: flex; flex-direction: column; gap: 2px; }
+.modal-score-bar { max-width: 120px; }
+
+/* ── 공통 ──────────────────────────────────────────────── */
 .empty-msg { color: var(--color-muted); font-size: 13px; padding: 24px 0; text-align: center; }
 
+/* ── 반응형 ─────────────────────────────────────────────── */
 @media (max-width: 900px) {
   .achievement-grid { grid-template-columns: 1fr; }
 }
 @media (max-width: 640px) {
   .dash-header, .dash-nav, .dash-filters, .dash-main { padding-left: 12px; padding-right: 12px; }
   .fq-overview { flex-direction: column; }
+  .filter-date-group { flex-direction: column; align-items: flex-start; }
+  .modal-split { grid-template-columns: 1fr; }
+  .modal-split-left { padding-right: 0; border-right: none; border-bottom: 1px solid var(--color-border); padding-bottom: 16px; margin-bottom: 16px; }
+  .modal-split-right { padding-left: 0; }
+}
+
+/* ── 다크 모드 ──────────────────────────────────────────── */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-primary: #60a5fa;
+    --color-danger:  #f87171;
+    --color-warn:    #fbbf24;
+    --color-ok:      #34d399;
+    --color-bg:      #111827;
+    --color-surface: #1f2937;
+    --color-border:  #374151;
+    --color-text:    #f9fafb;
+    --color-muted:   #9ca3af;
+    --shadow:        0 1px 4px rgba(0,0,0,.4);
+  }
+  .dash-table th { background: #1f2937; }
+  .dash-table tr:hover td { background: #374151; }
+  .role-badge { background: #1e3a5f; }
+  .concept-tag { background: #1e3a5f; }
+  .concept-tag--none { background: #374151; }
+  .btn-preset.active { background: #1d4ed8; border-color: #1d4ed8; }
+  .auth-box input { background: #111827; color: var(--color-text); border-color: var(--color-border); }
+  .score-bar-wrap { background: #374151; }
+  .msg-user { background: #1e3a5f; border-left-color: var(--color-primary); }
+  .msg-ai   { background: #1f2937; border-left-color: var(--color-muted); }
+  .weak-tag { background: #4b1c1c; color: var(--color-danger); }
+  .chat-count { background: #1e3a5f; }
 }
