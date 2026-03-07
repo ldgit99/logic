@@ -32,9 +32,9 @@ function uuid() {
 /**
  * 학생 앱 이벤트를 전송한다.
  * @param {'chat_message'|'hint_used'|'question_advanced'|'assessment_completed'|'pdf_generated'|'session_started'|'session_ended'} eventType
- * @param {{ chapterId: string, sessionId: string, studentId: string, studentName: string, payload?: object }} meta
+ * @param {{ chapterId?: string, sessionId?: string, studentId?: string, studentName?: string, payload?: object }} meta
  */
-export function sendEvent(eventType, meta) {
+export function sendEvent(eventType, meta = {}) {
   const event = {
     event_id: uuid(),
     event_type: eventType,

@@ -1,6 +1,6 @@
-import { showToast } from './main.js';
+﻿import { showToast } from './main.js';
 import { generateFeedback } from './feedback.js';
-import { getConversationMessages, getChapterRef } from './chatbot.js';
+import { getConversationMessages, getChapterRef, getSessionId } from './chatbot.js';
 import { sendAssessment, sendFeedbackReport } from './instrumentation.js?v=20260308a';
 
 let exportEventsBound = false;
@@ -189,11 +189,11 @@ async function handleConfirmSubmit() {
     const feedback = normalizeFeedback(rawFeedback, chapterData.formativeAssessment.totalQuestions);
     await savePdf(studentName, studentId, chapterData, messages, feedback);
 
-    // 서버 전송 — PDF와 독립적으로 실행 (실패해도 사용자에게 알리지 않음)
+    // ?쒕쾭 ?꾩넚 ??PDF? ?낅┰?곸쑝濡??ㅽ뻾 (?ㅽ뙣?대룄 ?ъ슜?먯뿉寃??뚮━吏 ?딆쓬)
     const submittedAt = new Date().toISOString();
-    const sessionId = (typeof crypto !== 'undefined' && crypto.randomUUID)
+    const sessionId = getSessionId() || ((typeof crypto !== 'undefined' && crypto.randomUUID)
       ? crypto.randomUUID()
-      : `${chapterData.id}_${studentId}_${Date.now()}`;
+      : `${chapterData.id}_${studentId}_${Date.now()}`);
     sendAssessment({
       session_id: sessionId,
       student_id: studentId,
@@ -260,3 +260,5 @@ export function initExport() {
     }
   });
 }
+
+

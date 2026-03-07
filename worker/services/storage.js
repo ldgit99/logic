@@ -1,48 +1,57 @@
-/**
+﻿/**
  * services/storage.js
- * KV 저장소 접근 계층 + 스키마 검증 (C5 태스크)
- * 라우트 파일에서 env.SUBMISSIONS.get/put을 직접 호출하지 않는다.
+ * KV ??μ냼 ?묎렐 怨꾩링 + ?ㅽ궎留?寃利?(C5 ?쒖뒪??
+ * ?쇱슦???뚯씪?먯꽌 env.SUBMISSIONS.get/put??吏곸젒 ?몄텧?섏? ?딅뒗??
  */
 
-// ── 스키마 검증 ───────────────────────────────────────────────────
+// ?? ?ㅽ궎留?寃利????????????????????????????????????????????????????
 
 export function validateEvent(body) {
-  const required = ['event_id', 'event_type', 'timestamp', 'chapter_id', 'session_id', 'student_id', 'student_name'];
+  const required = ['event_id', 'event_type', 'timestamp', 'chapter_id', 'session_id'];
   for (const field of required) {
-    if (!body[field]) return `필수 필드 누락: ${field}`;
+    if (!body[field]) return `Missing required field: ${field}`;
   }
+
   const allowedTypes = ['chat_message', 'hint_used', 'question_advanced', 'assessment_completed', 'pdf_generated', 'session_started', 'session_ended'];
-  if (!allowedTypes.includes(body.event_type)) return `허용되지 않는 event_type: ${body.event_type}`;
+  if (!allowedTypes.includes(body.event_type)) return `Unsupported event_type: ${body.event_type}`;
+
+  if (body.event_type === 'chat_message') {
+    const payload = body.payload || {};
+    if (!payload.role || !payload.content || !payload.mode || !payload.timestamp) {
+      return 'chat_message payload missing: role/content/mode/timestamp';
+    }
+  }
+
   return null;
 }
 
 export function validateAssessment(body) {
   const required = ['session_id', 'student_id', 'student_name', 'chapter_id', 'submitted_at', 'correct_count', 'total_count', 'score', 'weak_concepts'];
   for (const field of required) {
-    if (body[field] === undefined || body[field] === null) return `필수 필드 누락: ${field}`;
+    if (body[field] === undefined || body[field] === null) return `?꾩닔 ?꾨뱶 ?꾨씫: ${field}`;
   }
   const score = Number(body.score);
-  if (isNaN(score) || score < 0 || score > 100) return 'score는 0~100 사이 숫자여야 합니다';
+  if (isNaN(score) || score < 0 || score > 100) return 'score??0~100 ?ъ씠 ?レ옄?ъ빞 ?⑸땲??;
   const total = Number(body.total_count);
-  if (!Number.isInteger(total) || total < 1) return 'total_count는 1 이상의 정수여야 합니다';
-  if (!Array.isArray(body.weak_concepts)) return 'weak_concepts는 배열이어야 합니다';
+  if (!Number.isInteger(total) || total < 1) return 'total_count??1 ?댁긽???뺤닔?ъ빞 ?⑸땲??;
+  if (!Array.isArray(body.weak_concepts)) return 'weak_concepts??諛곗뿴?댁뼱???⑸땲??;
   return null;
 }
 
 export function validateFeedback(body) {
   const required = ['session_id', 'student_id', 'chapter_id', 'submitted_at', 'feed_up', 'feed_back', 'feed_forward'];
   for (const field of required) {
-    if (!body[field]) return `필수 필드 누락: ${field}`;
+    if (!body[field]) return `?꾩닔 ?꾨뱶 ?꾨씫: ${field}`;
   }
   return null;
 }
 
-// ── KV 조회 ───────────────────────────────────────────────────────
+// ?? KV 議고쉶 ???????????????????????????????????????????????????????
 
-const PAGE_LIMIT = 1000; // KV list 최대 키 수
+const PAGE_LIMIT = 1000; // KV list 理쒕? ????
 
 /**
- * 평가 결과 목록을 조회한다.
+ * ?됯? 寃곌낵 紐⑸줉??議고쉶?쒕떎.
  * @param {object} env
  * @param {{ chapter?: string, from?: string, to?: string, studentId?: string }} filters
  * @returns {Promise<object[]>}
@@ -51,13 +60,13 @@ export async function listAssessments(env, filters = {}) {
   const listed = await env.SUBMISSIONS.list({ prefix: 'assessmentidx:', limit: PAGE_LIMIT });
   const keys = listed.keys.map((k) => k.name);
 
-  // 필터링: assessmentidx:{submitted_at}:{student_id}:{chapter_id}
-  // submitted_at은 ISO 형식(HH:MM:SS)에 콜론이 포함되므로 뒤에서부터 파싱한다.
+  // ?꾪꽣留? assessmentidx:{submitted_at}:{student_id}:{chapter_id}
+  // submitted_at? ISO ?뺤떇(HH:MM:SS)??肄쒕줎???ы븿?섎?濡??ㅼ뿉?쒕????뚯떛?쒕떎.
   const filteredKeys = keys.filter((k) => {
     // k = "assessmentidx:2026-03-07T23:45:00.000Z:251010:02"
     const withoutPrefix = k.slice('assessmentidx:'.length); // "2026-03-07T23:45:00.000Z:251010:02"
-    const lastColon2 = withoutPrefix.lastIndexOf(':');       // 위치: 02 앞
-    const lastColon1 = withoutPrefix.lastIndexOf(':', lastColon2 - 1); // 위치: student_id 앞
+    const lastColon2 = withoutPrefix.lastIndexOf(':');       // ?꾩튂: 02 ??
+    const lastColon1 = withoutPrefix.lastIndexOf(':', lastColon2 - 1); // ?꾩튂: student_id ??
     const ts = withoutPrefix.slice(0, lastColon1);           // "2026-03-07T23:45:00.000Z"
     const studentId = withoutPrefix.slice(lastColon1 + 1, lastColon2); // "251010"
     const chapterId = withoutPrefix.slice(lastColon2 + 1);             // "02"
@@ -69,7 +78,7 @@ export async function listAssessments(env, filters = {}) {
     return true;
   });
 
-  // 인덱스 키 → 실제 데이터 키 → 값 병렬 조회
+  // ?몃뜳???????ㅼ젣 ?곗씠??????媛?蹂묐젹 議고쉶
   const dataKeys = await Promise.all(
     filteredKeys.map((idxKey) => env.SUBMISSIONS.get(idxKey))
   );
@@ -87,7 +96,7 @@ export async function listAssessments(env, filters = {}) {
 }
 
 /**
- * 이벤트 목록 조회 (session_id 기준)
+ * ?대깽??紐⑸줉 議고쉶 (session_id 湲곗?)
  */
 export async function listEvents(env, sessionId) {
   const listed = await env.SUBMISSIONS.list({ prefix: `eventidx:${sessionId}:`, limit: PAGE_LIMIT });
@@ -103,3 +112,5 @@ export async function listEvents(env, sessionId) {
     .filter(Boolean)
     .sort((a, b) => (a.timestamp > b.timestamp ? 1 : -1));
 }
+
+
