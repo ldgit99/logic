@@ -1,6 +1,6 @@
-import { initChatbot } from './chatbot.js?v=20260308a';
-import { initExport } from './export.js?v=20260308a';
-import { initAuthGate } from './auth.js?v=20260308a';
+import { initChatbot } from './chatbot.js?v=20260308d';
+import { initExport } from './export.js?v=20260308d';
+import { initAuthGate } from './auth.js?v=20260308d';
 
 // ─── 챕터 모듈 레지스트리 (동적 임포트) ───
 const CHAPTER_MODULES = {
@@ -192,7 +192,10 @@ function setupToggleHandlers() {
 // ─── 앱 초기화 ───
 async function init() {
   try {
-    await initAuthGate();
+    initAuthGate().catch((e) => {
+      console.error('auth gate init failed:', e);
+    });
+
     const res = await fetch('./chapters/index.json?v=20260307j');
     if (!res.ok) throw new Error('index.json not found');
     const chapters = await res.json();
