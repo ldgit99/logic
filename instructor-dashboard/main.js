@@ -30,6 +30,8 @@ let allSubmissions = [];
 // ── 초기화 ────────────────────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', () => {
+  applyTheme(localStorage.getItem('dash_theme') || 'auto');
+
   const savedToken = sessionStorage.getItem('dash_token');
   if (savedToken) {
     showDashboard(savedToken);
@@ -43,6 +45,7 @@ document.addEventListener('DOMContentLoaded', () => {
   bindDatePresets();
   bindLogout();
   bindModal();
+  bindThemeToggle();
 });
 
 // ── 인증 화면 ─────────────────────────────────────────────────────
@@ -243,6 +246,32 @@ function bindModal() {
     if (e.key === 'Escape') {
       document.getElementById('student-modal').classList.add('hidden');
     }
+  });
+}
+
+// ── 테마 ──────────────────────────────────────────────────────────
+
+function applyTheme(theme) {
+  const root = document.documentElement;
+  if (theme === 'dark') {
+    root.classList.add('dark');
+    root.classList.remove('light');
+  } else if (theme === 'light') {
+    root.classList.add('light');
+    root.classList.remove('dark');
+  } else {
+    root.classList.remove('dark', 'light'); // auto: 시스템 설정 따름
+  }
+  const btn = document.getElementById('btn-theme');
+  if (btn) btn.textContent = theme === 'dark' ? '☀️' : theme === 'light' ? '🌙' : '🌗';
+}
+
+function bindThemeToggle() {
+  document.getElementById('btn-theme')?.addEventListener('click', () => {
+    const current = localStorage.getItem('dash_theme') || 'auto';
+    const next = current === 'auto' ? 'dark' : current === 'dark' ? 'light' : 'auto';
+    localStorage.setItem('dash_theme', next);
+    applyTheme(next);
   });
 }
 

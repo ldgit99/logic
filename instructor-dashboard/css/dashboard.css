@@ -325,9 +325,29 @@ body {
   .modal-split-right { padding-left: 0; }
 }
 
-/* ── 다크 모드 ──────────────────────────────────────────── */
+/* ── 다크 모드 변수 ─────────────────────────────────────── */
+.dark,
+:root:not(.light):has(+ body) {
+  /* fallback: 클래스 없을 때 미디어쿼리로 처리 */
+}
+
+/* 수동 다크 */
+.dark {
+  --color-primary: #60a5fa;
+  --color-danger:  #f87171;
+  --color-warn:    #fbbf24;
+  --color-ok:      #34d399;
+  --color-bg:      #111827;
+  --color-surface: #1f2937;
+  --color-border:  #374151;
+  --color-text:    #f9fafb;
+  --color-muted:   #9ca3af;
+  --shadow:        0 1px 4px rgba(0,0,0,.4);
+}
+
+/* 시스템 다크 (auto 모드, .light 클래스 없을 때만) */
 @media (prefers-color-scheme: dark) {
-  :root {
+  html:not(.light):not(.dark) {
     --color-primary: #60a5fa;
     --color-danger:  #f87171;
     --color-warn:    #fbbf24;
@@ -339,16 +359,49 @@ body {
     --color-muted:   #9ca3af;
     --shadow:        0 1px 4px rgba(0,0,0,.4);
   }
-  .dash-table th { background: #1f2937; }
-  .dash-table tr:hover td { background: #374151; }
-  .role-badge { background: #1e3a5f; }
-  .concept-tag { background: #1e3a5f; }
-  .concept-tag--none { background: #374151; }
-  .btn-preset.active { background: #1d4ed8; border-color: #1d4ed8; }
-  .auth-box input { background: #111827; color: var(--color-text); border-color: var(--color-border); }
-  .score-bar-wrap { background: #374151; }
-  .msg-user { background: #1e3a5f; border-left-color: var(--color-primary); }
-  .msg-ai   { background: #1f2937; border-left-color: var(--color-muted); }
-  .weak-tag { background: #4b1c1c; color: var(--color-danger); }
-  .chat-count { background: #1e3a5f; }
 }
+
+/* 다크 모드 컴포넌트 재정의 */
+.dark .dash-table th { background: #1f2937; }
+.dark .dash-table tr:hover td { background: #374151; }
+.dark .role-badge { background: #1e3a5f; }
+.dark .concept-tag { background: #1e3a5f; }
+.dark .concept-tag--none { background: #374151; }
+.dark .btn-preset.active { background: #1d4ed8; border-color: #1d4ed8; }
+.dark .auth-box input { background: #111827; color: var(--color-text); border-color: var(--color-border); }
+.dark .score-bar-wrap { background: #374151; }
+.dark .msg-user { background: #1e3a5f; border-left-color: var(--color-primary); }
+.dark .msg-ai   { background: #374151; border-left-color: var(--color-muted); }
+.dark .weak-tag { background: #4b1c1c; color: var(--color-danger); }
+.dark .chat-count { background: #1e3a5f; }
+.dark .dash-filters select,
+.dark .dash-filters input { background: #1f2937; color: var(--color-text); border-color: var(--color-border); }
+.dark .modal-box { background: var(--color-surface); }
+.dark .auth-box { background: var(--color-surface); }
+
+/* 시스템 다크 컴포넌트 (auto) */
+@media (prefers-color-scheme: dark) {
+  html:not(.light):not(.dark) .dash-table th { background: #1f2937; }
+  html:not(.light):not(.dark) .dash-table tr:hover td { background: #374151; }
+  html:not(.light):not(.dark) .role-badge { background: #1e3a5f; }
+  html:not(.light):not(.dark) .concept-tag { background: #1e3a5f; }
+  html:not(.light):not(.dark) .concept-tag--none { background: #374151; }
+  html:not(.light):not(.dark) .btn-preset.active { background: #1d4ed8; border-color: #1d4ed8; }
+  html:not(.light):not(.dark) .auth-box input { background: #111827; color: var(--color-text); border-color: var(--color-border); }
+  html:not(.light):not(.dark) .score-bar-wrap { background: #374151; }
+  html:not(.light):not(.dark) .msg-user { background: #1e3a5f; border-left-color: var(--color-primary); }
+  html:not(.light):not(.dark) .msg-ai   { background: #374151; border-left-color: var(--color-muted); }
+  html:not(.light):not(.dark) .weak-tag { background: #4b1c1c; color: var(--color-danger); }
+  html:not(.light):not(.dark) .chat-count { background: #1e3a5f; }
+  html:not(.light):not(.dark) .dash-filters select,
+  html:not(.light):not(.dark) .dash-filters input { background: #1f2937; color: var(--color-text); border-color: var(--color-border); }
+}
+
+/* ── 테마 토글 버튼 ─────────────────────────────────────── */
+.btn-theme {
+  font-size: 16px; line-height: 1; cursor: pointer;
+  background: none; border: 1px solid var(--color-border);
+  border-radius: var(--radius); padding: 3px 8px;
+  transition: border-color .15s;
+}
+.btn-theme:hover { border-color: var(--color-primary); }
