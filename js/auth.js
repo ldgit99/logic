@@ -1,9 +1,9 @@
 const AUTH_KEY = 'logic_auth_v2';
 
 const WORKER_URLS = [
-  window.location.origin,
   'https://logic-proxy.dongkuklee99.workers.dev',
   'https://logic.dongkuklee99.workers.dev',
+  ...(window.location.origin.includes('localhost') || window.location.origin.includes('127.0.0.1') ? [window.location.origin] : []),
 ];
 
 function getEl(id) {

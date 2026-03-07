@@ -1,9 +1,10 @@
+const LOCAL_ORIGIN_WITH_SLASH = window.location.origin.endsWith('/') ? window.location.origin : (window.location.origin + '/');
+
 const WORKER_URLS = [
-  window.location.origin,
   'https://logic-proxy.dongkuklee99.workers.dev/',
   'https://logic.dongkuklee99.workers.dev/',
+  ...(window.location.origin.includes('localhost') || window.location.origin.includes('127.0.0.1') ? [LOCAL_ORIGIN_WITH_SLASH] : []),
 ];
-
 function buildFeedbackPrompt(chapterData, messages) {
   const chatLog = messages
     .filter((m) => m.role !== 'system')

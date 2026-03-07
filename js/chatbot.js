@@ -2,10 +2,12 @@ import { showToast } from './main.js';
 import { sendEvent } from './instrumentation.js?v=20260308a';
 import { getStudentProfile } from './auth.js?v=20260308a';
 
+  ...(window.location.origin.includes('localhost') || window.location.origin.includes('127.0.0.1') ? [LOCAL_ORIGIN_WITH_SLASH] : []),
+
 const WORKER_URLS = [
-  window.location.origin,
   'https://logic-proxy.dongkuklee99.workers.dev/',
   'https://logic.dongkuklee99.workers.dev/',
+  ...(window.location.origin.includes('localhost') || window.location.origin.includes('127.0.0.1') ? [LOCAL_ORIGIN_WITH_SLASH] : []),
 ];
 
 const COMPLETION_MARKER = '===형성평가완료===';
