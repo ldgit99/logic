@@ -1,4 +1,4 @@
-import { renderChapterWith } from './chapterBase.js';
+import { renderChapterWith } from './chapterBase.js?v=20260307i';
 import { mountMemorySim } from '../simulations/memorySim.js';
 
 const SIM_MOUNTS = {

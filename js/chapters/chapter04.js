@@ -1,4 +1,4 @@
-import { renderChapterWith } from './chapterBase.js';
+import { renderChapterWith } from './chapterBase.js?v=20260307i';
 import { mountGateSimulator } from '../simulations/gateSimulator.js';
 import { mountTimingDiagram } from '../simulations/timingDiagram.js';
 import { mountElectricalProps } from '../simulations/electricalProps.js';

@@ -1,19 +1,19 @@
-import { initChatbot } from './chatbot.js?v=20260307h';
-import { initExport } from './export.js?v=20260307h';
+import { initChatbot } from './chatbot.js?v=20260307i';
+import { initExport } from './export.js?v=20260307i';
 
 // ─── 챕터 모듈 레지스트리 (동적 임포트) ───
 const CHAPTER_MODULES = {
-  '01': () => import('./chapters/chapter01.js?v=20260307h'),
-  '02': () => import('./chapters/chapter02.js?v=20260307h'),
-  '03': () => import('./chapters/chapter03.js'),
-  '04': () => import('./chapters/chapter04.js'),
-  '05': () => import('./chapters/chapter05.js'),
-  '06': () => import('./chapters/chapter06.js'),
-  '07': () => import('./chapters/chapter07.js'),
-  '08': () => import('./chapters/chapter08.js'),
-  '09': () => import('./chapters/chapter09.js'),
-  '10': () => import('./chapters/chapter10.js'),
-  '11': () => import('./chapters/chapter11.js'),
+  '01': () => import('./chapters/chapter01.js?v=20260307i'),
+  '02': () => import('./chapters/chapter02.js?v=20260307i'),
+  '03': () => import('./chapters/chapter03.js?v=20260307i'),
+  '04': () => import('./chapters/chapter04.js?v=20260307i'),
+  '05': () => import('./chapters/chapter05.js?v=20260307i'),
+  '06': () => import('./chapters/chapter06.js?v=20260307i'),
+  '07': () => import('./chapters/chapter07.js?v=20260307i'),
+  '08': () => import('./chapters/chapter08.js?v=20260307i'),
+  '09': () => import('./chapters/chapter09.js?v=20260307i'),
+  '10': () => import('./chapters/chapter10.js?v=20260307i'),
+  '11': () => import('./chapters/chapter11.js?v=20260307i'),
 };
 
 let currentChapterId = null;
@@ -191,7 +191,7 @@ function setupToggleHandlers() {
 // ─── 앱 초기화 ───
 async function init() {
   try {
-    const res = await fetch('./chapters/index.json?v=20260307h');
+    const res = await fetch('./chapters/index.json?v=20260307i');
     if (!res.ok) throw new Error('index.json not found');
     const chapters = await res.json();
 

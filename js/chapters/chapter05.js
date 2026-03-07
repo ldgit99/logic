@@ -1,4 +1,4 @@
-import { renderChapterWith } from './chapterBase.js';
+import { renderChapterWith } from './chapterBase.js?v=20260307i';
 import { mountBooleanEval } from '../simulations/booleanEval.js';
 import { mountBooleanLaws } from '../simulations/booleanLaws.js';
 import { mountMintermMaxterm } from '../simulations/mintermMaxterm.js';
