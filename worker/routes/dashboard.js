@@ -1,10 +1,11 @@
-/**
+﻿/**
  * routes/dashboard.js
- * GET /dashboard/* — 교수용 조회 엔드포인트 (C4 태스크)
- * 모든 요청은 auth.js에서 토큰 검증 후 진입
+ * GET /dashboard/* ????흮????브퀗?????븐뼔援?????(C4 ??戮?츩??
+ * 嶺뚮ㅄ維獄???븐슙??? auth.js???????ルㅎ荑??롪틵?嶺???嶺뚯쉳???
  */
 
 import { listAssessments, listRoster } from '../services/storage.js';
+import { createUserByInstructor, deleteUserByInstructor } from '../services/studentAuth.js';
 import { calcSummary, calcInterventions, calcConcepts } from '../services/analytics.js';
 
 export async function handleDashboard(request, env, pathname) {
@@ -26,6 +27,12 @@ export async function handleDashboard(request, env, pathname) {
   if (pathname === '/dashboard/roster') {
     return handleRoster(env);
   }
+  if (request.method === 'POST' && pathname === '/dashboard/members/add') {
+    return handleRosterAdd(request, env);
+  }
+  if (request.method === 'POST' && pathname === '/dashboard/members/delete') {
+    return handleRosterDelete(request, env);
+  }
   if (request.method === 'POST' && pathname === '/dashboard/send-email') {
     return handleSendEmail(request, env);
   }
@@ -46,7 +53,7 @@ async function handleSummary(env, params) {
 async function handleStudents(env, params) {
   const submissions = await listAssessments(env, params);
 
-  // 이메일 enrichment: 고유 student_id별 프로필 조회
+  // ???筌??enrichment: ??μ쪠?? student_id???熬곣뫁夷???브퀗???
   const uniqueIds = [...new Set(submissions.map((s) => s.student_id))];
   const profileMap = {};
   await Promise.all(
@@ -74,6 +81,76 @@ async function handleRoster(env) {
   return jsonResponse({ roster, total: roster.length });
 }
 
+
+async function handleRosterAdd(request, env) {
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return jsonResponse({ error: 'invalid JSON' }, 400);
+  }
+
+  const studentId = String(body.student_id || '').trim();
+  const studentName = String(body.student_name || '').trim();
+  const email = String(body.email || '').trim();
+  const password = String(body.password || '');
+
+  if (!studentId || !studentName || !email || !password) {
+    return jsonResponse({ error: 'missing required fields' }, 400);
+  }
+  if (studentId.length < 4 || studentId.length > 32) {
+    return jsonResponse({ error: 'invalid student_id length' }, 400);
+  }
+  if (studentName.length < 2 || studentName.length > 30) {
+    return jsonResponse({ error: 'invalid student_name length' }, 400);
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return jsonResponse({ error: 'invalid email format' }, 400);
+  }
+  if (password.length < 8 || password.length > 64) {
+    return jsonResponse({ error: 'invalid password length' }, 400);
+  }
+
+  const created = await createUserByInstructor(env, {
+    studentId,
+    studentName,
+    password,
+    email,
+  });
+
+  if (created?.error === 'USER_EXISTS') {
+    return jsonResponse({ error: 'student already exists' }, 409);
+  }
+
+  return jsonResponse({
+    ok: true,
+    user: {
+      student_id: created.user.student_id,
+      student_name: created.user.student_name,
+      email: created.user.email || '',
+      created_at: created.user.created_at || '',
+    },
+  }, 201);
+}
+
+async function handleRosterDelete(request, env) {
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return jsonResponse({ error: 'invalid JSON' }, 400);
+  }
+
+  const studentId = String(body.student_id || '').trim();
+  if (!studentId) return jsonResponse({ error: 'missing student_id' }, 400);
+
+  const deleted = await deleteUserByInstructor(env, studentId);
+  if (deleted?.error === 'USER_NOT_FOUND') {
+    return jsonResponse({ error: 'student not found' }, 404);
+  }
+
+  return jsonResponse({ ok: true, student_id: studentId });
+}
 async function handleConceptsRoute(env, params) {
   const submissions = await listAssessments(env, params);
   const concepts = calcConcepts(submissions);
@@ -130,10 +207,10 @@ async function handleSendEmail(request, env) {
 
   const from = env.EMAIL_FROM || 'noreply@resend.dev';
   const html = `<div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px;">
-    <h2 style="color:#2563eb;">교수 메시지</h2>
-    <p>안녕하세요, <strong>${escHtml(studentName)}</strong>님!</p>
+    <h2 style="color:#2563eb;">??흮??嶺뚮∥???낆??</h2>
+    <p>???댟??琉얠돪?? <strong>${escHtml(studentName)}</strong>??</p>
     <div style="border-left:4px solid #2563eb;padding:12px 16px;background:#eff6ff;margin:16px 0;white-space:pre-wrap;">${escHtml(message)}</div>
-    <p style="color:#6b7280;font-size:12px;">본 메일은 디지털 논리회로 학습 시스템에서 발송되었습니다.</p>
+    <p style="color:#6b7280;font-size:12px;">??嶺뚮∥???? ???????寃몃뉴???夷????덈? ??戮?츩??戮?뱺???꾩룇裕???琉????鍮??</p>
   </div>`;
 
   try {
@@ -160,3 +237,4 @@ function jsonResponse(body, status = 200) {
     headers: { 'Content-Type': 'application/json' },
   });
 }
+

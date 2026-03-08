@@ -1,26 +1,26 @@
 /**
  * services/auth.js
- * Bearer 토큰 검증 및 역할 기반 접근 제어 (C6 태스크)
+ * Bearer ?좏겙 寃利?諛???븷 湲곕컲 ?묎렐 ?쒖뼱 (C6 ?쒖뒪??
  *
- * 환경변수:
- *   DASHBOARD_TOKEN  — 교수용 토큰 (wrangler secret put DASHBOARD_TOKEN)
- *   TA_TOKEN         — 조교용 토큰 (선택)
- *   ADMIN_TOKEN      — 운영자 토큰 (선택)
+ * ?섍꼍蹂??
+ *   DASHBOARD_TOKEN  ??援먯닔???좏겙 (wrangler secret put DASHBOARD_TOKEN)
+ *   TA_TOKEN         ??議곌탳???좏겙 (?좏깮)
+ *   ADMIN_TOKEN      ???댁쁺???좏겙 (?좏깮)
  *
- * 역할별 접근 범위:
- *   professor : /dashboard/* 전체 조회 가능
- *   ta        : /dashboard/summary, /dashboard/students 조회 가능
- *   admin     : /dashboard/* + 감사로그 조회 가능
+ * ??븷蹂??묎렐 踰붿쐞:
+ *   professor : /dashboard/* ?꾩껜 議고쉶 媛??
+ *   ta        : /dashboard/summary, /dashboard/students 議고쉶 媛??
+ *   admin     : /dashboard/* + 媛먯궗濡쒓렇 議고쉶 媛??
  */
 
 const ROLE_PERMISSIONS = {
-  professor: ['/dashboard/summary', '/dashboard/students', '/dashboard/concepts', '/dashboard/interventions', '/dashboard/roster'],
+  professor: ['/dashboard/summary', '/dashboard/students', '/dashboard/concepts', '/dashboard/interventions', '/dashboard/roster', '/dashboard/members'],
   ta:        ['/dashboard/summary', '/dashboard/students', '/dashboard/roster'],
-  admin:     ['/dashboard/summary', '/dashboard/students', '/dashboard/concepts', '/dashboard/interventions', '/dashboard/audit', '/dashboard/roster'],
+  admin:     ['/dashboard/summary', '/dashboard/students', '/dashboard/concepts', '/dashboard/interventions', '/dashboard/audit', '/dashboard/roster', '/dashboard/members'],
 };
 
 /**
- * Authorization 헤더에서 Bearer 토큰을 추출한다.
+ * Authorization ?ㅻ뜑?먯꽌 Bearer ?좏겙??異붿텧?쒕떎.
  */
 function extractToken(request) {
   const header = request.headers.get('Authorization') || '';
@@ -29,7 +29,7 @@ function extractToken(request) {
 }
 
 /**
- * 토큰을 검증하고 역할을 반환한다.
+ * ?좏겙??寃利앺븯怨???븷??諛섑솚?쒕떎.
  * @returns {'professor'|'ta'|'admin'|null}
  */
 function resolveRole(token, env) {
@@ -41,18 +41,18 @@ function resolveRole(token, env) {
 }
 
 /**
- * 요청을 인증한다. 실패 시 Response를 반환하고, 성공 시 null을 반환한다.
+ * ?붿껌???몄쬆?쒕떎. ?ㅽ뙣 ??Response瑜?諛섑솚?섍퀬, ?깃났 ??null??諛섑솚?쒕떎.
  * @param {Request} request
  * @param {object} env
- * @param {string} pathname  접근하려는 경로
- * @returns {Response|null}  Response: 인증 실패 / null: 인증 성공
+ * @param {string} pathname  ?묎렐?섎젮??寃쎈줈
+ * @returns {Response|null}  Response: ?몄쬆 ?ㅽ뙣 / null: ?몄쬆 ?깃났
  */
 export function authenticate(request, env, pathname) {
   const token = extractToken(request);
   const role = resolveRole(token, env);
 
   if (!role) {
-    return new Response(JSON.stringify({ error: '인증 실패' }), {
+    return new Response(JSON.stringify({ error: '?몄쬆 ?ㅽ뙣' }), {
       status: 401,
       headers: { 'Content-Type': 'application/json' },
     });
@@ -62,11 +62,11 @@ export function authenticate(request, env, pathname) {
   const hasAccess = allowed.some((p) => pathname.startsWith(p));
 
   if (!hasAccess) {
-    return new Response(JSON.stringify({ error: '권한 없음' }), {
+    return new Response(JSON.stringify({ error: '沅뚰븳 ?놁쓬' }), {
       status: 403,
       headers: { 'Content-Type': 'application/json' },
     });
   }
 
-  return null; // 인증 성공
+  return null; // ?몄쬆 ?깃났
 }

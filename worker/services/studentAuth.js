@@ -157,3 +157,32 @@ export async function changePassword(env, { studentId, currentPassword, newPassw
   await env.SUBMISSIONS.put(userKey(studentId), JSON.stringify(updated));
   return { ok: true };
 }
+export async function createUserByInstructor(env, { studentId, studentName, password, email }) {
+  return createUser(env, { studentId, studentName, password, email });
+}
+
+export async function deleteUserByInstructor(env, studentId) {
+  const user = await getUserByStudentId(env, studentId);
+  if (!user) return { error: 'USER_NOT_FOUND' };
+
+  await env.SUBMISSIONS.delete(userKey(studentId));
+
+  const listed = await env.SUBMISSIONS.list({ prefix: 'auth:sess:', limit: 1000 });
+  const keys = listed.keys || [];
+  await Promise.all(
+    keys.map(async (k) => {
+      const raw = await env.SUBMISSIONS.get(k.name);
+      if (!raw) return;
+      try {
+        const sess = JSON.parse(raw);
+        if (String(sess?.student_id || '') === String(studentId)) {
+          await env.SUBMISSIONS.delete(k.name);
+        }
+      } catch {
+        // ignore malformed session value
+      }
+    }),
+  );
+
+  return { ok: true };
+}

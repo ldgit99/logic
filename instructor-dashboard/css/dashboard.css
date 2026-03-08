@@ -1,4 +1,4 @@
-/* dashboard.css — 교수용 대시보드 스타일 */
+/* dashboard.css ??援먯닔????쒕낫???ㅽ???*/
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -27,7 +27,7 @@ body {
 .hidden { display: none !important; }
 .sr-only { position: absolute; width: 1px; height: 1px; clip: rect(0,0,0,0); overflow: hidden; }
 
-/* ── 인증 화면 ─────────────────────────────────────────────── */
+/* ?? ?몄쬆 ?붾㈃ ??????????????????????????????????????????????? */
 .auth-screen {
   display: flex; align-items: center; justify-content: center;
   min-height: 100vh; background: var(--color-bg);
@@ -56,7 +56,7 @@ body {
 .auth-box button:hover { background: #1d4ed8; }
 .auth-error { color: var(--color-danger); font-size: 13px; margin-top: 8px; }
 
-/* ── 대시보드 레이아웃 ───────────────────────────────────────── */
+/* ?? ??쒕낫???덉씠?꾩썐 ????????????????????????????????????????? */
 .dashboard-screen { display: flex; flex-direction: column; min-height: 100vh; }
 
 .dash-header {
@@ -79,7 +79,7 @@ body {
 }
 .btn-logout:hover { background: var(--color-bg); }
 
-/* ── 네비게이션 탭 ──────────────────────────────────────────── */
+/* ?? ?ㅻ퉬寃뚯씠???????????????????????????????????????????????? */
 .dash-nav {
   display: flex; gap: 4px;
   background: var(--color-surface);
@@ -110,7 +110,7 @@ body {
   50% { opacity: 0.6; }
 }
 
-/* ── 필터 바 ───────────────────────────────────────────────── */
+/* ?? ?꾪꽣 諛?????????????????????????????????????????????????? */
 .dash-filters {
   display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px;
   padding: 12px 24px; background: var(--color-surface);
@@ -134,11 +134,11 @@ body {
 }
 .btn-secondary:hover { background: #eff6ff; }
 
-/* ── 메인 영역 ─────────────────────────────────────────────── */
+/* ?? 硫붿씤 ?곸뿭 ??????????????????????????????????????????????? */
 .dash-main { flex: 1; padding: 20px 24px; }
 .dash-view { display: block; }
 
-/* ── Summary 카드 ──────────────────────────────────────────── */
+/* ?? Summary 移대뱶 ???????????????????????????????????????????? */
 .summary-cards { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; }
 .summary-card {
   background: var(--color-surface); border-radius: var(--radius);
@@ -155,7 +155,7 @@ body {
 .chapter-row-bar { height: 100%; border-radius: 3px; transition: width 0.4s ease; }
 .chapter-row-stats { width: 80px; flex-shrink: 0; text-align: right; color: var(--color-muted); font-size: 11px; }
 
-/* ── 테이블 ───────────────────────────────────────────────── */
+/* ?? ?뚯씠釉?????????????????????????????????????????????????? */
 .summary-table-wrap { overflow-x: auto; }
 .dash-table { width: 100%; border-collapse: collapse; background: var(--color-surface); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
 .dash-table th { background: #f9fafb; font-size: 12px; font-weight: 600; color: var(--color-muted); padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--color-border); }
@@ -174,7 +174,7 @@ body {
 }
 .btn-detail:hover { background: #eff6ff; }
 
-/* ── 개입 우선순위 큐 ────────────────────────────────────────── */
+/* ?? 媛쒖엯 ?곗꽑?쒖쐞 ???????????????????????????????????????????? */
 .section-title { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
 .section-desc { font-size: 12px; color: var(--color-muted); margin-bottom: 16px; }
 .intervention-list { display: flex; flex-direction: column; gap: 8px; }
@@ -202,7 +202,7 @@ body {
 .risk-label--medium { background: #fef3c7; color: #92400e; }
 .risk-label--low    { background: #d1fae5; color: #065f46; }
 
-/* ── 성취 분석 ─────────────────────────────────────────────── */
+/* ?? ?깆랬 遺꾩꽍 ??????????????????????????????????????????????? */
 .achievement-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
 .chart-card { background: var(--color-surface); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px; }
 .chart-title { font-size: 14px; font-weight: 600; margin-bottom: 12px; }
@@ -211,7 +211,7 @@ body {
 .legend-color { width: 12px; height: 12px; border-radius: 2px; display: inline-block; }
 .achievement-table-wrap { background: var(--color-surface); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px; }
 
-/* ── 오개념 ────────────────────────────────────────────────── */
+/* ?? ?ㅺ컻???????????????????????????????????????????????????? */
 .concept-list { display: flex; flex-direction: column; gap: 8px; }
 .concept-item {
   display: flex; align-items: center; gap: 12px;
@@ -231,7 +231,7 @@ body {
 .ch-tag { font-size: 11px; padding: 2px 6px; background: #eff6ff; color: var(--color-primary); border-radius: 10px; }
 .concept-count { font-size: 18px; font-weight: 700; min-width: 48px; text-align: right; }
 
-/* ── 피드백 품질 ───────────────────────────────────────────── */
+/* ?? ?쇰뱶諛??덉쭏 ????????????????????????????????????????????? */
 .fq-overview { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 20px; }
 .fq-gauge {
   background: var(--color-surface); border-radius: var(--radius);
@@ -245,7 +245,7 @@ body {
 .rate-warn { color: var(--color-warn); font-weight: 600; }
 .rate-bad  { color: var(--color-danger); font-weight: 600; }
 
-/* ── 모달 ──────────────────────────────────────────────────── */
+/* ?? 紐⑤떖 ???????????????????????????????????????????????????? */
 .modal-overlay {
   position: fixed; inset: 0; background: rgba(0,0,0,.45);
   display: flex; align-items: center; justify-content: center;
@@ -280,7 +280,7 @@ body {
 .msg-label { font-size: 11px; font-weight: 700; color: var(--color-muted); margin-bottom: 4px; }
 .msg-content { white-space: pre-wrap; word-break: break-word; }
 
-/* ── 점수 프로그레스 바 ──────────────────────────────────────── */
+/* ?? ?먯닔 ?꾨줈洹몃젅??諛????????????????????????????????????????? */
 .score-bar-wrap {
   height: 5px; background: #e5e7eb; border-radius: 3px;
   margin-bottom: 3px; overflow: hidden;
@@ -290,7 +290,7 @@ body {
 .score-warn-bar { background: var(--color-warn); }
 .score-bad-bar  { background: var(--color-danger); }
 
-/* ── 취약개념 태그 ────────────────────────────────────────── */
+/* ?? 痍⑥빟媛쒕뀗 ?쒓렇 ?????????????????????????????????????????? */
 .concept-cell { max-width: 200px; }
 .concept-tag {
   display: inline-block; font-size: 11px; padding: 2px 7px;
@@ -299,7 +299,7 @@ body {
 }
 .concept-tag--none { background: #f3f4f6; color: var(--color-muted); }
 
-/* ── 날짜 프리셋 ─────────────────────────────────────────── */
+/* ?? ?좎쭨 ?꾨━????????????????????????????????????????????? */
 .filter-date-group { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; }
 .date-presets { display: flex; gap: 4px; }
 .btn-preset {
@@ -311,7 +311,7 @@ body {
 .btn-preset.active { background: var(--color-primary); color: #fff; border-color: var(--color-primary); }
 .filter-result-count { font-size: 12px; color: var(--color-muted); align-self: center; margin-left: 4px; }
 
-/* ── 모달 2분할 ──────────────────────────────────────────── */
+/* ?? 紐⑤떖 2遺꾪븷 ???????????????????????????????????????????? */
 .modal-split { display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
 .modal-split-left {
   padding-right: 20px; border-right: 1px solid var(--color-border); overflow-y: auto;
@@ -362,7 +362,7 @@ body {
 .email-status.ok { color: var(--color-ok); }
 .email-status.error { color: var(--color-danger); }
 
-/* ── 학생 개별 보고서 뷰 ─────────────────────────────── */
+/* ?? ?숈깮 媛쒕퀎 蹂닿퀬??酉???????????????????????????????? */
 .sr-layout {
   display: grid;
   grid-template-columns: 260px 1fr;
@@ -445,14 +445,19 @@ body {
   .sr-sidebar { border-right: none; border-bottom: 1px solid var(--color-border); max-height: 240px; }
 }
 
-/* ── 공통 ──────────────────────────────────────────────── */
+/* ?? 怨듯넻 ???????????????????????????????????????????????? */
 .empty-msg { color: var(--color-muted); font-size: 13px; padding: 24px 0; text-align: center; }
 
-/* ── 반응형 ─────────────────────────────────────────────── */
+/* ?? 諛섏쓳????????????????????????????????????????????????? */
 @media (max-width: 900px) {
   .achievement-grid { grid-template-columns: 1fr; }
 }
+@media (max-width: 980px) {
+  .roster-add-form { grid-template-columns: 1fr 1fr; }
+}
+
 @media (max-width: 640px) {
+  .roster-add-form { grid-template-columns: 1fr; }
   .dash-header, .dash-nav, .dash-filters, .dash-main { padding-left: 12px; padding-right: 12px; }
   .fq-overview { flex-direction: column; }
   .filter-date-group { flex-direction: column; align-items: flex-start; }
@@ -461,13 +466,13 @@ body {
   .modal-split-right { padding-left: 0; }
 }
 
-/* ── 다크 모드 변수 ─────────────────────────────────────── */
+/* ?? ?ㅽ겕 紐⑤뱶 蹂????????????????????????????????????????? */
 .dark,
 :root:not(.light):has(+ body) {
-  /* fallback: 클래스 없을 때 미디어쿼리로 처리 */
+  /* fallback: ?대옒???놁쓣 ??誘몃뵒?댁옘由щ줈 泥섎━ */
 }
 
-/* 수동 다크 */
+/* ?섎룞 ?ㅽ겕 */
 .dark {
   --color-primary: #60a5fa;
   --color-danger:  #f87171;
@@ -481,7 +486,7 @@ body {
   --shadow:        0 1px 4px rgba(0,0,0,.4);
 }
 
-/* 시스템 다크 (auto 모드, .light 클래스 없을 때만) */
+/* ?쒖뒪???ㅽ겕 (auto 紐⑤뱶, .light ?대옒???놁쓣 ?뚮쭔) */
 @media (prefers-color-scheme: dark) {
   html:not(.light):not(.dark) {
     --color-primary: #60a5fa;
@@ -497,7 +502,7 @@ body {
   }
 }
 
-/* 다크 모드 컴포넌트 재정의 */
+/* ?ㅽ겕 紐⑤뱶 而댄룷?뚰듃 ?ъ젙??*/
 .dark .dash-table th { background: #1f2937; }
 .dark .dash-table tr:hover td { background: #374151; }
 .dark .role-badge { background: #1e3a5f; }
@@ -515,7 +520,7 @@ body {
 .dark .modal-box { background: var(--color-surface); }
 .dark .auth-box { background: var(--color-surface); }
 
-/* 시스템 다크 컴포넌트 (auto) */
+/* ?쒖뒪???ㅽ겕 而댄룷?뚰듃 (auto) */
 @media (prefers-color-scheme: dark) {
   html:not(.light):not(.dark) .dash-table th { background: #1f2937; }
   html:not(.light):not(.dark) .dash-table tr:hover td { background: #374151; }
@@ -533,7 +538,7 @@ body {
   html:not(.light):not(.dark) .dash-filters input { background: #1f2937; color: var(--color-text); border-color: var(--color-border); }
 }
 
-/* ── 상호작용 분석 뷰 ─────────────────────────────────── */
+/* ?? ?곹샇?묒슜 遺꾩꽍 酉???????????????????????????????????? */
 .ia-top-grid {
   display: grid;
   grid-template-columns: 240px 1fr;
@@ -554,7 +559,7 @@ body {
   color: var(--color-muted); margin-left: 8px;
 }
 
-/* 패턴 요약 stats */
+/* ?⑦꽩 ?붿빟 stats */
 .pattern-stats {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -572,7 +577,7 @@ body {
 .pstat--danger .pstat-value { color: var(--color-danger); }
 .pstat-label { font-size: 11px; color: var(--color-muted); margin-top: 2px; line-height: 1.4; }
 
-/* 산점도 범례 */
+/* ?곗젏??踰붾? */
 .scatter-legend { display: flex; gap: 12px; font-size: 11px; }
 .sleg { display: flex; align-items: center; gap: 4px; color: var(--color-muted); }
 .sleg::before { content: ''; display: inline-block; width: 10px; height: 10px; border-radius: 50%; }
@@ -580,7 +585,7 @@ body {
 .sleg--warn::before { background: #f59e0b; }
 .sleg--good::before { background: #10b981; }
 
-/* 히트맵 */
+/* ?덊듃留?*/
 .heatmap-scroll { overflow-x: auto; }
 .heatmap-table th, .heatmap-table td { white-space: nowrap; }
 .hm-concept-name {
@@ -592,7 +597,7 @@ body {
 .hm-cell--zero { background: transparent; }
 .hm-total { font-weight: 700; text-align: center; color: var(--color-muted); }
 
-/* 힌트 배지 */
+/* ?뚰듃 諛곗? */
 .hint-badge {
   display: inline-block; font-size: 12px; font-weight: 600;
   padding: 2px 8px; border-radius: 10px;
@@ -601,12 +606,12 @@ body {
 .hint-badge--mid  { background: #fef3c7; color: #92400e; }
 .hint-badge--low  { background: #d1fae5; color: #065f46; }
 
-/* 반응형 */
+/* 諛섏쓳??*/
 @media (max-width: 860px) {
   .ia-top-grid { grid-template-columns: 1fr; }
 }
 
-/* 다크 모드 재정의 */
+/* ?ㅽ겕 紐⑤뱶 ?ъ젙??*/
 .dark .pstat { background: #374151; }
 .dark .pstat--danger { background: #4b1c1c; }
 .dark .hint-badge--mid { background: #44300a; color: #fbbf24; }
@@ -619,7 +624,7 @@ body {
   html:not(.light):not(.dark) .hint-badge--low { background: #064e2d; color: #34d399; }
 }
 
-/* ── 테마 토글 버튼 ─────────────────────────────────────── */
+/* ?? ?뚮쭏 ?좉? 踰꾪듉 ??????????????????????????????????????? */
 .btn-theme {
   font-size: 16px; line-height: 1; cursor: pointer;
   background: none; border: 1px solid var(--color-border);
@@ -628,7 +633,7 @@ body {
 }
 .btn-theme:hover { border-color: var(--color-primary); }
 
-/* ── 수강생 명단 (E8) ──────────────────────────────────────── */
+/* ?? ?섍컯??紐낅떒 (E8) ???????????????????????????????????????? */
 .roster-header { margin-bottom: 16px; }
 .roster-title-row {
   display: flex; align-items: center; gap: 12px; margin-bottom: 10px;
@@ -639,12 +644,57 @@ body {
   background: var(--color-border); border-radius: 12px; padding: 2px 10px;
 }
 .roster-csv-btn { margin-left: auto; }
-.roster-search {
-  width: 100%; max-width: 360px;
-  padding: 7px 12px; border: 1px solid var(--color-border);
-  border-radius: var(--radius); font-size: 13px;
-  background: var(--color-surface); color: var(--color-text);
+
+.roster-manage-panel {
+  margin-bottom: 16px;
+  padding: 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
 }
+.roster-manage-title {
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.roster-add-form {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(120px, 1fr)) auto;
+  gap: 8px;
+  align-items: center;
+}
+.roster-add-form input {
+  padding: 7px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  font-size: 13px;
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+.roster-manage-help {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--color-muted);
+}
+.roster-manage-status {
+  min-height: 18px;
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--color-muted);
+}
+.roster-manage-status.ok { color: var(--color-ok); }
+.roster-manage-status.error { color: var(--color-danger); }
+.btn-danger-mini {
+  padding: 4px 10px;
+  font-size: 12px;
+  border: 1px solid #fca5a5;
+  border-radius: var(--radius);
+  background: #fef2f2;
+  color: #b91c1c;
+  cursor: pointer;
+}
+.btn-danger-mini:hover { background: #fee2e2; }
+.btn-danger-mini:disabled { opacity: 0.6; cursor: default; }
 .roster-table-wrap { overflow-x: auto; }
 .roster-table .mono { font-family: monospace; }
 .roster-table .roster-email a { color: var(--color-primary); text-decoration: none; }
@@ -653,7 +703,7 @@ body {
 .roster-table .roster-date { font-size: 12px; color: var(--color-text-muted); white-space: nowrap; }
 .roster-table .roster-num { color: var(--color-text-muted); font-size: 12px; }
 
-/* ── 챕터 잠금 패널 ──────────────────────────────────────────── */
+/* ?? 梨뺥꽣 ?좉툑 ?⑤꼸 ???????????????????????????????????????????? */
 .lock-panel {
   margin-top: 28px; padding: 16px;
   background: var(--color-surface); border-radius: var(--radius);

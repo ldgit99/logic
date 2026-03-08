@@ -1,6 +1,6 @@
-/**
+﻿/**
  * apiClient.js
- * Worker API와의 통신을 담당하는 클라이언트 유틸리티
+ * Worker API????듭떊???대떦?섎뒗 ?대씪?댁뼵???좏떥由ы떚
  */
 
 const WORKER_BASE_URLS = [
@@ -26,9 +26,9 @@ function getAuthHeaders() {
 }
 
 /**
- * Worker에 GET 요청을 보낸다. 여러 URL을 순차 시도한다.
- * @param {string} path  예: '/dashboard/summary'
- * @param {Record<string,string>} [params] 쿼리 파라미터
+ * Worker??GET ?붿껌??蹂대궦?? ?щ윭 URL???쒖감 ?쒕룄?쒕떎.
+ * @param {string} path  ?? '/dashboard/summary'
+ * @param {Record<string,string>} [params] 荑쇰━ ?뚮씪誘명꽣
  */
 export async function apiGet(path, params = {}) {
   const query = new URLSearchParams(params).toString();
@@ -42,8 +42,8 @@ export async function apiGet(path, params = {}) {
         headers: getAuthHeaders(),
       });
 
-      if (res.status === 401) throw new ApiError(401, '인증 실패');
-      if (res.status === 403) throw new ApiError(403, '권한 없음');
+      if (res.status === 401) throw new ApiError(401, '?몄쬆 ?ㅽ뙣');
+      if (res.status === 403) throw new ApiError(403, '沅뚰븳 ?놁쓬');
       if (!res.ok) {
         const text = await res.text();
         throw new ApiError(res.status, text);
@@ -56,11 +56,11 @@ export async function apiGet(path, params = {}) {
     }
   }
 
-  throw lastError || new Error('API 요청 실패');
+  throw lastError || new Error('API ?붿껌 ?ㅽ뙣');
 }
 
 /**
- * Worker에 POST 요청을 보낸다.
+ * Worker??POST ?붿껌??蹂대궦??
  * @param {string} path
  * @param {object} body
  */
@@ -75,8 +75,8 @@ export async function apiPost(path, body) {
         body: JSON.stringify(body),
       });
 
-      if (res.status === 401) throw new ApiError(401, '인증 실패');
-      if (res.status === 403) throw new ApiError(403, '권한 없음');
+      if (res.status === 401) throw new ApiError(401, '?몄쬆 ?ㅽ뙣');
+      if (res.status === 403) throw new ApiError(403, '沅뚰븳 ?놁쓬');
       if (!res.ok) {
         const text = await res.text();
         throw new ApiError(res.status, text);
@@ -90,7 +90,7 @@ export async function apiPost(path, body) {
     }
   }
 
-  throw lastError || new Error('API 요청 실패');
+  throw lastError || new Error('API ?붿껌 ?ㅽ뙣');
 }
 
 export class ApiError extends Error {
@@ -100,10 +100,10 @@ export class ApiError extends Error {
   }
 }
 
-// ── 대시보드 전용 API 함수 ─────────────────────────────────────
+// ?? ??쒕낫???꾩슜 API ?⑥닔 ?????????????????????????????????????
 
 /**
- * 인증 검증 (토큰 유효성 확인)
+ * ?몄쬆 寃利?(?좏겙 ?좏슚???뺤씤)
  * @param {string} token
  */
 export async function verifyToken(token) {
@@ -119,7 +119,7 @@ export async function verifyToken(token) {
 }
 
 /**
- * 요약 데이터 조회
+ * ?붿빟 ?곗씠??議고쉶
  * @param {{ chapter?: string, from?: string, to?: string, studentId?: string }} filters
  */
 export async function fetchSummary(filters = {}) {
@@ -127,35 +127,51 @@ export async function fetchSummary(filters = {}) {
 }
 
 /**
- * 학생 목록(제출 결과) 조회
+ * ?숈깮 紐⑸줉(?쒖텧 寃곌낵) 議고쉶
  */
 export async function fetchStudents(filters = {}) {
   return apiGet('/dashboard/students', cleanParams(filters));
 }
 
 /**
- * 개념별 취약도 조회
+ * 媛쒕뀗蹂?痍⑥빟??議고쉶
  */
 export async function fetchConcepts(filters = {}) {
   return apiGet('/dashboard/concepts', cleanParams(filters));
 }
 
 /**
- * 개입 우선순위 큐 조회
+ * 媛쒖엯 ?곗꽑?쒖쐞 ??議고쉶
  */
 export async function fetchInterventions(filters = {}) {
   return apiGet('/dashboard/interventions', cleanParams(filters));
 }
 
 /**
- * 수강생 명단 조회 (가입 정보 기반)
+ * ?섍컯??紐낅떒 議고쉶 (媛???뺣낫 湲곕컲)
  */
 export async function fetchRoster() {
   return apiGet('/dashboard/roster');
 }
 
 /**
- * 특정 학생의 전체 제출 이력 조회
+ * Add student account from instructor dashboard.
+ * @param {{ student_id: string, student_name: string, email?: string, password: string }} payload
+ */
+export async function addRosterMember(payload) {
+  return apiPost('/dashboard/members/add', payload);
+}
+
+/**
+ * Delete student account from instructor dashboard.
+ * @param {string} studentId
+ */
+export async function deleteRosterMember(studentId) {
+  return apiPost('/dashboard/members/delete', { student_id: studentId });
+}
+
+/**
+ * ?뱀젙 ?숈깮???꾩껜 ?쒖텧 ?대젰 議고쉶
  * @param {string} studentId
  */
 export async function fetchStudentHistory(studentId) {
@@ -169,3 +185,4 @@ function cleanParams(obj) {
   }
   return out;
 }
+
