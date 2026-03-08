@@ -46,11 +46,25 @@ body {
   gap: 12px;
   height: var(--header-h);
   padding: 0 16px;
+  /* iOS 노치/Dynamic Island safe area */
+  padding-left: max(16px, env(safe-area-inset-left));
+  padding-right: max(16px, env(safe-area-inset-right));
   background: var(--bg-secondary);
   border-bottom: 1px solid var(--border);
   position: fixed;
   top: 0; left: 0; right: 0;
   z-index: 300;
+}
+
+/* ─── 모바일 패널 백드롭 ─── */
+#panel-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 140;
+  cursor: pointer; /* iOS: click 이벤트 버블링 활성화 */
+  -webkit-tap-highlight-color: transparent;
 }
 
 #header-title {
@@ -248,7 +262,14 @@ body {
     text-overflow: ellipsis;
   }
   #content-inner {
-    padding: 16px 16px 60px;
+    /* iOS 홈 인디케이터(하단 바) safe area */
+    padding: 16px 16px max(60px, calc(40px + env(safe-area-inset-bottom)));
+  }
+
+  /* 모바일: iOS 모멘텀 스크롤 */
+  #content-area,
+  #toc-list {
+    -webkit-overflow-scrolling: touch;
   }
 
   /* 모바일: 토글 버튼 강조 */

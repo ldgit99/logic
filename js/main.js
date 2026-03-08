@@ -317,30 +317,52 @@ function setupToggleHandlers() {
   const appBody = document.getElementById('app-body');
   const sidebar = document.getElementById('sidebar');
   const chatbotPanel = document.getElementById('chatbot-panel');
+  const backdrop = document.getElementById('panel-backdrop');
+
+  function isMobile() { return window.innerWidth <= 768; }
+  function isTablet() { return window.innerWidth <= 1024; }
+
+  function showBackdrop() {
+    if (backdrop) backdrop.style.display = 'block';
+  }
+  function hideBackdrop() {
+    if (backdrop) backdrop.style.display = 'none';
+  }
+  function closeAllPanels() {
+    sidebar.classList.remove('open');
+    chatbotPanel.classList.remove('open');
+    hideBackdrop();
+  }
+
+  // backdrop 탭 → 패널 닫기 (iOS "click 없는 div" 문제 해결)
+  if (backdrop) {
+    backdrop.addEventListener('click', closeAllPanels);
+    backdrop.addEventListener('touchend', (e) => { e.preventDefault(); closeAllPanels(); });
+  }
 
   document.getElementById('sidebar-toggle').addEventListener('click', () => {
-    if (window.innerWidth <= 768) {
-      sidebar.classList.toggle('open');
+    if (isMobile()) {
+      const opening = !sidebar.classList.contains('open');
+      closeAllPanels();
+      if (opening) { sidebar.classList.add('open'); showBackdrop(); }
     } else {
       appBody.classList.toggle('sidebar-hidden');
     }
   });
 
   document.getElementById('chatbot-toggle').addEventListener('click', () => {
-    if (window.innerWidth <= 1024) {
-      chatbotPanel.classList.toggle('open');
+    if (isTablet()) {
+      const opening = !chatbotPanel.classList.contains('open');
+      closeAllPanels();
+      if (opening) { chatbotPanel.classList.add('open'); showBackdrop(); }
     } else {
       appBody.classList.toggle('chatbot-hidden');
     }
   });
 
+  // 데스크탑: 바깥 클릭 시 패널 닫기 (document click 방식 유지)
   document.addEventListener('click', e => {
-    if (window.innerWidth <= 768 && sidebar.classList.contains('open')) {
-      if (!sidebar.contains(e.target) && !e.target.closest('#sidebar-toggle')) {
-        sidebar.classList.remove('open');
-      }
-    }
-    if (window.innerWidth <= 1024 && chatbotPanel.classList.contains('open')) {
+    if (!isMobile() && window.innerWidth <= 1024 && chatbotPanel.classList.contains('open')) {
       if (!chatbotPanel.contains(e.target) && !e.target.closest('#chatbot-toggle')) {
         chatbotPanel.classList.remove('open');
       }
