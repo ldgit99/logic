@@ -8,10 +8,7 @@
   justify-content: center;
   z-index: 250;
   backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
   animation: overlay-in 0.15s ease forwards;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
 }
 
 .modal-overlay.hidden {
@@ -318,10 +315,12 @@
   .modal-overlay {
     align-items: flex-start;
     padding: 16px;
+    overflow-y: auto;
     animation: none;
+    opacity: 1;
   }
   .modal-box {
-    margin: auto;
+    margin: 0 auto;
     padding: 24px 20px;
     animation: none;
     opacity: 1;

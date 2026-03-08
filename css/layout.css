@@ -191,6 +191,14 @@ body {
   #app-body {
     grid-template-columns: 0 1fr 0 !important;
   }
+  /*
+   * 핵심 수정: position:fixed 된 sidebar/chatbot은 grid flow에서 제외되므로
+   * content-area가 자동으로 1열(width:0)에 배치된다.
+   * grid-column: 1 / -1 로 전체 열을 강제 점유.
+   */
+  #content-area {
+    grid-column: 1 / -1;
+  }
   #sidebar {
     position: fixed !important;
     left: 0;
@@ -200,7 +208,7 @@ body {
     width: 260px !important;
     transform: translateX(-100%);
     transition: transform var(--transition);
-    z-index: 90;
+    z-index: 150;
   }
   #sidebar.open {
     transform: translateX(0);
@@ -208,13 +216,6 @@ body {
   /* 모바일: 헤더 내 불필요한 요소 축소 */
   #chapter-indicator { display: none; }
   .auth-student-label { display: none; }
-
-  /* 모바일: 가상 키보드가 열릴 때 레이아웃 유지 */
-  body { overflow-y: hidden; }
-  #app-body {
-    /* content area min-height ensures visibility even with keyboard */
-    min-height: 200px;
-  }
   #content-inner {
     padding: 16px 16px 60px;
   }
