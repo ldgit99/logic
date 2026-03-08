@@ -1,5 +1,4 @@
-﻿import { showToast } from './main.js';
-import { sendEvent } from './instrumentation.js?v=20260308o';
+﻿import { sendEvent } from './instrumentation.js?v=20260308o';
 import { getStudentProfile } from './auth.js?v=20260308o';
 
 const LOCAL_ORIGIN_WITH_SLASH = window.location.origin.endsWith('/') ? window.location.origin : (window.location.origin + '/');
@@ -208,18 +207,21 @@ function pushLogMessage(role, content, mode = currentMode) {
   };
   logMessages.push(msg);
 
-  if (role === 'user' || role === 'assistant') {
+  if (role === 'user' || role === 'assistant' || role === 'system') {
+    const student = getStudentMeta();
+    if (!student.studentId) return;
     sendEvent('chat_message', {
       chapterId: msg.chapter_id,
       sessionId: msg.session_id,
-      studentId: getStudentMeta().studentId,
-      studentName: getStudentMeta().studentName,
+      studentId: student.studentId,
+      studentName: student.studentName,
       payload: {
         role,
         content,
         mode,
         timestamp: msg.timestamp,
         chapter_id: msg.chapter_id,
+        session_id: msg.session_id,
       },
     });
   }
@@ -636,11 +638,11 @@ async function fetchAndCacheLocks() {
   }
 }
 
-export function initChatbot(chapterData) {
+export async function initChatbot(chapterData) {
   chapterRef = chapterData;
   bindEventsOnce();
 
-  // ?좉툑 ?곹깭 ?뺤씤 (鍮꾨룞湲? 珥덇린??蹂묓뻾)
+  // lock state check
   fetchAndCacheLocks().then(() => {
     if (chapterLocks[chapterData.id]) {
       const container = getEl('chat-messages');
@@ -653,6 +655,13 @@ export function initChatbot(chapterData) {
     }
   });
 
+  try {
+    const restoredFromServer = await tryRestoreSessionFromServer(chapterData);
+    if (restoredFromServer) return;
+  } catch (e) {
+    console.error('server restore failed:', e);
+  }
+
   const restored = loadSessionForChapter(chapterData.id);
 
   if (restored) {
@@ -660,14 +669,16 @@ export function initChatbot(chapterData) {
     currentMode = restored.currentMode || ChatMode.LEARNING;
     assessmentComplete = Boolean(restored.assessmentComplete);
     logMessages = Array.isArray(restored.logMessages) ? restored.logMessages : [];
-    modelMessages = Array.isArray(restored.modelMessages) ? restored.modelMessages : [{ role: 'system', content: buildLearningPrompt(chapterData) }];
+    modelMessages = Array.isArray(restored.modelMessages)
+      ? restored.modelMessages
+      : rebuildModelMessagesFromLogs(chapterData, logMessages, currentMode);
 
     restoreUIFromLogs();
     updateBadge();
     setSubmitEnabled(assessmentComplete);
 
     appendBubble('system', '?댁쟾 ?몄뀡??蹂듭썝?섏뿀?듬땲?? ?댁뼱??吏꾪뻾?섏꽭??');
-    pushLogMessage('system', '?몄뀡 蹂듭썝', currentMode);
+    pushLogMessage('system', '?몄뀡 蹂듭썝(local)', currentMode);
     persistSession();
     return;
   }
@@ -680,9 +691,3 @@ export function initChatbot(chapterData) {
 
   createNewLearningSession();
 }
-
-
-
-
-
-
