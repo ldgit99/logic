@@ -179,9 +179,6 @@ async function handleConfirmSubmit() {
     return;
   }
 
-  const emailEl = getEl('input-email');
-  const studentEmail = (emailEl?.value || '').trim();
-
   const chapterData = getChapterRef();
   const messages = getConversationMessages();
   if (!chapterData || !Array.isArray(messages) || messages.length === 0) {
@@ -217,7 +214,6 @@ async function handleConfirmSubmit() {
       feed_back: feedback.feedBack,
       feed_forward: feedback.feedForward,
       messages: messages.filter((m) => m.role !== 'system'),
-      ...(studentEmail ? { student_email: studentEmail } : {}),
     });
     sendFeedbackReport({
       session_id: sessionId,
@@ -250,7 +246,7 @@ export function initExport() {
     submitBtn.addEventListener('click', () => {
       if (submitBtn.disabled) return;
       openModal();
-      getEl('input-email')?.focus();
+      getEl('modal-confirm')?.focus();
     });
   }
 
@@ -261,10 +257,8 @@ export function initExport() {
     if (e.key === 'Escape') closeModal();
 
     if (e.key === 'Enter' && !getEl('student-modal')?.classList.contains('hidden')) {
-      if (document.activeElement?.id === 'input-email') {
-        e.preventDefault();
-        handleConfirmSubmit();
-      }
+      e.preventDefault();
+      handleConfirmSubmit();
     }
   });
 }

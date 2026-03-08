@@ -34,9 +34,19 @@ export async function handleAssessments(request, env) {
   const idxKey = `assessmentidx:${ts}:${body.student_id}:${body.chapter_id}`;
   await env.SUBMISSIONS.put(idxKey, key, { expirationTtl: 15552000 });
 
-  // 이메일 발송 (학생 이메일과 API 키가 있는 경우에만, 실패해도 201 반환)
-  if (body.student_email && env.RESEND_API_KEY) {
-    sendFeedbackEmail(env, body).catch((e) => console.error('[email]', e));
+  // 이메일 발송: 가입 프로필에서 이메일 자동 조회 (실패해도 201 반환)
+  if (env.RESEND_API_KEY) {
+    (async () => {
+      try {
+        const userRaw = await env.SUBMISSIONS.get(`auth:user:${body.student_id}`);
+        const studentEmail = userRaw ? (JSON.parse(userRaw).email || '') : '';
+        if (studentEmail) {
+          await sendFeedbackEmail(env, { ...body, student_email: studentEmail });
+        }
+      } catch (e) {
+        console.error('[email]', e);
+      }
+    })();
   }
 
   return jsonResponse({ ok: true }, 201);
