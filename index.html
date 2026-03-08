@@ -13,6 +13,13 @@
   <link rel="stylesheet" href="css/chatbot.css" />
   <link rel="stylesheet" href="css/modal.css" />
 </head>
+<!-- 테마 초기화: FOUC 방지를 위해 body보다 먼저 실행 -->
+<script>
+  (function() {
+    const saved = localStorage.getItem('theme');
+    if (saved === 'light') document.documentElement.setAttribute('data-theme', 'light');
+  })();
+</script>
 <body>
 
   <!-- ─── 헤더 ─── -->
@@ -22,6 +29,10 @@
       <h1>경북대학교 정보컴퓨터교육과 디지털 논리회로</h1>
       <span id="chapter-indicator">제01장. 들어가기</span>
     </div>
+    <button id="theme-toggle" aria-label="테마 전환" title="라이트/다크 모드 전환" style="background:none;border:1px solid var(--border);color:var(--text-secondary);width:34px;height:34px;border-radius:var(--radius-sm);cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;transition:var(--transition);flex-shrink:0;">
+      <svg id="theme-icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="display:block"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      <svg id="theme-icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="display:none"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="12" y1="21" x2="12" y2="23" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="1" y1="12" x2="3" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="21" y1="12" x2="23" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
     <button id="chatbot-toggle" aria-label="챗봇 열기/닫기" title="AI 튜터">💬</button>
     <div id="auth-user" class="auth-user">
       <span id="auth-student-label" class="auth-student-label"></span>
@@ -207,6 +218,47 @@
 
   <!-- ─── 앱 진입점 (ES Module) ─── -->
   <script type="module" src="js/main.js?v=20260308o"></script>
+
+  <!-- ─── 테마 토글 로직 ─── -->
+  <script>
+    (function() {
+      const btn = document.getElementById('theme-toggle');
+      const moon = document.getElementById('theme-icon-moon');
+      const sun = document.getElementById('theme-icon-sun');
+      const html = document.documentElement;
+
+      function applyTheme(theme) {
+        if (theme === 'light') {
+          html.setAttribute('data-theme', 'light');
+          moon.style.display = 'none';
+          sun.style.display = 'block';
+        } else {
+          html.removeAttribute('data-theme');
+          moon.style.display = 'block';
+          sun.style.display = 'none';
+        }
+      }
+
+      // 초기 아이콘 동기화
+      applyTheme(localStorage.getItem('theme') || 'dark');
+
+      btn.addEventListener('click', function() {
+        const current = html.getAttribute('data-theme');
+        const next = current === 'light' ? 'dark' : 'light';
+        localStorage.setItem('theme', next);
+        applyTheme(next);
+      });
+
+      btn.addEventListener('mouseenter', function() {
+        btn.style.background = 'var(--bg-tertiary)';
+        btn.style.color = 'var(--text-primary)';
+      });
+      btn.addEventListener('mouseleave', function() {
+        btn.style.background = 'none';
+        btn.style.color = 'var(--text-secondary)';
+      });
+    })();
+  </script>
 
   <!-- ─── Service Worker 등록 + 업데이트 알림 ─── -->
   <script>

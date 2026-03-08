@@ -24,6 +24,31 @@
   --transition: 0.2s ease;
 }
 
+/* ─── 라이트 모드 변수 ─── */
+[data-theme="light"] {
+  --bg-primary:   #f6f8fa;
+  --bg-secondary: #ffffff;
+  --bg-tertiary:  #f0f2f5;
+  --bg-card:      #ffffff;
+  --border:       #d0d7de;
+  --border-light: #e8ecf0;
+  --text-primary:   #1f2328;
+  --text-secondary: #656d76;
+  --text-muted:     #848d97;
+  --accent-blue:  #0969da;
+  --accent-blue-hover: #0550ae;
+  --accent-green: #1a7f37;
+  --accent-yellow:#9a6700;
+  --accent-red:   #d1242f;
+  --accent-purple:#8250df;
+  --shadow:     0 4px 16px rgba(0,0,0,0.12);
+}
+
+/* ─── 테마 전환 애니메이션 ─── */
+body, #app-header, #sidebar, #content-area, #chatbot-panel {
+  transition: background var(--transition), color var(--transition), border-color var(--transition);
+}
+
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 html { font-size: 15px; scroll-behavior: smooth; }
