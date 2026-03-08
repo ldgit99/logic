@@ -1,8 +1,8 @@
 import { showToast } from './main.js';
-import { sendEvent } from './instrumentation.js?v=20260308a';
-import { getStudentProfile } from './auth.js?v=20260308a';
+import { sendEvent } from './instrumentation.js?v=20260308o';
+import { getStudentProfile } from './auth.js?v=20260308o';
 
-  ...(window.location.origin.includes('localhost') || window.location.origin.includes('127.0.0.1') ? [LOCAL_ORIGIN_WITH_SLASH] : []),
+const LOCAL_ORIGIN_WITH_SLASH = window.location.origin.endsWith('/') ? window.location.origin : (window.location.origin + '/');
 
 const WORKER_URLS = [
   'https://logic-proxy.dongkuklee99.workers.dev/',
