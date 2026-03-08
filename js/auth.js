@@ -13,18 +13,29 @@ function sanitize(value) {
   return String(value || '').trim();
 }
 
+function getActivePanel() {
+  return getEl('panel-signup')?.classList.contains('hidden') ? 'login' : 'signup';
+}
+
 function setError(message) {
-  const el = getEl('login-error');
+  const panel = getActivePanel();
+  const el = getEl(panel === 'signup' ? 'signup-error' : 'login-error');
   if (!el) return;
   el.textContent = message || '';
   el.classList.toggle('hidden', !message);
 }
 
+function clearErrors() {
+  ['login-error', 'signup-error'].forEach((id) => {
+    const el = getEl(id);
+    if (el) { el.textContent = ''; el.classList.add('hidden'); }
+  });
+}
+
 function setBusy(isBusy) {
-  const loginBtn = getEl('login-submit');
-  const signupBtn = getEl('signup-submit');
-  if (loginBtn) loginBtn.disabled = isBusy;
-  if (signupBtn) signupBtn.disabled = isBusy;
+  const panel = getActivePanel();
+  const btn = getEl(panel === 'signup' ? 'signup-submit' : 'login-submit');
+  if (btn) btn.disabled = isBusy;
 }
 
 function loadAuthRaw() {
@@ -180,12 +191,19 @@ async function logout(token) {
   }
 }
 
-function getInputValues() {
+function getLoginValues() {
+  return {
+    studentId: sanitize(getEl('login-student-id')?.value),
+    password: String(getEl('login-password')?.value || ''),
+  };
+}
+
+function getSignupValues() {
   return {
     studentName: sanitize(getEl('login-name')?.value),
-    studentId: sanitize(getEl('login-student-id')?.value),
+    studentId: sanitize(getEl('signup-student-id')?.value),
     email: sanitize(getEl('login-email')?.value),
-    password: String(getEl('login-password')?.value || ''),
+    password: String(getEl('signup-password')?.value || ''),
     passwordConfirm: String(getEl('login-password-confirm')?.value || ''),
   };
 }
@@ -331,17 +349,31 @@ export async function initAuthGate() {
   }
 
   showLoginGate();
-  setError('');
+  clearErrors();
 
-  const nameInput = getEl('login-name');
-  const idInput = getEl('login-student-id');
-  const emailInput = getEl('login-email');
-  const pwInput = getEl('login-password');
-  const pwConfirmInput = getEl('login-password-confirm');
-  const loginBtn = getEl('login-submit');
-  const signupBtn = getEl('signup-submit');
+  // 탭 전환 함수
+  function switchToPanel(panel) {
+    const isLogin = panel === 'login';
+    getEl('panel-login')?.classList.toggle('hidden', !isLogin);
+    getEl('panel-signup')?.classList.toggle('hidden', isLogin);
+    getEl('tab-login')?.classList.toggle('active', isLogin);
+    getEl('tab-signup')?.classList.toggle('active', !isLogin);
+    getEl('tab-login')?.setAttribute('aria-selected', String(isLogin));
+    getEl('tab-signup')?.setAttribute('aria-selected', String(!isLogin));
+    clearErrors();
+    if (isLogin) {
+      getEl('login-student-id')?.focus();
+    } else {
+      getEl('login-name')?.focus();
+    }
+  }
 
-  if (idInput) idInput.focus();
+  getEl('tab-login')?.addEventListener('click', () => switchToPanel('login'));
+  getEl('tab-signup')?.addEventListener('click', () => switchToPanel('signup'));
+  getEl('goto-signup')?.addEventListener('click', () => switchToPanel('signup'));
+  getEl('goto-login')?.addEventListener('click', () => switchToPanel('login'));
+
+  getEl('login-student-id')?.focus();
 
   return await new Promise((resolve) => {
     const completeAuth = (profile) => {
@@ -354,12 +386,9 @@ export async function initAuthGate() {
     };
 
     const onLogin = async () => {
-      const values = getInputValues();
+      const values = getLoginValues();
       const invalid = validateForLogin(values);
-      if (invalid) {
-        setError(invalid);
-        return;
-      }
+      if (invalid) { setError(invalid); return; }
 
       setBusy(true);
       setError('');
@@ -374,12 +403,9 @@ export async function initAuthGate() {
     };
 
     const onSignup = async () => {
-      const values = getInputValues();
+      const values = getSignupValues();
       const invalid = validateForSignup(values);
-      if (invalid) {
-        setError(invalid);
-        return;
-      }
+      if (invalid) { setError(invalid); return; }
 
       setBusy(true);
       setError('');
@@ -389,9 +415,8 @@ export async function initAuthGate() {
       } catch (err) {
         const msg = String(err?.message || '회원가입에 실패했습니다.');
         if (msg.includes('Internal Server Error') || msg.includes('인증 서버')) {
-          // 서버 인증 장애 시 학습이 막히지 않도록 로컬 임시 계정으로 진행
           completeAuth({
-            token: "local:" + Date.now(),
+            token: 'local:' + Date.now(),
             studentId: values.studentId,
             studentName: values.studentName,
           });
@@ -403,19 +428,19 @@ export async function initAuthGate() {
       }
     };
 
-    loginBtn?.addEventListener('click', onLogin);
-    signupBtn?.addEventListener('click', onSignup);
+    getEl('login-submit')?.addEventListener('click', onLogin);
+    getEl('signup-submit')?.addEventListener('click', onSignup);
 
-    const onKeyDown = (e) => {
-      if (e.key !== 'Enter') return;
-      e.preventDefault();
-      onLogin();
-    };
+    const onLoginKey = (e) => { if (e.key === 'Enter') { e.preventDefault(); onLogin(); } };
+    const onSignupKey = (e) => { if (e.key === 'Enter') { e.preventDefault(); onSignup(); } };
 
-    idInput?.addEventListener('keydown', onKeyDown);
-    pwInput?.addEventListener('keydown', onKeyDown);
-    pwConfirmInput?.addEventListener('keydown', onKeyDown);
-    nameInput?.addEventListener('keydown', onKeyDown);
-    emailInput?.addEventListener('keydown', onKeyDown);
+    getEl('login-student-id')?.addEventListener('keydown', onLoginKey);
+    getEl('login-password')?.addEventListener('keydown', onLoginKey);
+
+    getEl('login-name')?.addEventListener('keydown', onSignupKey);
+    getEl('signup-student-id')?.addEventListener('keydown', onSignupKey);
+    getEl('login-email')?.addEventListener('keydown', onSignupKey);
+    getEl('signup-password')?.addEventListener('keydown', onSignupKey);
+    getEl('login-password-confirm')?.addEventListener('keydown', onSignupKey);
   });
 }
