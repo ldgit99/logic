@@ -219,7 +219,7 @@
   text-overflow: ellipsis;
 }
 
-.auth-logout {
+.auth-logout, .auth-change-pw {
   background: transparent;
   color: var(--text-secondary);
   border: 1px solid var(--border);
@@ -229,7 +229,7 @@
   cursor: pointer;
 }
 
-.auth-logout:hover {
+.auth-logout:hover, .auth-change-pw:hover {
   color: var(--text-primary);
   border-color: var(--accent-blue);
 }

@@ -93,6 +93,22 @@ body {
 }
 .nav-tab:hover { color: var(--color-text); }
 .nav-tab.active { color: var(--color-primary); border-bottom-color: var(--color-primary); font-weight: 600; }
+.nav-tab { position: relative; }
+.new-badge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  font-size: 11px;
+  font-weight: 700;
+  background: var(--color-danger);
+  color: #fff;
+  border-radius: 10px;
+  animation: badge-pulse 1.5s ease infinite;
+}
+@keyframes badge-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
 
 /* ── 필터 바 ───────────────────────────────────────────────── */
 .dash-filters {
@@ -132,7 +148,12 @@ body {
 .card-value { font-size: 22px; font-weight: 700; }
 .card-value--risk { color: var(--color-danger); }
 .card-value--concept { font-size: 14px; color: var(--color-primary); font-weight: 600; }
-.chapter-breakdown { list-style: none; font-size: 13px; line-height: 1.7; }
+.chapter-breakdown { list-style: none; font-size: 12px; }
+.chapter-row { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+.chapter-row-label { width: 36px; flex-shrink: 0; font-weight: 600; }
+.chapter-row-bar-wrap { flex: 1; height: 6px; background: #e5e7eb; border-radius: 3px; overflow: hidden; }
+.chapter-row-bar { height: 100%; border-radius: 3px; transition: width 0.4s ease; }
+.chapter-row-stats { width: 80px; flex-shrink: 0; text-align: right; color: var(--color-muted); font-size: 11px; }
 
 /* ── 테이블 ───────────────────────────────────────────────── */
 .summary-table-wrap { overflow-x: auto; }
@@ -308,6 +329,38 @@ body {
 }
 .modal-score-wrap { display: flex; flex-direction: column; gap: 2px; }
 .modal-score-bar { max-width: 120px; }
+
+.history-panel {
+  background: var(--color-bg);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  min-height: 30px;
+}
+.history-loading { font-size: 12px; color: var(--color-muted); }
+.history-header { font-size: 12px; font-weight: 700; margin-bottom: 6px; }
+.sparkline-svg { display: block; margin-bottom: 6px; }
+.history-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.hist-item { font-size: 11px; padding: 2px 6px; background: #fff; border: 1px solid var(--color-border); border-radius: 4px; }
+
+.email-compose {
+  margin-top: 16px;
+  border-top: 1px solid var(--color-border);
+  padding-top: 14px;
+}
+.email-compose h3 { font-size: 13px; font-weight: 700; margin-bottom: 8px; }
+.email-compose .dash-input {
+  width: 100%; padding: 8px 10px;
+  border: 1px solid var(--color-border); border-radius: var(--radius);
+  font-size: 13px; font-family: inherit; margin-bottom: 6px;
+  background: var(--color-surface); color: var(--color-text);
+}
+.email-compose-footer {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+}
+.email-status { font-size: 12px; }
+.email-status.ok { color: var(--color-ok); }
+.email-status.error { color: var(--color-danger); }
 
 /* ── 학생 개별 보고서 뷰 ─────────────────────────────── */
 .sr-layout {
@@ -599,3 +652,23 @@ body {
 .roster-table .no-email { color: var(--color-text-muted); font-size: 12px; }
 .roster-table .roster-date { font-size: 12px; color: var(--color-text-muted); white-space: nowrap; }
 .roster-table .roster-num { color: var(--color-text-muted); font-size: 12px; }
+
+/* ── 챕터 잠금 패널 ──────────────────────────────────────────── */
+.lock-panel {
+  margin-top: 28px; padding: 16px;
+  background: var(--color-surface); border-radius: var(--radius);
+  border: 1px solid var(--color-border);
+}
+.lock-panel-title { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+.lock-panel-desc { font-size: 12px; color: var(--color-muted); margin-bottom: 12px; }
+.lock-loading { font-size: 12px; color: var(--color-muted); }
+.lock-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+.lock-item { display: flex; align-items: center; gap: 6px; }
+.lock-ch-label { font-size: 12px; font-weight: 600; width: 32px; }
+.lock-toggle-btn {
+  padding: 4px 12px; font-size: 12px; border-radius: 20px; border: none;
+  cursor: pointer; font-weight: 600; transition: background 0.15s;
+}
+.lock-toggle-btn.open { background: #d1fae5; color: #065f46; }
+.lock-toggle-btn.locked { background: #fee2e2; color: #991b1b; }
+.lock-toggle-btn:disabled { opacity: 0.5; cursor: default; }

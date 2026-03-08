@@ -154,6 +154,14 @@ export async function fetchRoster() {
   return apiGet('/dashboard/roster');
 }
 
+/**
+ * 특정 학생의 전체 제출 이력 조회
+ * @param {string} studentId
+ */
+export async function fetchStudentHistory(studentId) {
+  return apiGet('/dashboard/students', cleanParams({ studentId }));
+}
+
 function cleanParams(obj) {
   const out = {};
   for (const [k, v] of Object.entries(obj)) {

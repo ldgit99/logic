@@ -218,12 +218,96 @@ function bindLogoutOnce() {
   });
 }
 
+function showToastMsg(message, type = 'success') {
+  let container = document.getElementById('toast-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'toast-container';
+    document.body.appendChild(container);
+  }
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  toast.textContent = message;
+  container.appendChild(toast);
+  setTimeout(() => toast.remove(), 4000);
+}
+
+function bindChangePwOnce() {
+  const openBtn = getEl('auth-change-pw');
+  if (!openBtn || openBtn.dataset.bound === 'true') return;
+  openBtn.dataset.bound = 'true';
+
+  const modal = getEl('change-pw-modal');
+  const cancelBtn = getEl('change-pw-cancel');
+  const submitBtn = getEl('change-pw-submit');
+  const errorEl = getEl('change-pw-error');
+
+  function openModal() {
+    getEl('change-pw-current').value = '';
+    getEl('change-pw-new').value = '';
+    getEl('change-pw-confirm').value = '';
+    if (errorEl) { errorEl.textContent = ''; errorEl.classList.add('hidden'); }
+    modal?.classList.remove('hidden');
+    getEl('change-pw-current')?.focus();
+  }
+  function closeModal() {
+    modal?.classList.add('hidden');
+  }
+
+  openBtn.addEventListener('click', openModal);
+  cancelBtn?.addEventListener('click', closeModal);
+  modal?.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+
+  const doSubmit = async () => {
+    const current = String(getEl('change-pw-current')?.value || '');
+    const newPw = String(getEl('change-pw-new')?.value || '');
+    const confirm = String(getEl('change-pw-confirm')?.value || '');
+
+    if (!current || !newPw || !confirm) {
+      if (errorEl) { errorEl.textContent = '모든 항목을 입력하세요.'; errorEl.classList.remove('hidden'); }
+      return;
+    }
+    if (newPw.length < 8) {
+      if (errorEl) { errorEl.textContent = '새 비밀번호는 8자 이상이어야 합니다.'; errorEl.classList.remove('hidden'); }
+      return;
+    }
+    if (newPw !== confirm) {
+      if (errorEl) { errorEl.textContent = '새 비밀번호가 일치하지 않습니다.'; errorEl.classList.remove('hidden'); }
+      return;
+    }
+
+    if (submitBtn) submitBtn.disabled = true;
+    try {
+      const profile = getStudentProfile();
+      if (!profile?.token) throw new Error('로그인 상태가 아닙니다.');
+      await apiRequest('/auth/change-password', 'POST', {
+        current_password: current,
+        new_password: newPw,
+      }, profile.token);
+      closeModal();
+      showToastMsg('비밀번호가 변경되었습니다.');
+    } catch (err) {
+      const msg = String(err?.message || '비밀번호 변경에 실패했습니다.');
+      const displayMsg = msg.includes('current password is incorrect') ? '현재 비밀번호가 올바르지 않습니다.' : msg;
+      if (errorEl) { errorEl.textContent = displayMsg; errorEl.classList.remove('hidden'); }
+    } finally {
+      if (submitBtn) submitBtn.disabled = false;
+    }
+  };
+
+  submitBtn?.addEventListener('click', doSubmit);
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !modal?.classList.contains('hidden')) closeModal();
+  });
+}
+
 export function getStudentProfile() {
   return normalizeProfile(loadAuthRaw());
 }
 
 export async function initAuthGate() {
   bindLogoutOnce();
+  bindChangePwOnce();
 
   const existing = getStudentProfile();
   if (existing?.token?.startsWith('local:')) {

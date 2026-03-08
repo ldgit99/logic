@@ -3,6 +3,10 @@
  * 수강생 명단 뷰 — 회원가입 기반 전체 학생 목록 (이메일, 가입일 포함)
  */
 
+import { apiGet, apiPost } from '../apiClient.js';
+
+const CHAPTERS = ['01','02','03','04','05','06','07','08','09','10','11'];
+
 export function renderRoster(data, container) {
   const roster = data.roster || [];
 
@@ -97,6 +101,53 @@ export function renderRoster(data, container) {
     a.download = `수강생명단_${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
+  });
+
+  // 챕터 잠금/오픈 패널
+  const lockPanel = document.createElement('div');
+  lockPanel.className = 'lock-panel';
+  lockPanel.innerHTML = `
+    <h2 class="lock-panel-title">챕터 접근 제어</h2>
+    <p class="lock-panel-desc">잠긴 챕터는 학생 앱에서 AI 튜터 사용이 차단됩니다.</p>
+    <div class="lock-grid" id="lock-grid"><div class="lock-loading">불러오는 중...</div></div>
+  `;
+  container.appendChild(lockPanel);
+
+  apiGet('/dashboard/locks').then((data) => {
+    const locks = data?.locks || {};
+    const grid = document.getElementById('lock-grid');
+    if (!grid) return;
+    grid.innerHTML = CHAPTERS.map((ch) => {
+      const locked = !!locks[ch];
+      return `<div class="lock-item" data-ch="${ch}">
+        <span class="lock-ch-label">Ch.${ch}</span>
+        <button class="lock-toggle-btn ${locked ? 'locked' : 'open'}" data-ch="${ch}" data-locked="${locked}">
+          ${locked ? '잠김' : '열림'}
+        </button>
+      </div>`;
+    }).join('');
+
+    grid.querySelectorAll('.lock-toggle-btn').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const ch = btn.dataset.ch;
+        const isLocked = btn.dataset.locked === 'true';
+        btn.disabled = true;
+        try {
+          const res = await apiPost('/dashboard/locks', { chapter_id: ch, locked: !isLocked });
+          const newLocked = !!(res?.locks?.[ch]);
+          btn.dataset.locked = String(newLocked);
+          btn.textContent = newLocked ? '잠김' : '열림';
+          btn.className = `lock-toggle-btn ${newLocked ? 'locked' : 'open'}`;
+        } catch (e) {
+          console.error('[lock]', e);
+        } finally {
+          btn.disabled = false;
+        }
+      });
+    });
+  }).catch(() => {
+    const grid = document.getElementById('lock-grid');
+    if (grid) grid.innerHTML = '<span class="empty-msg">불러오기 실패</span>';
   });
 }
 

@@ -4,11 +4,12 @@
  */
 
 import { escapeHtml, formatDate } from '../utils/format.js';
+import { apiPost, fetchStudentHistory } from '../apiClient.js';
 
 /**
  * @param {object} submission  제출 데이터 (messages[], feedBack, feedForward, weakConcepts 포함)
  */
-export function openStudentModal(submission) {
+export async function openStudentModal(submission) {
   const modal = document.getElementById('student-modal');
   const title = document.getElementById('modal-student-title');
   const body = document.getElementById('modal-body');
@@ -40,6 +41,9 @@ export function openStudentModal(submission) {
   body.innerHTML = `
     <div class="modal-split">
       <div class="modal-split-left">
+        <div id="student-history-panel" class="history-panel">
+          <div class="history-loading">이력 불러오는 중...</div>
+        </div>
         <div class="modal-meta">
           <table class="meta-table">
             <tr><th>학번</th><td>${escapeHtml(id)}</td></tr>
@@ -79,12 +83,88 @@ export function openStudentModal(submission) {
       <div class="modal-split-right">
         <h3 class="chat-log-title">대화 로그 <span class="chat-count">${messages.length}개</span></h3>
         <div class="chat-log">${chatHtml}</div>
+
+        <div class="email-compose">
+          <h3>교수 메시지 발송</h3>
+          <input type="text" class="email-subject dash-input" placeholder="제목" />
+          <textarea class="email-message dash-input" rows="4" placeholder="학생에게 보낼 메시지를 입력하세요."></textarea>
+          <div class="email-compose-footer">
+            <span class="email-status"></span>
+            <button class="btn-primary send-email-btn">발송</button>
+          </div>
+        </div>
       </div>
     </div>
   `;
 
   modal.classList.remove('hidden');
   modal.querySelector('.modal-box').scrollTop = 0;
+
+  // 학생 이력 비동기 로드
+  const historyPanel = body.querySelector('#student-history-panel');
+  if (historyPanel) {
+    fetchStudentHistory(submission.student_id || submission.studentId || '')
+      .then((data) => {
+        const subs = (data?.submissions || []).sort((a, b) =>
+          (a.submitted_at || '').localeCompare(b.submitted_at || ''));
+        if (subs.length === 0) { historyPanel.innerHTML = ''; return; }
+        const sparkline = buildSparkline(subs.map((s) => s.score ?? 0));
+        const rows = subs.map((s) => {
+          const sc = s.score ?? '-';
+          const cls = s.score >= 80 ? 'score-good' : s.score >= 60 ? 'score-warn' : 'score-bad';
+          return `<span class="hist-item">Ch.${s.chapter_id} <strong class="${cls}">${sc}점</strong></span>`;
+        }).join('');
+        historyPanel.innerHTML = `
+          <div class="history-header">점수 추이 (${subs.length}회 제출)</div>
+          ${sparkline}
+          <div class="history-chips">${rows}</div>
+        `;
+      })
+      .catch(() => { historyPanel.innerHTML = ''; });
+  }
+
+  // 교수 메시지 발송 버튼 이벤트
+  const sendBtn = body.querySelector('.send-email-btn');
+  if (sendBtn) {
+    sendBtn.addEventListener('click', async () => {
+      const subjectEl = body.querySelector('.email-subject');
+      const msgEl = body.querySelector('.email-message');
+      const statusEl = body.querySelector('.email-status');
+      const subject = String(subjectEl?.value || '').trim();
+      const message = String(msgEl?.value || '').trim();
+      if (!subject || !message) { if (statusEl) { statusEl.textContent = '제목과 내용을 입력하세요.'; statusEl.className = 'email-status error'; } return; }
+      sendBtn.disabled = true;
+      if (statusEl) { statusEl.textContent = '발송 중...'; statusEl.className = 'email-status'; }
+      try {
+        const studentId = submission.student_id || submission.studentId || '';
+        await apiPost('/dashboard/send-email', { student_id: studentId, subject, message });
+        if (statusEl) { statusEl.textContent = '발송 완료!'; statusEl.className = 'email-status ok'; }
+        if (subjectEl) subjectEl.value = '';
+        if (msgEl) msgEl.value = '';
+      } catch (err) {
+        if (statusEl) { statusEl.textContent = `발송 실패: ${err?.message || '오류'}`; statusEl.className = 'email-status error'; }
+      } finally {
+        sendBtn.disabled = false;
+      }
+    });
+  }
+}
+
+function buildSparkline(scores) {
+  if (scores.length < 2) return '';
+  const W = 200, H = 40, pad = 4;
+  const minV = Math.min(...scores, 0);
+  const maxV = Math.max(...scores, 100);
+  const range = maxV - minV || 1;
+  const xs = scores.map((_, i) => pad + (i / (scores.length - 1)) * (W - pad * 2));
+  const ys = scores.map((v) => H - pad - ((v - minV) / range) * (H - pad * 2));
+  const pts = xs.map((x, i) => `${x.toFixed(1)},${ys[i].toFixed(1)}`).join(' ');
+  const last = scores[scores.length - 1];
+  const color = last >= 80 ? '#10b981' : last >= 60 ? '#f59e0b' : '#ef4444';
+  return `<svg width="${W}" height="${H}" class="sparkline-svg" viewBox="0 0 ${W} ${H}">
+    <polyline points="${pts}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round"/>
+    <circle cx="${xs[xs.length-1].toFixed(1)}" cy="${ys[ys.length-1].toFixed(1)}" r="3" fill="${color}"/>
+  </svg>`;
 }
 
 function renderMessage(m) {

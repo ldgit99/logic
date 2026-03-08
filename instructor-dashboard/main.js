@@ -30,6 +30,8 @@ import { exportCSV } from './utils/csv.js';
 let currentView = 'summary';
 let currentFilters = {};
 let allSubmissions = [];
+let pollingTimer = null;
+let lastKnownCount = null;
 
 // ── 초기화 ────────────────────────────────────────────────────────
 
@@ -86,6 +88,44 @@ async function showDashboard(token) {
   document.getElementById('auth-screen').classList.add('hidden');
   document.getElementById('dashboard-screen').classList.remove('hidden');
   await loadView(currentView);
+  startPolling();
+}
+
+// ── 신규 제출 폴링 (30초) ─────────────────────────────────────────
+
+function startPolling() {
+  if (pollingTimer) clearInterval(pollingTimer);
+  pollingTimer = setInterval(async () => {
+    try {
+      const data = await fetchSummary({});
+      const count = data?.totalSubmissions ?? 0;
+      if (lastKnownCount !== null && count > lastKnownCount) {
+        const diff = count - lastKnownCount;
+        showNewSubmissionBadge(diff);
+      }
+      lastKnownCount = count;
+    } catch {
+      // 폴링 실패는 무시
+    }
+  }, 30000);
+}
+
+function showNewSubmissionBadge(count) {
+  const summaryTab = document.querySelector('.nav-tab[data-view="summary"]');
+  if (!summaryTab) return;
+  let badge = summaryTab.querySelector('.new-badge');
+  if (!badge) {
+    badge = document.createElement('span');
+    badge.className = 'new-badge';
+    summaryTab.appendChild(badge);
+  }
+  const existing = parseInt(badge.dataset.count || '0', 10);
+  badge.dataset.count = String(existing + count);
+  badge.textContent = `+${badge.dataset.count}`;
+}
+
+function clearNewBadge() {
+  document.querySelector('.nav-tab[data-view="summary"] .new-badge')?.remove();
 }
 
 // ── 네비게이션 탭 ─────────────────────────────────────────────────
@@ -96,6 +136,7 @@ function bindNavTabs() {
       document.querySelectorAll('.nav-tab').forEach((t) => t.classList.remove('active'));
       tab.classList.add('active');
       currentView = tab.dataset.view;
+      if (currentView === 'summary') clearNewBadge();
       loadView(currentView);
     });
   });
@@ -172,6 +213,8 @@ async function loadView(view) {
           fetchStudents(currentFilters),
         ]);
         allSubmissions = students.submissions || [];
+        lastKnownCount = summary?.total_submissions ?? allSubmissions.length;
+        clearNewBadge();
         renderSummaryCards(summary, document.getElementById('summary-cards'));
         renderSummaryTable(allSubmissions, document.getElementById('summary-table-body'), {
           onRowClick: (submission) => openStudentModal(submission),

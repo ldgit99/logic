@@ -536,9 +536,40 @@ export function getSessionId() {
   return sessionId;
 }
 
+let chapterLocks = {};
+let locksFetched = false;
+
+async function fetchAndCacheLocks() {
+  if (locksFetched) return;
+  for (const base of WORKER_URLS) {
+    try {
+      const res = await fetch(`${base}locks`, { cache: 'no-store' });
+      if (res.ok) {
+        const data = await res.json();
+        chapterLocks = data?.locks || {};
+        locksFetched = true;
+        return;
+      }
+    } catch { /* ignore */ }
+  }
+}
+
 export function initChatbot(chapterData) {
   chapterRef = chapterData;
   bindEventsOnce();
+
+  // 잠금 상태 확인 (비동기, 초기화 병행)
+  fetchAndCacheLocks().then(() => {
+    if (chapterLocks[chapterData.id]) {
+      const container = getEl('chat-messages');
+      if (container) container.innerHTML = '';
+      appendBubble('system', '이 챕터는 현재 교수자에 의해 잠겨 있습니다. 접근이 제한됩니다.');
+      const input = getEl('chat-input');
+      const sendBtn = getEl('chat-send');
+      if (input) input.disabled = true;
+      if (sendBtn) sendBtn.disabled = true;
+    }
+  });
 
   const restored = loadSessionForChapter(chapterData.id);
 

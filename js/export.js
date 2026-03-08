@@ -1,4 +1,4 @@
-import { showToast } from './main.js';
+import { showToast, markChapterSubmitted } from './main.js';
 import { generateFeedback } from './feedback.js';
 import { getConversationMessages, getChapterRef, getSessionId } from './chatbot.js?v=20260308o';
 import { getStudentProfile } from './auth.js?v=20260308o';
@@ -225,6 +225,7 @@ async function handleConfirmSubmit() {
       feed_forward: feedback.feedForward,
     });
 
+    markChapterSubmitted(chapterData.id);
     showToast('PDF \uC0DD\uC131\uC774 \uC644\uB8CC\uB418\uC5C8\uC2B5\uB2C8\uB2E4.', 'success');
   } catch (err) {
     console.error('PDF export error:', err);

@@ -75,12 +75,20 @@ export default {
       if (pathname.startsWith('/auth/')) {
         response = await handleStudentAuth(request, env, pathname);
 
-      // ── GET /dashboard/* ─────────────────────────────────────────
-      } else if (request.method === 'GET' && pathname.startsWith('/dashboard/')) {
+      // ── GET|POST /dashboard/* ────────────────────────────────────
+      } else if ((request.method === 'GET' || request.method === 'POST') && pathname.startsWith('/dashboard/')) {
         const authError = authenticate(request, env, pathname);
         if (authError) return withCors(authError, origin);
 
         response = await handleDashboard(request, env, pathname);
+
+      // ── GET /locks (학생 앱용, 인증 없음) ────────────────────────
+      } else if (request.method === 'GET' && pathname === '/locks') {
+        const raw = await env.SUBMISSIONS.get('config:chapter_locks').catch(() => null);
+        const locks = raw ? JSON.parse(raw) : {};
+        response = new Response(JSON.stringify({ locks }), {
+          headers: { 'Content-Type': 'application/json' },
+        });
 
       // ── POST /events ─────────────────────────────────────────────
       } else if (request.method === 'POST' && pathname === '/events') {

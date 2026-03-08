@@ -37,15 +37,21 @@ export function calcSummary(submissions) {
   }
   const topWeakConcept = Object.entries(conceptCount).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
 
-  // 챕터별 완료 수
+  // 챕터별 완료 수 + 평균 점수
   const chapterMap = {};
   for (const s of submissions) {
     const ch = s.chapter_id || '?';
-    chapterMap[ch] = (chapterMap[ch] || 0) + 1;
+    if (!chapterMap[ch]) chapterMap[ch] = { count: 0, scoreSum: 0 };
+    chapterMap[ch].count += 1;
+    chapterMap[ch].scoreSum += s.score ?? 0;
   }
   const chapterBreakdown = Object.entries(chapterMap)
     .sort(([a], [b]) => a.localeCompare(b))
-    .map(([chapterId, count]) => ({ chapterId, count }));
+    .map(([chapterId, { count, scoreSum }]) => ({
+      chapterId,
+      count,
+      avgScore: Math.round((scoreSum / count) * 10) / 10,
+    }));
 
   return { totalSubmissions: n, avgScore, riskStudentCount, topWeakConcept, chapterBreakdown };
 }

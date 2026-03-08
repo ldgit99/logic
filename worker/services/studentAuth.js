@@ -144,3 +144,16 @@ export async function revokeSession(env, token) {
   const tokenHash = await sha256Hex(token);
   await env.SUBMISSIONS.delete(sessionKey(tokenHash));
 }
+
+export async function changePassword(env, { studentId, currentPassword, newPassword }) {
+  const user = await getUserByStudentId(env, studentId);
+  if (!user) return { error: 'USER_NOT_FOUND' };
+  const computed = await hashPassword(currentPassword, user.salt);
+  if (computed !== user.password_hash) return { error: 'WRONG_PASSWORD' };
+
+  const salt = toBase64(randomBytes(16));
+  const passwordHash = await hashPassword(newPassword, salt);
+  const updated = { ...user, salt, password_hash: passwordHash };
+  await env.SUBMISSIONS.put(userKey(studentId), JSON.stringify(updated));
+  return { ok: true };
+}

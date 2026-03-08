@@ -19,7 +19,18 @@ export function renderSummaryCards(summary, container) {
   const chapterBreakdown = summary.chapterBreakdown ?? [];
 
   const chapterHtml = chapterBreakdown
-    .map((c) => `<li>Ch.${c.chapterId}: ${c.count}명</li>`)
+    .map((c) => {
+      const barColor = c.avgScore >= 80 ? '#10b981' : c.avgScore >= 60 ? '#f59e0b' : '#ef4444';
+      const barWidth = c.avgScore != null ? Math.min(c.avgScore, 100) : 0;
+      return `
+        <li class="chapter-row">
+          <span class="chapter-row-label">Ch.${c.chapterId}</span>
+          <div class="chapter-row-bar-wrap">
+            <div class="chapter-row-bar" style="width:${barWidth}%;background:${barColor};"></div>
+          </div>
+          <span class="chapter-row-stats">${c.count}명 / ${c.avgScore != null ? c.avgScore + '점' : '-'}</span>
+        </li>`;
+    })
     .join('');
 
   container.innerHTML = `
@@ -32,7 +43,7 @@ export function renderSummaryCards(summary, container) {
       <div class="card-value">${avgScore}점</div>
     </div>
     <div class="summary-card summary-card--chapter">
-      <div class="card-label">챕터별 완료</div>
+      <div class="card-label">챕터별 평균 점수</div>
       <ul class="chapter-breakdown">${chapterHtml || '<li>-</li>'}</ul>
     </div>
     <div class="summary-card summary-card--risk">

@@ -21,6 +21,43 @@ const CHAPTER_MODULES = {
 let currentChapterId = null;
 let scrollObserver = null;
 
+// ─── 제출 완료 상태 ───
+const SUBMITTED_KEY_PREFIX = 'logic_submitted_';
+
+export function markChapterSubmitted(chapterId) {
+  localStorage.setItem(`${SUBMITTED_KEY_PREFIX}${chapterId}`, '1');
+  // TOC 뱃지 업데이트
+  const chapterEl = document.querySelector(`.toc-chapter[data-chapter-id="${chapterId}"]`);
+  if (chapterEl && !chapterEl.querySelector('.toc-submitted-badge')) {
+    const badge = document.createElement('span');
+    badge.className = 'toc-submitted-badge';
+    badge.textContent = '✓';
+    chapterEl.querySelector('.chapter-title')?.after(badge);
+  }
+  // 제출 버튼 상태 업데이트
+  if (chapterId === currentChapterId) {
+    updateSubmitButtonState(true);
+  }
+}
+
+function isChapterSubmitted(chapterId) {
+  return localStorage.getItem(`${SUBMITTED_KEY_PREFIX}${chapterId}`) === '1';
+}
+
+export function updateSubmitButtonState(submitted) {
+  const btn = document.getElementById('btn-submit-pdf');
+  if (!btn) return;
+  if (submitted) {
+    btn.textContent = '제출 완료';
+    btn.classList.add('submitted');
+    btn.disabled = true;
+  } else {
+    btn.textContent = '형성평가 제출';
+    btn.classList.remove('submitted');
+    btn.disabled = false;
+  }
+}
+
 const FETCH_TIMEOUT_MS = 10000;
 const AUTH_FALLBACK_KEY = 'logic_basic_auth_v1';
 
@@ -163,9 +200,12 @@ function buildTOC(chapters) {
 
     const label = document.createElement('div');
     label.className = 'toc-chapter-label';
+    const submittedBadge = isChapterSubmitted(ch.id)
+      ? '<span class="toc-submitted-badge">✓</span>'
+      : '';
     label.innerHTML = `
       <span class="chapter-num">${ch.id}</span>
-      <span class="chapter-title">${ch.title}</span>
+      <span class="chapter-title">${ch.title}</span>${submittedBadge}
       <span class="toc-arrow">▾</span>
     `;
     label.addEventListener('click', () => loadChapter(ch.id));
@@ -263,6 +303,7 @@ async function loadChapter(id) {
     } catch (e) {
       console.error('chatbot init failed:', e);
     }
+    updateSubmitButtonState(isChapterSubmitted(id));
     setTimeout(setupScrollSpy, 150);
   } catch (err) {
     console.error(`챕터 ${id} 로드 실패:`, err);

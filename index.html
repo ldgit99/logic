@@ -25,6 +25,7 @@
     <button id="chatbot-toggle" aria-label="챗봇 열기/닫기" title="AI 튜터">💬</button>
     <div id="auth-user" class="auth-user">
       <span id="auth-student-label" class="auth-student-label"></span>
+      <button id="auth-change-pw" class="auth-change-pw" type="button" title="비밀번호 변경">🔑</button>
       <button id="auth-logout" class="auth-logout" type="button">로그아웃</button>
     </div>
   </header>
@@ -139,6 +140,30 @@
     </div>
   </div>
 
+  <!-- ─── 비밀번호 변경 모달 ─── -->
+  <div id="change-pw-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="change-pw-title">
+    <div class="modal-box">
+      <h2 id="change-pw-title">비밀번호 변경</h2>
+      <div class="form-group">
+        <label for="change-pw-current">현재 비밀번호</label>
+        <input type="password" id="change-pw-current" placeholder="현재 비밀번호" autocomplete="current-password" />
+      </div>
+      <div class="form-group">
+        <label for="change-pw-new">새 비밀번호</label>
+        <input type="password" id="change-pw-new" placeholder="8자 이상" autocomplete="new-password" />
+      </div>
+      <div class="form-group">
+        <label for="change-pw-confirm">새 비밀번호 확인</label>
+        <input type="password" id="change-pw-confirm" placeholder="새 비밀번호 다시 입력" autocomplete="new-password" />
+      </div>
+      <p id="change-pw-error" class="login-error hidden"></p>
+      <div class="modal-actions">
+        <button id="change-pw-cancel" class="btn-secondary" type="button">취소</button>
+        <button id="change-pw-submit" class="btn-primary" type="button">변경</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ─── 로딩 오버레이 (AI 피드백 생성 중) ─── -->
   <div id="loading-overlay" class="modal-overlay hidden">
     <div class="modal-box loading-box">
@@ -157,6 +182,15 @@
 
   <!-- ─── 앱 진입점 (ES Module) ─── -->
   <script type="module" src="js/main.js?v=20260308o"></script>
+
+  <!-- ─── Service Worker 등록 ─── -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
+      });
+    }
+  </script>
 </body>
 </html>
 

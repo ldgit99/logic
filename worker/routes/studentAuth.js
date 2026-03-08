@@ -1,4 +1,5 @@
 import {
+  changePassword,
   createSession,
   createUser,
   getSessionByToken,
@@ -113,6 +114,34 @@ export async function handleStudentAuth(request, env, pathname) {
   if (request.method === 'POST' && pathname === '/auth/logout') {
     const token = readBearerToken(request);
     if (token) await revokeSession(env, token);
+    return json({ ok: true });
+  }
+
+  if (request.method === 'POST' && pathname === '/auth/change-password') {
+    const token = readBearerToken(request);
+    const found = await getSessionByToken(env, token);
+    if (!found) return json({ error: 'unauthorized' }, 401);
+
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return json({ error: 'invalid JSON' }, 400);
+    }
+
+    const currentPassword = String(body.current_password || '');
+    const newPassword = String(body.new_password || '');
+    if (!currentPassword || !newPassword) return json({ error: 'missing fields' }, 400);
+    if (newPassword.length < 8 || newPassword.length > 64) return json({ error: 'invalid password length' }, 400);
+
+    const result = await changePassword(env, {
+      studentId: found.session.student_id,
+      currentPassword,
+      newPassword,
+    });
+
+    if (result.error === 'WRONG_PASSWORD') return json({ error: 'current password is incorrect' }, 400);
+    if (result.error === 'USER_NOT_FOUND') return json({ error: 'user not found' }, 404);
     return json({ ok: true });
   }
 
