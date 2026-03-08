@@ -1,5 +1,31 @@
-import { showToast, markChapterSubmitted } from './main.js';
 import { generateFeedback } from './feedback.js';
+
+function showToast(message, type = 'info') {
+  let container = document.getElementById('toast-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'toast-container';
+    document.body.appendChild(container);
+  }
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  toast.textContent = message;
+  container.appendChild(toast);
+  setTimeout(() => toast.remove(), 4000);
+}
+
+function markChapterSubmittedLocal(chapterId) {
+  localStorage.setItem(`logic_submitted_${chapterId}`, '1');
+  const chapterEl = document.querySelector(`.toc-chapter[data-chapter-id="${chapterId}"]`);
+  if (chapterEl && !chapterEl.querySelector('.toc-submitted-badge')) {
+    const badge = document.createElement('span');
+    badge.className = 'toc-submitted-badge';
+    badge.textContent = '\u2713';
+    chapterEl.querySelector('.chapter-title')?.after(badge);
+  }
+  const btn = document.getElementById('btn-submit-pdf');
+  if (btn) { btn.textContent = '\uC81C\uCD9C \uC644\uB8CC'; btn.classList.add('submitted'); btn.disabled = true; }
+}
 import { getConversationMessages, getChapterRef, getSessionId } from './chatbot.js?v=20260308o';
 import { getStudentProfile } from './auth.js?v=20260308o';
 import { sendAssessment, sendFeedbackReport } from './instrumentation.js?v=20260308o';
@@ -225,7 +251,7 @@ async function handleConfirmSubmit() {
       feed_forward: feedback.feedForward,
     });
 
-    markChapterSubmitted(chapterData.id);
+    markChapterSubmittedLocal(chapterData.id);
     showToast('PDF \uC0DD\uC131\uC774 \uC644\uB8CC\uB418\uC5C8\uC2B5\uB2C8\uB2E4.', 'success');
   } catch (err) {
     console.error('PDF export error:', err);
