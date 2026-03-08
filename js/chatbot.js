@@ -1,4 +1,4 @@
-import { showToast } from './main.js';
+﻿import { showToast } from './main.js';
 import { sendEvent } from './instrumentation.js?v=20260308o';
 import { getStudentProfile } from './auth.js?v=20260308o';
 
@@ -10,8 +10,8 @@ const WORKER_URLS = [
   ...(window.location.origin.includes('localhost') || window.location.origin.includes('127.0.0.1') ? [LOCAL_ORIGIN_WITH_SLASH] : []),
 ];
 
-const COMPLETION_MARKER = '===형성평가완료===';
-const ASSESSMENT_TRIGGER = '형성평가';
+const COMPLETION_MARKER = '===?뺤꽦?됯??꾨즺===';
+const ASSESSMENT_TRIGGER = '?뺤꽦?됯?';
 const SESSION_INDEX_KEY = 'logic_session_index_v2';
 const SESSION_PREFIX = 'logic_session_v2';
 const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 30;
@@ -77,23 +77,23 @@ function buildLearningPrompt(data) {
   const { title, objectives } = data;
   const keyConcepts = data.keyConcepts || [];
   return [
-    `당신은 "${title}"의 AI 학습 튜터입니다.`,
+    `?뱀떊? "${title}"??AI ?숈뒿 ?쒗꽣?낅땲??`,
     '',
-    '[역할]',
-    '- 현재 챕터의 학습 내용 질문에 정확하고 이해하기 쉽게 답변합니다.',
-    '- 예시, 비유, 단계별 설명을 사용해 학습을 돕습니다.',
-    '- 형성평가를 시작하려면 사용자가 정확히 "형성평가"라고 입력해야 한다고 안내합니다.',
+    '[??븷]',
+    '- ?꾩옱 梨뺥꽣???숈뒿 ?댁슜 吏덈Ц???뺥솗?섍퀬 ?댄빐?섍린 ?쎄쾶 ?듬??⑸땲??',
+    '- ?덉떆, 鍮꾩쑀, ?④퀎蹂??ㅻ챸???ъ슜???숈뒿???뺤뒿?덈떎.',
+    '- ?뺤꽦?됯?瑜??쒖옉?섎젮硫??ъ슜?먭? ?뺥솗??"?뺤꽦?됯?"?쇨퀬 ?낅젰?댁빞 ?쒕떎怨??덈궡?⑸땲??',
     '',
-    '[학습목표]',
+    '[?숈뒿紐⑺몴]',
     ...objectives.map((o, i) => `${i + 1}. ${o}`),
     '',
-    '[핵심 개념]',
-    keyConcepts.length ? keyConcepts.join(', ') : '챕터 내용 참조',
+    '[?듭떖 媛쒕뀗]',
+    keyConcepts.length ? keyConcepts.join(', ') : '梨뺥꽣 ?댁슜 李몄“',
     '',
-    '[응답 규칙]',
-    '- 반드시 한국어로 답변합니다.',
-    '- 사실과 추론을 구분해 설명합니다.',
-    '- 불필요한 장문 대신 핵심부터 명확히 답변합니다.',
+    '[?묐떟 洹쒖튃]',
+    '- 諛섎뱶???쒓뎅?대줈 ?듬??⑸땲??',
+    '- ?ъ떎怨?異붾줎??援щ텇???ㅻ챸?⑸땲??',
+    '- 遺덊븘?뷀븳 ?λЦ ????듭떖遺??紐낇솗???듬??⑸땲??',
   ].join('\n');
 }
 
@@ -107,35 +107,35 @@ function buildAssessmentPrompt(data) {
     const bloom = q.bloomLevel || q.bloom || '';
     const concept = q.concept || '';
     const keyAnswer = q.keyAnswer || q.answer || '';
-    const hints = (q.hints || []).map((h, j) => `  힌트${j + 1}: ${h}`).join('\n');
-    return `Q${i + 1} [Bloom: ${bloom}] 핵심 개념: ${concept}\n  질문: ${q.question}\n  모범 답안: ${keyAnswer}${hints ? `\n${hints}` : ''}`;
+    const hints = (q.hints || []).map((h, j) => `  ?뚰듃${j + 1}: ${h}`).join('\n');
+    return `Q${i + 1} [Bloom: ${bloom}] ?듭떖 媛쒕뀗: ${concept}\n  吏덈Ц: ${q.question}\n  紐⑤쾾 ?듭븞: ${keyAnswer}${hints ? `\n${hints}` : ''}`;
   }).join('\n\n');
 
   return [
-    `당신은 "디지털 논리회로" 과목의 AI 튜터입니다. 형성평가를 진행합니다.`,
+    `?뱀떊? "?붿????쇰━?뚮줈" 怨쇰ぉ??AI ?쒗꽣?낅땲?? ?뺤꽦?됯?瑜?吏꾪뻾?⑸땲??`,
     '',
-    '[현재 챕터]',
+    '[?꾩옱 梨뺥꽣]',
     title,
     '',
-    '[학습목표]',
+    '[?숈뒿紐⑺몴]',
     ...objectives.map((o, i) => `${i + 1}. ${o}`),
     '',
-    '[핵심 개념]',
-    keyConcepts.length ? keyConcepts.join(', ') : '챕터 내용 참조',
+    '[?듭떖 媛쒕뀗]',
+    keyConcepts.length ? keyConcepts.join(', ') : '梨뺥꽣 ?댁슜 李몄“',
     '',
-    `[형성평가 문항 (총 ${totalQuestions}개)]`,
+    `[?뺤꽦?됯? 臾명빆 (珥?${totalQuestions}媛?]`,
     questionsText,
     '',
-    '[형성평가 진행 규칙]',
-    '1. Q1부터 순서대로 질문합니다.',
-    '2. 오답/불충분 답변에는 단계형 힌트를 제공합니다.',
-    '3. 힌트 최대 3단계 후에도 오답이면 정답 제시 후 다음 문항으로 이동합니다.',
-    '4. 모든 문항 종료 후 결과를 요약합니다.',
-    `5. 최종 응답에 반드시 ${COMPLETION_MARKER} 문자열을 포함합니다.`,
+    '[?뺤꽦?됯? 吏꾪뻾 洹쒖튃]',
+    '1. Q1遺???쒖꽌?濡?吏덈Ц?⑸땲??',
+    '2. ?ㅻ떟/遺덉땐遺??듬??먮뒗 ?④퀎???뚰듃瑜??쒓났?⑸땲??',
+    '3. ?뚰듃 理쒕? 3?④퀎 ?꾩뿉???ㅻ떟?대㈃ ?뺣떟 ?쒖떆 ???ㅼ쓬 臾명빆?쇰줈 ?대룞?⑸땲??',
+    '4. 紐⑤뱺 臾명빆 醫낅즺 ??寃곌낵瑜??붿빟?⑸땲??',
+    `5. 理쒖쥌 ?묐떟??諛섎뱶??${COMPLETION_MARKER} 臾몄옄?댁쓣 ?ы븿?⑸땲??`,
     '',
-    '[응답 규칙]',
-    '- 반드시 한국어로 답변합니다.',
-    '- 한 번에 하나의 질문만 진행합니다.',
+    '[?묐떟 洹쒖튃]',
+    '- 諛섎뱶???쒓뎅?대줈 ?듬??⑸땲??',
+    '- ??踰덉뿉 ?섎굹??吏덈Ц留?吏꾪뻾?⑸땲??',
   ].join('\n');
 }
 
@@ -147,7 +147,7 @@ function appendBubble(role, text, isStreaming = false) {
   const bubble = document.createElement('div');
   bubble.className = `chat-bubble ${role}`;
 
-  const avatarText = role === 'ai' ? '🤖' : role === 'user' ? '👤' : '';
+  const avatarText = role === 'ai' ? '?쨼' : role === 'user' ? '?뫀' : '';
 
   if (role === 'system') {
     bubble.innerHTML = `<div class="bubble-text">${escapeHtml(text)}</div>`;
@@ -181,13 +181,13 @@ function updateBadge() {
   if (!badge) return;
 
   if (currentMode === ChatMode.ASSESSMENT_COMPLETE) {
-    badge.textContent = '완료';
+    badge.textContent = '?꾨즺';
     badge.className = 'badge badge-complete';
   } else if (currentMode === ChatMode.ASSESSMENT) {
-    badge.textContent = '진행 중';
+    badge.textContent = '吏꾪뻾 以?;
     badge.className = 'badge badge-active';
   } else {
-    badge.textContent = '학습 중';
+    badge.textContent = '?숈뒿 以?;
     badge.className = 'badge badge-pending';
   }
 }
@@ -267,6 +267,88 @@ function loadSessionForChapter(chapterId) {
   }
 }
 
+
+async function apiGetWithAuth(path, token) {
+  let lastError = null;
+  for (const base of WORKER_URLS) {
+    try {
+      const res = await fetch(`${base.replace(/\/$/, '')}${path}`, {
+        method: 'GET',
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      });
+      if (!res.ok) {
+        if (res.status === 401 || res.status === 403 || res.status === 404) return null;
+        const text = await res.text();
+        throw new Error(`restore api error ${res.status}: ${text}`);
+      }
+      return await res.json();
+    } catch (err) {
+      lastError = err;
+    }
+  }
+  if (lastError) throw lastError;
+  return null;
+}
+
+function getServerToken() {
+  const profile = getStudentProfile() || {};
+  const token = String(profile.token || '').trim();
+  if (!token || token.startsWith('local:')) return '';
+  return token;
+}
+
+function rebuildModelMessagesFromLogs(chapterData, messages, mode) {
+  const prompt = mode === ChatMode.ASSESSMENT || mode === ChatMode.ASSESSMENT_COMPLETE
+    ? buildAssessmentPrompt(chapterData)
+    : buildLearningPrompt(chapterData);
+
+  const restored = [{ role: 'system', content: prompt }];
+  (messages || []).forEach((m) => {
+    if (m.role === 'user' || m.role === 'assistant') {
+      restored.push({ role: m.role, content: String(m.content || '') });
+    }
+  });
+  return restored;
+}
+
+async function tryRestoreSessionFromServer(chapterData) {
+  const token = getServerToken();
+  if (!token) return false;
+
+  const latestRes = await apiGetWithAuth(`/sessions/latest?chapter_id=${encodeURIComponent(chapterData.id)}`, token);
+  const latest = latestRes?.session;
+  if (!latest?.session_id) return false;
+
+  const messageRes = await apiGetWithAuth(`/sessions/${encodeURIComponent(latest.session_id)}/messages`, token);
+  const serverMessages = Array.isArray(messageRes?.messages) ? messageRes.messages : [];
+  if (serverMessages.length === 0) return false;
+
+  sessionId = String(latest.session_id);
+  logMessages = serverMessages.map((m) => ({
+    role: m.role === 'ai' ? 'assistant' : m.role,
+    content: String(m.content || ''),
+    mode: String(m.mode || ChatMode.LEARNING),
+    timestamp: String(m.timestamp || nowIso()),
+    session_id: String(m.session_id || sessionId),
+    chapter_id: String(m.chapter_id || chapterData.id),
+  }));
+
+  const lastMode = String(logMessages[logMessages.length - 1]?.mode || ChatMode.LEARNING);
+  currentMode = Object.values(ChatMode).includes(lastMode) ? lastMode : ChatMode.LEARNING;
+  assessmentComplete = currentMode === ChatMode.ASSESSMENT_COMPLETE;
+  modelMessages = rebuildModelMessagesFromLogs(chapterData, logMessages, currentMode);
+
+  restoreUIFromLogs();
+  updateBadge();
+  setSubmitEnabled(assessmentComplete);
+
+  appendBubble('system', '?댁쟾 ?몄뀡??서버??蹂듭썝?섏뿀?듬땲?? ?댁뼱??吏꾪뻾?섏꽭??');
+  pushLogMessage('system', '?몄뀡 蹂듭썝(server)', currentMode);
+  persistSession();
+  return true;
+}
 function restoreUIFromLogs() {
   const container = getEl('chat-messages');
   if (!container) return;
@@ -280,7 +362,7 @@ function restoreUIFromLogs() {
 function isLikelyLearningQuestion(input) {
   const text = normalizeInput(input);
   if (!text) return false;
-  const patterns = ['설명', '왜', '무엇', '뭐야', '원리', '개념', '학습'];
+  const patterns = ['?ㅻ챸', '??, '臾댁뾿', '萸먯빞', '?먮━', '媛쒕뀗', '?숈뒿'];
   const hasQuestionMark = text.includes('?');
   return hasQuestionMark || patterns.some((p) => text.includes(p));
 }
@@ -327,8 +409,8 @@ function handleAssessmentComplete() {
   updateBadge();
   setSubmitEnabled(true);
 
-  appendBubble('system', '형성평가가 완료되었습니다. 아래 "형성평가 제출 (PDF)" 버튼으로 제출하세요.');
-  pushLogMessage('system', '형성평가 완료', ChatMode.ASSESSMENT_COMPLETE);
+  appendBubble('system', '?뺤꽦?됯?媛 ?꾨즺?섏뿀?듬땲?? ?꾨옒 "?뺤꽦?됯? ?쒖텧 (PDF)" 踰꾪듉?쇰줈 ?쒖텧?섏꽭??');
+  pushLogMessage('system', '?뺤꽦?됯? ?꾨즺', ChatMode.ASSESSMENT_COMPLETE);
 
   sendEvent('assessment_completed', {
     chapterId: chapterRef?.id || '',
@@ -351,7 +433,7 @@ async function sendToAI(userText, opts = {}) {
   const normalized = normalizeInput(userText);
 
   if (!force && currentMode === ChatMode.ASSESSMENT && !assessmentComplete && isLikelyLearningQuestion(normalized)) {
-    const blockedMsg = '형성평가 진행 중입니다. 평가를 이어가세요.';
+    const blockedMsg = '?뺤꽦?됯? 吏꾪뻾 以묒엯?덈떎. ?됯?瑜??댁뼱媛?몄슂.';
     appendBubble('system', blockedMsg);
     pushLogMessage('system', blockedMsg, currentMode);
     persistSession();
@@ -408,7 +490,7 @@ async function sendToAI(userText, opts = {}) {
     }
   } catch (err) {
     if (textEl) {
-      textEl.textContent = '오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
+      textEl.textContent = '?ㅻ쪟媛 諛쒖깮?덉뒿?덈떎. ?좎떆 ???ㅼ떆 ?쒕룄?댁＜?몄슂.';
       textEl.style.color = 'var(--accent-red)';
     }
     console.error('Streaming error:', err);
@@ -439,14 +521,14 @@ async function startAssessment() {
   updateBadge();
   setSubmitEnabled(false);
 
-  const notice = `형성평가 모드를 시작합니다. 총 ${getAssessmentQuestionCount()}문항을 진행합니다.`;
+  const notice = `?뺤꽦?됯? 紐⑤뱶瑜??쒖옉?⑸땲?? 珥?${getAssessmentQuestionCount()}臾명빆??吏꾪뻾?⑸땲??`;
   appendBubble('system', notice);
   pushLogMessage('system', notice, currentMode);
 
   modelMessages = [{ role: 'system', content: buildAssessmentPrompt(chapterRef) }];
   persistSession();
 
-  await sendToAI('형성평가를 시작합니다. Q1부터 질문해주세요.', { force: true });
+  await sendToAI('?뺤꽦?됯?瑜??쒖옉?⑸땲?? Q1遺??吏덈Ц?댁＜?몄슂.', { force: true });
 }
 
 function handleSend() {
@@ -466,7 +548,7 @@ function handleSend() {
   }
 
   if (currentMode === ChatMode.ASSESSMENT_COMPLETE) {
-    const msg = '형성평가가 완료되었습니다. PDF 제출 후 다음 학습을 진행하세요.';
+    const msg = '?뺤꽦?됯?媛 ?꾨즺?섏뿀?듬땲?? PDF ?쒖텧 ???ㅼ쓬 ?숈뒿??吏꾪뻾?섏꽭??';
     appendBubble('system', msg);
     pushLogMessage('system', msg, currentMode);
     persistSession();
@@ -507,7 +589,7 @@ function createNewLearningSession() {
   logMessages = [];
   modelMessages = [{ role: 'system', content: buildLearningPrompt(chapterRef) }];
 
-  const welcome = `안녕하세요! ${chapterRef.title} 학습 튜터입니다. 학습 질문을 자유롭게 해주세요. 형성평가를 시작하려면 "형성평가"를 입력하세요.`;
+  const welcome = `?덈뀞?섏꽭?? ${chapterRef.title} ?숈뒿 ?쒗꽣?낅땲?? ?숈뒿 吏덈Ц???먯쑀濡?쾶 ?댁＜?몄슂. ?뺤꽦?됯?瑜??쒖옉?섎젮硫?"?뺤꽦?됯?"瑜??낅젰?섏꽭??`;
   appendBubble('ai', welcome);
   pushLogMessage('assistant', welcome, currentMode);
   persistSession();
@@ -558,12 +640,12 @@ export function initChatbot(chapterData) {
   chapterRef = chapterData;
   bindEventsOnce();
 
-  // 잠금 상태 확인 (비동기, 초기화 병행)
+  // ?좉툑 ?곹깭 ?뺤씤 (鍮꾨룞湲? 珥덇린??蹂묓뻾)
   fetchAndCacheLocks().then(() => {
     if (chapterLocks[chapterData.id]) {
       const container = getEl('chat-messages');
       if (container) container.innerHTML = '';
-      appendBubble('system', '이 챕터는 현재 교수자에 의해 잠겨 있습니다. 접근이 제한됩니다.');
+      appendBubble('system', '??梨뺥꽣???꾩옱 援먯닔?먯뿉 ?섑빐 ?좉꺼 ?덉뒿?덈떎. ?묎렐???쒗븳?⑸땲??');
       const input = getEl('chat-input');
       const sendBtn = getEl('chat-send');
       if (input) input.disabled = true;
@@ -584,8 +666,8 @@ export function initChatbot(chapterData) {
     updateBadge();
     setSubmitEnabled(assessmentComplete);
 
-    appendBubble('system', '이전 세션이 복원되었습니다. 이어서 진행하세요.');
-    pushLogMessage('system', '세션 복원', currentMode);
+    appendBubble('system', '?댁쟾 ?몄뀡??蹂듭썝?섏뿀?듬땲?? ?댁뼱??吏꾪뻾?섏꽭??');
+    pushLogMessage('system', '?몄뀡 蹂듭썝', currentMode);
     persistSession();
     return;
   }
@@ -598,5 +680,9 @@ export function initChatbot(chapterData) {
 
   createNewLearningSession();
 }
+
+
+
+
 
 

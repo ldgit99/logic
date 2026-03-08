@@ -1,9 +1,9 @@
-let initChatbot = () => {};
+﻿let initChatbot = () => {};
 let initExport = () => {};
 let initAuthGate = async () => null;
 let authModuleLoaded = false;
 
-// ─── 챕터 모듈 레지스트리 (동적 임포트) ───
+// ??? 梨뺥꽣 紐⑤뱢 ?덉??ㅽ듃由?(?숈쟻 ?꾪룷?? ???
 const CHAPTER_MODULES = {
   '01': () => import('./chapters/chapter01.js?v=20260307j'),
   '02': () => import('./chapters/chapter02.js?v=20260307j'),
@@ -21,20 +21,20 @@ const CHAPTER_MODULES = {
 let currentChapterId = null;
 let scrollObserver = null;
 
-// ─── 제출 완료 상태 ───
+// ??? ?쒖텧 ?꾨즺 ?곹깭 ???
 const SUBMITTED_KEY_PREFIX = 'logic_submitted_';
 
 export function markChapterSubmitted(chapterId) {
   localStorage.setItem(`${SUBMITTED_KEY_PREFIX}${chapterId}`, '1');
-  // TOC 뱃지 업데이트
+  // TOC 諭껋? ?낅뜲?댄듃
   const chapterEl = document.querySelector(`.toc-chapter[data-chapter-id="${chapterId}"]`);
   if (chapterEl && !chapterEl.querySelector('.toc-submitted-badge')) {
     const badge = document.createElement('span');
     badge.className = 'toc-submitted-badge';
-    badge.textContent = '✓';
+    badge.textContent = '??;
     chapterEl.querySelector('.chapter-title')?.after(badge);
   }
-  // 제출 버튼 상태 업데이트
+  // ?쒖텧 踰꾪듉 ?곹깭 ?낅뜲?댄듃
   if (chapterId === currentChapterId) {
     updateSubmitButtonState(true);
   }
@@ -48,11 +48,11 @@ export function updateSubmitButtonState(submitted) {
   const btn = document.getElementById('btn-submit-pdf');
   if (!btn) return;
   if (submitted) {
-    btn.textContent = '제출 완료';
+    btn.textContent = '?쒖텧 ?꾨즺';
     btn.classList.add('submitted');
     btn.disabled = true;
   } else {
-    btn.textContent = '형성평가 제출';
+    btn.textContent = '?뺤꽦?됯? ?쒖텧';
     btn.classList.remove('submitted');
     btn.disabled = false;
   }
@@ -150,7 +150,7 @@ function initBasicLoginGateFallback() {
     const studentName = String(nameInput?.value || '').trim();
     const studentId = String(idInput?.value || '').trim();
     if (!studentName || !studentId) {
-      setError('이름과 학번을 입력하세요.');
+      setError('?대쫫怨??숇쾲???낅젰?섏꽭??');
       return;
     }
     setError('');
@@ -173,7 +173,7 @@ function initBasicLoginGateFallback() {
     });
   }
 }
-// ─── 토스트 알림 ───
+// ??? ?좎뒪???뚮┝ ???
 export function showToast(message, type = 'info') {
   let container = document.getElementById('toast-container');
   if (!container) {
@@ -188,7 +188,7 @@ export function showToast(message, type = 'info') {
   setTimeout(() => toast.remove(), 4000);
 }
 
-// ─── TOC 전체 빌드 (index.json 기반) ───
+// ??? TOC ?꾩껜 鍮뚮뱶 (index.json 湲곕컲) ???
 function buildTOC(chapters) {
   const tocList = document.getElementById('toc-list');
   tocList.innerHTML = '';
@@ -201,12 +201,12 @@ function buildTOC(chapters) {
     const label = document.createElement('div');
     label.className = 'toc-chapter-label';
     const submittedBadge = isChapterSubmitted(ch.id)
-      ? '<span class="toc-submitted-badge">✓</span>'
+      ? '<span class="toc-submitted-badge">??/span>'
       : '';
     label.innerHTML = `
       <span class="chapter-num">${ch.id}</span>
       <span class="chapter-title">${ch.title}</span>${submittedBadge}
-      <span class="toc-arrow">▾</span>
+      <span class="toc-arrow">??/span>
     `;
     label.addEventListener('click', () => loadChapter(ch.id));
 
@@ -219,7 +219,7 @@ function buildTOC(chapters) {
   });
 }
 
-// ─── 활성 챕터의 섹션 목록 업데이트 ───
+// ??? ?쒖꽦 梨뺥꽣???뱀뀡 紐⑸줉 ?낅뜲?댄듃 ???
 function updateTOCSections(chapterId, chapterData) {
   document.querySelectorAll('.toc-chapter').forEach(el => {
     el.classList.add('collapsed');
@@ -253,13 +253,13 @@ function updateTOCSections(chapterId, chapterData) {
   const footer = document.getElementById('sidebar-footer');
   if (footer && chapterData.objectives) {
     footer.innerHTML = `
-      <div class="objectives-title">학습목표</div>
+      <div class="objectives-title">?숈뒿紐⑺몴</div>
       ${chapterData.objectives.map(o => `<div class="objective-item">${o}</div>`).join('')}
     `;
   }
 }
 
-// ─── 스크롤 스파이 ───
+// ??? ?ㅽ겕濡??ㅽ뙆?????
 function setupScrollSpy() {
   if (scrollObserver) scrollObserver.disconnect();
   const sections = document.querySelectorAll('.content-section');
@@ -280,13 +280,13 @@ function setupScrollSpy() {
   sections.forEach(el => scrollObserver.observe(el));
 }
 
-// ─── 챕터 로드 ───
+// ??? 梨뺥꽣 濡쒕뱶 ???
 async function loadChapter(id) {
   if (id === currentChapterId) return;
   currentChapterId = id;
 
   document.getElementById('content-inner').innerHTML =
-    '<div id="loading-screen"><div class="spinner"></div><p>콘텐츠를 불러오는 중...</p></div>';
+    '<div id="loading-screen"><div class="spinner"></div><p>肄섑뀗痢좊? 遺덈윭?ㅻ뒗 以?..</p></div>';
   document.getElementById('content-area').scrollTop = 0;
 
   try {
@@ -299,20 +299,20 @@ async function loadChapter(id) {
     await mod.renderChapter(chapterData);
 
     try {
-      initChatbot(chapterData);
+      await initChatbot(chapterData);
     } catch (e) {
       console.error('chatbot init failed:', e);
     }
     updateSubmitButtonState(isChapterSubmitted(id));
     setTimeout(setupScrollSpy, 150);
   } catch (err) {
-    console.error(`챕터 ${id} 로드 실패:`, err);
+    console.error(`梨뺥꽣 ${id} 濡쒕뱶 ?ㅽ뙣:`, err);
     document.getElementById('content-inner').innerHTML =
-      `<p style="color:var(--accent-red);padding:32px;">챕터 ${id} 로드에 실패했습니다.</p>`;
+      `<p style="color:var(--accent-red);padding:32px;">梨뺥꽣 ${id} 濡쒕뱶???ㅽ뙣?덉뒿?덈떎.</p>`;
   }
 }
 
-// ─── 사이드바 / 챗봇 토글 ───
+// ??? ?ъ씠?쒕컮 / 梨쀫큸 ?좉? ???
 function setupToggleHandlers() {
   const appBody = document.getElementById('app-body');
   const sidebar = document.getElementById('sidebar');
@@ -334,7 +334,7 @@ function setupToggleHandlers() {
     hideBackdrop();
   }
 
-  // backdrop 탭 → 패널 닫기 (iOS "click 없는 div" 문제 해결)
+  // backdrop ?????⑤꼸 ?リ린 (iOS "click ?녿뒗 div" 臾몄젣 ?닿껐)
   if (backdrop) {
     backdrop.addEventListener('click', closeAllPanels);
     backdrop.addEventListener('touchend', (e) => { e.preventDefault(); closeAllPanels(); });
@@ -360,7 +360,7 @@ function setupToggleHandlers() {
     }
   });
 
-  // 데스크탑: 바깥 클릭 시 패널 닫기 (document click 방식 유지)
+  // ?곗뒪?ы깙: 諛붽묑 ?대┃ ???⑤꼸 ?リ린 (document click 諛⑹떇 ?좎?)
   document.addEventListener('click', e => {
     if (!isMobile() && window.innerWidth <= 1024 && chatbotPanel.classList.contains('open')) {
       if (!chatbotPanel.contains(e.target) && !e.target.closest('#chatbot-toggle')) {
@@ -370,7 +370,7 @@ function setupToggleHandlers() {
   });
 }
 
-// ─── 앱 초기화 ───
+// ??? ??珥덇린?????
 async function init() {
   try {
     await loadRuntimeModules();
@@ -391,11 +391,11 @@ async function init() {
 
     await loadChapter(chapters[0].id);
   } catch (err) {
-    console.error('앱 초기화 실패:', err);
+    console.error('??珥덇린???ㅽ뙣:', err);
     document.getElementById('loading-screen').innerHTML = `
       <p style="color:var(--accent-red);text-align:center;">
-        콘텐츠 로드 실패.<br>
-        <small>로컬에서 실행 시 <code>python -m http.server</code> 또는 Live Server를 사용하세요.</small>
+        肄섑뀗痢?濡쒕뱶 ?ㅽ뙣.<br>
+        <small>濡쒖뺄?먯꽌 ?ㅽ뻾 ??<code>python -m http.server</code> ?먮뒗 Live Server瑜??ъ슜?섏꽭??</small>
       </p>`;
   }
 }
@@ -405,4 +405,5 @@ if (document.readyState === 'loading') {
 } else {
   init();
 }
+
 

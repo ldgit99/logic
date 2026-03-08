@@ -1,22 +1,5 @@
-/**
- * worker.js — Cloudflare Worker 메인 진입점
- *
- * 라우팅:
- *   POST /              → OpenAI API 프록시 (기존)
- *   POST /events        → 이벤트 수집 (신규)
- *   POST /assessment    → 평가 결과 저장 (신규)
- *   POST /feedback-report → 피드백 리포트 저장 (신규)
- *   GET  /dashboard/*   → 교수용 조회 (신규, 토큰 인증 필요)
- *
- * 환경변수 설정:
- *   wrangler secret put OPENAI_API_KEY
- *   wrangler secret put DASHBOARD_TOKEN
- *   wrangler secret put TA_TOKEN        (선택)
- *   wrangler secret put ADMIN_TOKEN     (선택)
- *
- * KV 네임스페이스:
- *   wrangler kv:namespace create SUBMISSIONS
- *   → wrangler.toml에 id/preview_id 입력
+﻿/**
+ * worker.js Cloudflare Worker entry
  */
 
 import { handleEvents } from './routes/events.js';
@@ -24,6 +7,7 @@ import { handleAssessments } from './routes/assessments.js';
 import { handleFeedbackReports } from './routes/feedbackReports.js';
 import { handleDashboard } from './routes/dashboard.js';
 import { handleStudentAuth } from './routes/studentAuth.js';
+import { handleSessions } from './routes/sessions.js';
 import { authenticate } from './services/auth.js';
 
 const ALLOWED_ORIGINS = [
@@ -36,13 +20,6 @@ const ALLOWED_ORIGINS = [
   'http://localhost:8000',
 ];
 
-function isAllowedOrigin(origin) {
-  if (!origin) return false;
-  if (ALLOWED_ORIGINS.includes(origin)) return true;
-  if (/^https:\/\/[a-z0-9-]+\.workers\.dev$/i.test(origin)) return true;
-  return false;
-}
-
 function corsHeaders(origin) {
   return {
     'Access-Control-Allow-Origin': '*',
@@ -51,6 +28,7 @@ function corsHeaders(origin) {
     'Access-Control-Max-Age': '86400',
   };
 }
+
 function withCors(response, origin) {
   const headers = new Headers(response.headers);
   Object.entries(corsHeaders(origin)).forEach(([k, v]) => headers.set(k, v));
@@ -63,7 +41,6 @@ export default {
     const url = new URL(request.url);
     const pathname = url.pathname;
 
-    // CORS preflight
     if (request.method === 'OPTIONS') {
       return new Response(null, { status: 204, headers: corsHeaders(origin) });
     }
@@ -71,41 +48,30 @@ export default {
     let response;
 
     try {
-      // auth endpoints
       if (pathname.startsWith('/auth/')) {
         response = await handleStudentAuth(request, env, pathname);
-
-      // ── GET|POST /dashboard/* ────────────────────────────────────
+      } else if (pathname.startsWith('/sessions/')) {
+        response = await handleSessions(request, env, pathname, url);
+      } else if (request.method === 'GET' && pathname === '/sessions/latest') {
+        response = await handleSessions(request, env, pathname, url);
       } else if ((request.method === 'GET' || request.method === 'POST') && pathname.startsWith('/dashboard/')) {
         const authError = authenticate(request, env, pathname);
         if (authError) return withCors(authError, origin);
-
         response = await handleDashboard(request, env, pathname);
-
-      // ── GET /locks (학생 앱용, 인증 없음) ────────────────────────
       } else if (request.method === 'GET' && pathname === '/locks') {
         const raw = await env.SUBMISSIONS.get('config:chapter_locks').catch(() => null);
         const locks = raw ? JSON.parse(raw) : {};
         response = new Response(JSON.stringify({ locks }), {
           headers: { 'Content-Type': 'application/json' },
         });
-
-      // ── POST /events ─────────────────────────────────────────────
       } else if (request.method === 'POST' && pathname === '/events') {
         response = await handleEvents(request, env);
-
-      // ── POST /assessment ─────────────────────────────────────────
       } else if (request.method === 'POST' && pathname === '/assessment') {
         response = await handleAssessments(request, env);
-
-      // ── POST /feedback-report ────────────────────────────────────
       } else if (request.method === 'POST' && pathname === '/feedback-report') {
         response = await handleFeedbackReports(request, env);
-
-      // ── POST / → OpenAI 프록시 (기존) ──────────────────────────
       } else if (request.method === 'POST' && pathname === '/') {
         response = await handleOpenAIProxy(request, env);
-
       } else {
         response = new Response(JSON.stringify({ error: 'Not Found' }), {
           status: 404,
@@ -123,8 +89,6 @@ export default {
     return withCors(response, origin);
   },
 };
-
-// ── OpenAI API 프록시 (기존 로직 유지) ──────────────────────────────
 
 async function handleOpenAIProxy(request, env) {
   let body;
@@ -155,5 +119,3 @@ async function handleOpenAIProxy(request, env) {
     },
   });
 }
-
-// deploy-trigger-20260307

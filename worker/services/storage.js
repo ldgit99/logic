@@ -1,4 +1,4 @@
-/**
+﻿/**
  * services/storage.js
  * Validation + KV query helpers.
  */
@@ -25,6 +25,7 @@ export function validateEvent(body) {
   }
 
   if (body.event_type === 'chat_message') {
+    if (!body.student_id) return 'chat_message missing: student_id';
     const payload = body.payload || {};
     if (!payload.role || !payload.content || !payload.mode || !payload.timestamp) {
       return 'chat_message payload missing: role/content/mode/timestamp';
@@ -80,16 +81,27 @@ export function validateFeedback(body) {
 
 // KV queries
 const PAGE_LIMIT = 1000;
+const EVENTS_TTL_SECONDS = 15552000; // 180 days
+
+async function listAllKeys(env, prefix) {
+  const out = [];
+  let cursor;
+  do {
+    const listed = await env.SUBMISSIONS.list({ prefix, limit: PAGE_LIMIT, cursor });
+    out.push(...(listed.keys || []));
+    cursor = listed.list_complete ? undefined : listed.cursor;
+  } while (cursor);
+  return out;
+}
 
 /**
  * List assessment records with optional filters.
  */
 export async function listAssessments(env, filters = {}) {
-  const listed = await env.SUBMISSIONS.list({ prefix: 'assessmentidx:', limit: PAGE_LIMIT });
-  const keys = listed.keys.map((k) => k.name);
+  const keys = await listAllKeys(env, 'assessmentidx:');
 
   // assessmentidx:{submitted_at}:{student_id}:{chapter_id}
-  const filteredKeys = keys.filter((k) => {
+  const filteredKeys = keys.map((k) => k.name).filter((k) => {
     const withoutPrefix = k.slice('assessmentidx:'.length);
     const lastColon2 = withoutPrefix.lastIndexOf(':');
     const lastColon1 = withoutPrefix.lastIndexOf(':', lastColon2 - 1);
@@ -153,8 +165,8 @@ export async function listRoster(env) {
  * List events by session id.
  */
 export async function listEvents(env, sessionId) {
-  const listed = await env.SUBMISSIONS.list({ prefix: `eventidx:${sessionId}:`, limit: PAGE_LIMIT });
-  const eventIds = listed.keys.map((k) => k.name.split(':').pop());
+  const keys = await listAllKeys(env, `eventidx:${sessionId}:`);
+  const eventIds = keys.map((k) => k.name.split(':').pop());
 
   const values = await Promise.all(eventIds.map((id) => env.SUBMISSIONS.get(`event:${id}`)));
 
@@ -168,5 +180,118 @@ export async function listEvents(env, sessionId) {
       }
     })
     .filter(Boolean)
+    .sort((a, b) => (a.timestamp > b.timestamp ? 1 : -1));
+}
+
+function toIsoOrNow(value) {
+  const text = String(value || '');
+  const ms = Date.parse(text);
+  if (Number.isNaN(ms)) return new Date().toISOString();
+  return new Date(ms).toISOString();
+}
+
+function sessionMetaKey(studentId, chapterId, sessionId) {
+  return `sessionmeta:${studentId}:${chapterId}:${sessionId}`;
+}
+
+function sessionLatestKey(studentId, chapterId) {
+  return `sessionlatest:${studentId}:${chapterId}`;
+}
+
+function sessionScopeKey(sessionId) {
+  return `sessionscope:${sessionId}`;
+}
+
+export async function upsertSessionIndexes(env, args) {
+  const studentId = String(args.studentId || '').trim();
+  const chapterId = String(args.chapterId || '').trim();
+  const sessionId = String(args.sessionId || '').trim();
+  if (!studentId || !chapterId || !sessionId) return;
+
+  const mode = String(args.mode || '');
+  const lastUpdated = toIsoOrNow(args.timestamp);
+  const incrementMessageCount = Boolean(args.incrementMessageCount);
+
+  const metaK = sessionMetaKey(studentId, chapterId, sessionId);
+  let current = null;
+  try {
+    const raw = await env.SUBMISSIONS.get(metaK);
+    current = raw ? JSON.parse(raw) : null;
+  } catch {
+    current = null;
+  }
+
+  const next = {
+    student_id: studentId,
+    chapter_id: chapterId,
+    session_id: sessionId,
+    mode: mode || current?.mode || 'learning',
+    message_count: Number(current?.message_count || 0) + (incrementMessageCount ? 1 : 0),
+    last_updated: lastUpdated,
+    created_at: current?.created_at || lastUpdated,
+  };
+
+  await env.SUBMISSIONS.put(metaK, JSON.stringify(next), { expirationTtl: EVENTS_TTL_SECONDS });
+  await env.SUBMISSIONS.put(
+    sessionLatestKey(studentId, chapterId),
+    JSON.stringify({ session_id: sessionId, chapter_id: chapterId, updated_at: lastUpdated }),
+    { expirationTtl: EVENTS_TTL_SECONDS },
+  );
+  await env.SUBMISSIONS.put(
+    sessionScopeKey(sessionId),
+    JSON.stringify({ student_id: studentId, chapter_id: chapterId, updated_at: lastUpdated }),
+    { expirationTtl: EVENTS_TTL_SECONDS },
+  );
+}
+
+export async function getLatestSessionForStudentChapter(env, studentId, chapterId) {
+  const student = String(studentId || '').trim();
+  const chapter = String(chapterId || '').trim();
+  if (!student || !chapter) return null;
+  const raw = await env.SUBMISSIONS.get(sessionLatestKey(student, chapter));
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw);
+    if (!parsed?.session_id) return null;
+    return {
+      session_id: parsed.session_id,
+      chapter_id: parsed.chapter_id || chapter,
+      updated_at: parsed.updated_at || '',
+    };
+  } catch {
+    return null;
+  }
+}
+
+export async function getSessionScope(env, sessionId) {
+  const sid = String(sessionId || '').trim();
+  if (!sid) return null;
+  const raw = await env.SUBMISSIONS.get(sessionScopeKey(sid));
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw);
+    if (!parsed?.student_id || !parsed?.chapter_id) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+export async function listSessionMessages(env, sessionId) {
+  const events = await listEvents(env, sessionId);
+  return events
+    .filter((e) => e?.event_type === 'chat_message')
+    .map((e) => {
+      const payload = e.payload || {};
+      return {
+        role: String(payload.role || ''),
+        content: String(payload.content || ''),
+        mode: String(payload.mode || 'learning'),
+        timestamp: String(payload.timestamp || e.timestamp || ''),
+        session_id: String(e.session_id || sessionId),
+        chapter_id: String(e.chapter_id || payload.chapter_id || ''),
+      };
+    })
+    .filter((m) => m.role && m.content)
     .sort((a, b) => (a.timestamp > b.timestamp ? 1 : -1));
 }
