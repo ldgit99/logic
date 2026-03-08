@@ -31,11 +31,10 @@ function setLoading(visible, message = '\uD53C\uB4DC\uBC31\uC744 \uC0DD\uC131\uD
 function openModal() {
   const modal = getEl('student-modal');
   const profile = getStudentProfile() || {};
-  const nameEl = getEl('input-name');
-  const idEl = getEl('input-student-id');
-
-  if (nameEl && !nameEl.value) nameEl.value = profile.studentName || '';
-  if (idEl && !idEl.value) idEl.value = profile.studentId || '';
+  const display = getEl('modal-profile-display');
+  if (display) {
+    display.textContent = `${profile.studentName || ''}  (${profile.studentId || ''})`;
+  }
   if (modal) modal.classList.remove('hidden');
 }
 
@@ -171,14 +170,12 @@ async function savePdf(studentName, studentId, chapterData, messages, feedback) 
 }
 
 async function handleConfirmSubmit() {
-  const nameEl = getEl('input-name');
-  const idEl = getEl('input-student-id');
   const profile = getStudentProfile() || {};
-  const studentName = ((nameEl?.value || '').trim() || profile.studentName || '').trim();
-  const studentId = ((idEl?.value || '').trim() || profile.studentId || '').trim();
+  const studentName = (profile.studentName || '').trim();
+  const studentId = (profile.studentId || '').trim();
 
   if (!studentName || !studentId) {
-    showToast('\uC774\uB984\uACFC \uD559\uBC88\uC744 \uC785\uB825\uD574\uC8FC\uC138\uC694.', 'error');
+    showToast('\uB85C\uADF8\uC778 \uC815\uBCF4\uB97C \uD655\uC778\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.', 'error');
     return;
   }
 
@@ -253,8 +250,7 @@ export function initExport() {
     submitBtn.addEventListener('click', () => {
       if (submitBtn.disabled) return;
       openModal();
-      const nameEl = getEl('input-name');
-      if (nameEl) nameEl.focus();
+      getEl('input-email')?.focus();
     });
   }
 
@@ -265,8 +261,7 @@ export function initExport() {
     if (e.key === 'Escape') closeModal();
 
     if (e.key === 'Enter' && !getEl('student-modal')?.classList.contains('hidden')) {
-      const activeId = document.activeElement?.id;
-      if (activeId === 'input-name' || activeId === 'input-student-id') {
+      if (document.activeElement?.id === 'input-email') {
         e.preventDefault();
         handleConfirmSubmit();
       }

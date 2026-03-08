@@ -128,14 +128,13 @@
   <div id="student-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title">
     <div class="modal-box">
       <h2 id="modal-title">형성평가 제출</h2>
-      <p class="modal-desc">PDF 제출을 위해 정보를 입력해주세요.</p>
-      <div class="form-group">
-        <label for="input-name">이름</label>
-        <input type="text" id="input-name" placeholder="홍길동" autocomplete="name" />
+      <p class="modal-desc">아래 정보로 PDF를 생성합니다.</p>
+      <div class="modal-profile-info">
+        <span id="modal-profile-display" class="modal-profile-name"></span>
       </div>
       <div class="form-group">
-        <label for="input-student-id">학번</label>
-        <input type="text" id="input-student-id" placeholder="2024XXXXXX" />
+        <label for="input-email">이메일 <span class="label-optional">(피드백 수신, 선택사항)</span></label>
+        <input type="email" id="input-email" placeholder="student@knu.ac.kr" autocomplete="email" />
       </div>
       <div class="modal-actions">
         <button id="modal-cancel" class="btn-secondary">취소</button>
