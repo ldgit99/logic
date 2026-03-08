@@ -208,11 +208,32 @@
   <!-- ─── 앱 진입점 (ES Module) ─── -->
   <script type="module" src="js/main.js?v=20260308o"></script>
 
-  <!-- ─── Service Worker 등록 ─── -->
+  <!-- ─── Service Worker 등록 + 업데이트 알림 ─── -->
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js').catch(() => {});
+
+        // 새 SW 활성화 시 업데이트 토스트 표시
+        navigator.serviceWorker.addEventListener('message', (event) => {
+          if (event.data?.type !== 'SW_UPDATED') return;
+          let container = document.getElementById('toast-container');
+          if (!container) {
+            container = document.createElement('div');
+            container.id = 'toast-container';
+            document.body.appendChild(container);
+          }
+          const toast = document.createElement('div');
+          toast.className = 'toast info';
+          toast.style.cssText = 'display:flex;align-items:center;gap:10px;max-width:320px;pointer-events:all';
+          toast.innerHTML =
+            '<span>앱이 최신 버전으로 업데이트되었습니다.</span>' +
+            '<button onclick="location.reload()" style="background:var(--accent-blue);color:#fff;border:none;' +
+            'border-radius:6px;padding:4px 10px;font-size:0.78rem;cursor:pointer;flex-shrink:0">새로고침</button>';
+          container.appendChild(toast);
+          // 30초 후 자동 제거
+          setTimeout(() => toast.remove(), 30000);
+        });
       });
     }
   </script>
