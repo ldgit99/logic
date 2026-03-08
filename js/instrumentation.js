@@ -36,15 +36,27 @@ function uuid() {
  * @param {{ chapterId?: string, sessionId?: string, studentId?: string, studentName?: string, payload?: object }} meta
  */
 export function sendEvent(eventType, meta = {}) {
+  const now = new Date().toISOString();
+  const payload = { ...(meta.payload || {}) };
+
+  if (eventType === 'chat_message') {
+    payload.role = String(payload.role || '');
+    payload.content = String(payload.content || '');
+    payload.mode = String(payload.mode || 'learning');
+    payload.timestamp = String(payload.timestamp || now);
+    payload.chapter_id = String(payload.chapter_id || meta.chapterId || '');
+    payload.session_id = String(payload.session_id || meta.sessionId || '');
+  }
+
   const event = {
     event_id: uuid(),
     event_type: eventType,
-    timestamp: new Date().toISOString(),
+    timestamp: now,
     chapter_id: meta.chapterId || '',
     session_id: meta.sessionId || '',
     student_id: meta.studentId || '',
     student_name: meta.studentName || '',
-    payload: meta.payload || {},
+    payload,
   };
 
   postWithFallback('/events', event);
