@@ -38,7 +38,7 @@ async function fetchJsonWithTimeout(url, timeoutMs = FETCH_TIMEOUT_MS) {
 
 async function loadRuntimeModules() {
   try {
-    const authMod = await import('./auth.js?v=20260308m');
+    const authMod = await import('./auth.js?v=20260308n');
     if (typeof authMod.initAuthGate === 'function') {
       initAuthGate = authMod.initAuthGate;
       authModuleLoaded = true;
@@ -48,7 +48,7 @@ async function loadRuntimeModules() {
   }
 
   try {
-    const exportMod = await import('./export.js?v=20260308m');
+    const exportMod = await import('./export.js?v=20260308n');
     if (typeof exportMod.initExport === 'function') {
       initExport = exportMod.initExport;
     }
@@ -57,7 +57,7 @@ async function loadRuntimeModules() {
   }
 
   try {
-    const chatbotMod = await import('./chatbot.js?v=20260308m');
+    const chatbotMod = await import('./chatbot.js?v=20260308n');
     if (typeof chatbotMod.initChatbot === 'function') {
       initChatbot = chatbotMod.initChatbot;
     }
