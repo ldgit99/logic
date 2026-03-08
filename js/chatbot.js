@@ -1,5 +1,5 @@
-﻿import { sendEvent } from './instrumentation.js?v=20260308o';
-import { getStudentProfile } from './auth.js?v=20260308o';
+﻿import { sendEvent } from './instrumentation.js?v=20260309c';
+import { getStudentProfile } from './auth.js?v=20260309c';
 
 const LOCAL_ORIGIN_WITH_SLASH = window.location.origin.endsWith('/') ? window.location.origin : (window.location.origin + '/');
 
