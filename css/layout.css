@@ -179,7 +179,7 @@ body {
     width: var(--chatbot-w) !important;
     transform: translateX(100%);
     transition: transform var(--transition);
-    z-index: 90;
+    z-index: 150;
   }
   #chatbot-panel.open {
     transform: translateX(0);
@@ -213,10 +213,27 @@ body {
   #sidebar.open {
     transform: translateX(0);
   }
+  /* 모바일: 챗봇 패널 너비를 화면에 맞게 */
+  #chatbot-panel {
+    width: min(92vw, 380px) !important;
+  }
+
   /* 모바일: 헤더 내 불필요한 요소 축소 */
   #chapter-indicator { display: none; }
   .auth-student-label { display: none; }
+  #header-title h1 {
+    font-size: 0.82rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
   #content-inner {
     padding: 16px 16px 60px;
+  }
+
+  /* 모바일: 토글 버튼 강조 */
+  #sidebar-toggle, #chatbot-toggle {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    border-color: var(--accent-blue);
   }
 }
