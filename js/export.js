@@ -1,6 +1,6 @@
 import { showToast } from './main.js';
 import { generateFeedback } from './feedback.js';
-import { getConversationMessages, getChapterRef, getSessionId } from './chatbot.js';
+import { getConversationMessages, getChapterRef, getSessionId } from './chatbot.js?v=20260308o';
 import { getStudentProfile } from './auth.js?v=20260308o';
 import { sendAssessment, sendFeedbackReport } from './instrumentation.js?v=20260308o';
 
