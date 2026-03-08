@@ -188,23 +188,31 @@ body {
 
 @media (max-width: 768px) {
   :root { --sidebar-w: 0px; }
-  #app-body {
-    grid-template-columns: 0 1fr 0 !important;
-  }
+
   /*
-   * 핵심 수정: position:fixed 된 sidebar/chatbot은 grid flow에서 제외되므로
-   * content-area가 자동으로 1열(width:0)에 배치된다.
-   * grid-column: 1 / -1 로 전체 열을 강제 점유.
+   * 모바일 레이아웃 전략:
+   * - #app-body를 position:relative + overflow:hidden 컨테이너로 사용
+   * - sidebar/chatbot을 position:absolute로 변경 (fixed 대신)
+   *   → body { overflow:hidden } + position:fixed 조합이 Android에서
+   *     패널을 클리핑하는 버그를 방지
+   * - content-area는 grid-column: 1/-1 로 전체 너비 점유
    */
+  #app-body {
+    grid-template-columns: 1fr !important;
+    position: relative;
+    overflow: hidden;
+  }
   #content-area {
     grid-column: 1 / -1;
+    width: 100%;
   }
+
+  /* 사이드바: absolute → app-body 기준 좌측 슬라이드 */
   #sidebar {
-    position: fixed !important;
+    position: absolute !important;
     left: 0;
-    top: var(--header-h);
-    height: calc(100vh - var(--header-h));
-    height: calc(100dvh - var(--header-h));
+    top: 0;
+    height: 100%;
     width: 260px !important;
     transform: translateX(-100%);
     transition: transform var(--transition);
@@ -212,10 +220,23 @@ body {
   }
   #sidebar.open {
     transform: translateX(0);
+    box-shadow: 4px 0 20px rgba(0,0,0,0.5);
   }
-  /* 모바일: 챗봇 패널 너비를 화면에 맞게 */
+
+  /* 챗봇: absolute → app-body 기준 우측 슬라이드 */
   #chatbot-panel {
-    width: min(92vw, 380px) !important;
+    position: absolute !important;
+    right: 0;
+    top: 0;
+    height: 100%;
+    width: min(92vw, 360px) !important;
+    transform: translateX(100%);
+    transition: transform var(--transition);
+    z-index: 150;
+  }
+  #chatbot-panel.open {
+    transform: translateX(0);
+    box-shadow: -4px 0 20px rgba(0,0,0,0.5);
   }
 
   /* 모바일: 헤더 내 불필요한 요소 축소 */
