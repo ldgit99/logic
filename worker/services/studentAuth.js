@@ -1,5 +1,5 @@
 const SESSION_TTL_SECONDS = 60 * 60 * 24 * 30; // 30 days
-const PBKDF2_ITERATIONS = 120000;
+const PBKDF2_ITERATIONS = 100000;
 
 function userKey(studentId) {
   return `auth:user:${studentId}`;

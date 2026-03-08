@@ -147,6 +147,13 @@ export async function fetchInterventions(filters = {}) {
   return apiGet('/dashboard/interventions', cleanParams(filters));
 }
 
+/**
+ * 수강생 명단 조회 (가입 정보 기반)
+ */
+export async function fetchRoster() {
+  return apiGet('/dashboard/roster');
+}
+
 function cleanParams(obj) {
   const out = {};
   for (const [k, v] of Object.entries(obj)) {

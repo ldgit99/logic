@@ -14,9 +14,9 @@
  */
 
 const ROLE_PERMISSIONS = {
-  professor: ['/dashboard/summary', '/dashboard/students', '/dashboard/concepts', '/dashboard/interventions'],
-  ta:        ['/dashboard/summary', '/dashboard/students'],
-  admin:     ['/dashboard/summary', '/dashboard/students', '/dashboard/concepts', '/dashboard/interventions', '/dashboard/audit'],
+  professor: ['/dashboard/summary', '/dashboard/students', '/dashboard/concepts', '/dashboard/interventions', '/dashboard/roster'],
+  ta:        ['/dashboard/summary', '/dashboard/students', '/dashboard/roster'],
+  admin:     ['/dashboard/summary', '/dashboard/students', '/dashboard/concepts', '/dashboard/interventions', '/dashboard/audit', '/dashboard/roster'],
 };
 
 /**

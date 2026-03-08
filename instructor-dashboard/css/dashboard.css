@@ -574,3 +574,28 @@ body {
   transition: border-color .15s;
 }
 .btn-theme:hover { border-color: var(--color-primary); }
+
+/* ── 수강생 명단 (E8) ──────────────────────────────────────── */
+.roster-header { margin-bottom: 16px; }
+.roster-title-row {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 10px;
+}
+.roster-title { font-size: 17px; font-weight: 700; }
+.roster-count {
+  font-size: 13px; color: var(--color-text-muted);
+  background: var(--color-border); border-radius: 12px; padding: 2px 10px;
+}
+.roster-csv-btn { margin-left: auto; }
+.roster-search {
+  width: 100%; max-width: 360px;
+  padding: 7px 12px; border: 1px solid var(--color-border);
+  border-radius: var(--radius); font-size: 13px;
+  background: var(--color-surface); color: var(--color-text);
+}
+.roster-table-wrap { overflow-x: auto; }
+.roster-table .mono { font-family: monospace; }
+.roster-table .roster-email a { color: var(--color-primary); text-decoration: none; }
+.roster-table .roster-email a:hover { text-decoration: underline; }
+.roster-table .no-email { color: var(--color-text-muted); font-size: 12px; }
+.roster-table .roster-date { font-size: 12px; color: var(--color-text-muted); white-space: nowrap; }
+.roster-table .roster-num { color: var(--color-text-muted); font-size: 12px; }

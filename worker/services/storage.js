@@ -125,6 +125,31 @@ export async function listAssessments(env, filters = {}) {
 }
 
 /**
+ * List all registered students (auth:user:* keys).
+ */
+export async function listRoster(env) {
+  const listed = await env.SUBMISSIONS.list({ prefix: 'auth:user:', limit: PAGE_LIMIT });
+  const values = await Promise.all(listed.keys.map((k) => env.SUBMISSIONS.get(k.name)));
+  return values
+    .filter(Boolean)
+    .map((v) => {
+      try {
+        const u = JSON.parse(v);
+        return {
+          student_id: u.student_id || '',
+          student_name: u.student_name || '',
+          email: u.email || '',
+          created_at: u.created_at || '',
+        };
+      } catch {
+        return null;
+      }
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.student_id.localeCompare(b.student_id));
+}
+
+/**
  * List events by session id.
  */
 export async function listEvents(env, sessionId) {

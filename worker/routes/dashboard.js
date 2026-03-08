@@ -4,7 +4,7 @@
  * 모든 요청은 auth.js에서 토큰 검증 후 진입
  */
 
-import { listAssessments } from '../services/storage.js';
+import { listAssessments, listRoster } from '../services/storage.js';
 import { calcSummary, calcInterventions, calcConcepts } from '../services/analytics.js';
 
 export async function handleDashboard(request, env, pathname) {
@@ -23,6 +23,9 @@ export async function handleDashboard(request, env, pathname) {
   if (pathname === '/dashboard/interventions') {
     return handleInterventions(env, params);
   }
+  if (pathname === '/dashboard/roster') {
+    return handleRoster(env);
+  }
 
   return jsonResponse({ error: 'Not Found' }, 404);
 }
@@ -35,7 +38,33 @@ async function handleSummary(env, params) {
 
 async function handleStudents(env, params) {
   const submissions = await listAssessments(env, params);
-  return jsonResponse({ submissions, total: submissions.length });
+
+  // 이메일 enrichment: 고유 student_id별 프로필 조회
+  const uniqueIds = [...new Set(submissions.map((s) => s.student_id))];
+  const profileMap = {};
+  await Promise.all(
+    uniqueIds.map(async (id) => {
+      const raw = await env.SUBMISSIONS.get(`auth:user:${id}`);
+      if (!raw) return;
+      try {
+        const u = JSON.parse(raw);
+        profileMap[id] = { email: u.email || '', created_at: u.created_at || '' };
+      } catch { /* ignore */ }
+    }),
+  );
+
+  const enriched = submissions.map((s) => ({
+    ...s,
+    email: profileMap[s.student_id]?.email || '',
+    registered_at: profileMap[s.student_id]?.created_at || '',
+  }));
+
+  return jsonResponse({ submissions: enriched, total: enriched.length });
+}
+
+async function handleRoster(env) {
+  const roster = await listRoster(env);
+  return jsonResponse({ roster, total: roster.length });
 }
 
 async function handleConceptsRoute(env, params) {
