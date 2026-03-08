@@ -3,6 +3,7 @@
   overflow-y: auto;
   background: var(--bg-primary);
   scroll-behavior: smooth;
+  min-height: 0;
 }
 
 #content-area::-webkit-scrollbar { width: 6px; }

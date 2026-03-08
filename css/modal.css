@@ -6,9 +6,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 200;
+  z-index: 250;
   backdrop-filter: blur(4px);
-  animation: overlay-in 0.15s ease;
+  -webkit-backdrop-filter: blur(4px);
+  animation: overlay-in 0.15s ease forwards;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .modal-overlay.hidden {
@@ -29,7 +32,7 @@
   width: 100%;
   max-width: 420px;
   box-shadow: var(--shadow);
-  animation: modal-in 0.2s ease;
+  animation: modal-in 0.2s ease forwards;
 }
 
 @keyframes modal-in {
@@ -248,7 +251,7 @@
   position: fixed;
   bottom: 24px;
   right: 24px;
-  z-index: 300;
+  z-index: 400;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -311,6 +314,21 @@
 @media (max-width: 768px) {
   .auth-student-label {
     display: none;
+  }
+  .modal-overlay {
+    align-items: flex-start;
+    padding: 16px;
+    animation: none;
+  }
+  .modal-box {
+    margin: auto;
+    padding: 24px 20px;
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+  .auth-modal-box {
+    max-width: 100%;
   }
 }
 

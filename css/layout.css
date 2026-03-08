@@ -34,6 +34,7 @@ body {
   color: var(--text-primary);
   line-height: 1.7;
   height: 100vh;
+  height: 100dvh;
   overflow: hidden;
   -webkit-font-smoothing: antialiased;
 }
@@ -49,7 +50,7 @@ body {
   border-bottom: 1px solid var(--border);
   position: fixed;
   top: 0; left: 0; right: 0;
-  z-index: 100;
+  z-index: 300;
 }
 
 #header-title {
@@ -101,6 +102,7 @@ body {
   display: grid;
   grid-template-columns: var(--sidebar-w) 1fr var(--chatbot-w);
   height: calc(100vh - var(--header-h));
+  height: calc(100dvh - var(--header-h));
   margin-top: var(--header-h);
   transition: grid-template-columns var(--transition);
 }
@@ -118,6 +120,12 @@ body {
 /* 둘 다 숨김 */
 #app-body.sidebar-hidden.chatbot-hidden {
   grid-template-columns: 0 1fr 0;
+}
+
+/* 그리드 자식 요소 축소 방지 */
+#sidebar, #content-area, #chatbot-panel {
+  min-width: 0;
+  min-height: 0;
 }
 
 /* ─── PDF 출력용 숨김 DOM ─── */
@@ -167,6 +175,7 @@ body {
     right: 0;
     top: var(--header-h);
     height: calc(100vh - var(--header-h));
+    height: calc(100dvh - var(--header-h));
     width: var(--chatbot-w) !important;
     transform: translateX(100%);
     transition: transform var(--transition);
@@ -187,6 +196,7 @@ body {
     left: 0;
     top: var(--header-h);
     height: calc(100vh - var(--header-h));
+    height: calc(100dvh - var(--header-h));
     width: 260px !important;
     transform: translateX(-100%);
     transition: transform var(--transition);
@@ -194,5 +204,18 @@ body {
   }
   #sidebar.open {
     transform: translateX(0);
+  }
+  /* 모바일: 헤더 내 불필요한 요소 축소 */
+  #chapter-indicator { display: none; }
+  .auth-student-label { display: none; }
+
+  /* 모바일: 가상 키보드가 열릴 때 레이아웃 유지 */
+  body { overflow-y: hidden; }
+  #app-body {
+    /* content area min-height ensures visibility even with keyboard */
+    min-height: 200px;
+  }
+  #content-inner {
+    padding: 16px 16px 60px;
   }
 }
