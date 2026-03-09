@@ -39,21 +39,21 @@ function buildShell() {
   ).join('');
 
   return `
-    <div class="questions-header" style="display:flex;align-items:center;gap:12px;padding:16px 0 8px;flex-wrap:wrap;position:sticky;top:0;background:var(--bg-main,#fff);z-index:10;border-bottom:1px solid var(--border);margin-bottom:8px;">
+    <div class="questions-header" style="display:flex;align-items:center;gap:12px;padding:16px 0 8px;flex-wrap:wrap;position:sticky;top:0;background:var(--color-surface);z-index:10;border-bottom:1px solid var(--color-border);margin-bottom:8px;">
       <h2 style="margin:0;font-size:1.1rem;">형성평가 문항 관리</h2>
-      <select id="q-chapter-select" style="padding:6px 10px;border-radius:6px;border:1px solid var(--border);font-size:0.9rem;">
+      <select id="q-chapter-select" style="padding:6px 10px;border-radius:6px;border:1px solid var(--color-border);font-size:0.9rem;">
         ${options}
       </select>
-      <span id="q-status" style="font-size:0.8rem;color:var(--text-secondary);margin-left:auto;"></span>
-      <button id="q-save-btn" style="background:var(--accent-blue);color:#fff;border:none;border-radius:6px;padding:8px 18px;cursor:pointer;font-size:0.9rem;">저장</button>
+      <span id="q-status" style="font-size:0.8rem;color:var(--color-muted);margin-left:auto;"></span>
+      <button id="q-save-btn" style="background:var(--color-primary);color:#fff;border:none;border-radius:6px;padding:8px 18px;cursor:pointer;font-size:0.9rem;">저장</button>
     </div>
-    <p style="font-size:0.8rem;color:var(--text-secondary);margin:0 0 16px;">
+    <p style="font-size:0.8rem;color:var(--color-muted);margin:0 0 16px;">
       여기서 저장한 문항이 챗봇 형성평가에 반영됩니다. 저장하지 않으면 기존 JSON 문항이 사용됩니다.
     </p>
     <div id="q-list" style="display:flex;flex-direction:column;gap:16px;"></div>
     <div style="display:flex;gap:8px;margin-top:16px;">
-      <button id="q-add-btn" style="flex:1;padding:8px 18px;border-radius:6px;border:2px dashed var(--border);background:transparent;cursor:pointer;font-size:0.9rem;">+ 문항 추가</button>
-      <button id="q-save-btn-bottom" style="padding:8px 24px;background:var(--accent-blue);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:0.9rem;font-weight:600;">저장</button>
+      <button id="q-add-btn" style="flex:1;padding:8px 18px;border-radius:6px;border:2px dashed var(--color-border);background:transparent;cursor:pointer;font-size:0.9rem;">+ 문항 추가</button>
+      <button id="q-save-btn-bottom" style="padding:8px 24px;background:var(--color-primary);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:0.9rem;font-weight:600;">저장</button>
     </div>
   `;
 }
@@ -160,33 +160,33 @@ function buildCard(q, index) {
   const hints = [...(q.hints || []), '', '', ''].slice(0, 3);
 
   return `
-    <div class="q-card" style="border:1px solid var(--border);border-radius:8px;padding:16px;background:var(--bg-card, var(--bg-secondary));">
+    <div class="q-card" style="border:1px solid var(--color-border);border-radius:8px;padding:16px;background:var(--color-surface);">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
         <strong style="min-width:32px;">Q${index + 1}</strong>
-        <select class="q-bloom" style="padding:4px 8px;border-radius:4px;border:1px solid var(--border);font-size:0.85rem;">
+        <select class="q-bloom" style="padding:4px 8px;border-radius:4px;border:1px solid var(--color-border);font-size:0.85rem;">
           ${bloomOptions}
         </select>
         <input class="q-concept" type="text" placeholder="개념 (예: 보수 표현)" value="${esc(q.concept)}"
-          style="flex:1;padding:4px 8px;border-radius:4px;border:1px solid var(--border);font-size:0.85rem;" />
+          style="flex:1;padding:4px 8px;border-radius:4px;border:1px solid var(--color-border);font-size:0.85rem;" />
         <button class="q-delete-btn" data-index="${index}"
-          style="margin-left:auto;background:none;border:none;cursor:pointer;color:var(--accent-red);font-size:1rem;">✕</button>
+          style="margin-left:auto;background:none;border:none;cursor:pointer;color:var(--color-danger);font-size:1rem;">✕</button>
       </div>
 
-      <label style="display:block;font-size:0.8rem;color:var(--text-secondary);margin-bottom:4px;">질문</label>
+      <label style="display:block;font-size:0.8rem;color:var(--color-muted);margin-bottom:4px;">질문</label>
       <textarea class="q-question" rows="2"
-        style="width:100%;padding:8px;border-radius:4px;border:1px solid var(--border);font-size:0.9rem;resize:vertical;box-sizing:border-box;"
+        style="width:100%;padding:8px;border-radius:4px;border:1px solid var(--color-border);font-size:0.9rem;resize:vertical;box-sizing:border-box;"
         placeholder="학생에게 물어볼 질문을 입력하세요.">${esc(q.question)}</textarea>
 
-      <label style="display:block;font-size:0.8rem;color:var(--text-secondary);margin:8px 0 4px;">모범 답안</label>
+      <label style="display:block;font-size:0.8rem;color:var(--color-muted);margin:8px 0 4px;">모범 답안</label>
       <textarea class="q-answer" rows="2"
-        style="width:100%;padding:8px;border-radius:4px;border:1px solid var(--border);font-size:0.9rem;resize:vertical;box-sizing:border-box;"
+        style="width:100%;padding:8px;border-radius:4px;border:1px solid var(--color-border);font-size:0.9rem;resize:vertical;box-sizing:border-box;"
         placeholder="AI가 채점 기준으로 사용할 모범 답안을 입력하세요.">${esc(q.keyAnswer)}</textarea>
 
-      <label style="display:block;font-size:0.8rem;color:var(--text-secondary);margin:8px 0 4px;">힌트 (최대 3개)</label>
+      <label style="display:block;font-size:0.8rem;color:var(--color-muted);margin:8px 0 4px;">힌트 (최대 3개)</label>
       <div style="display:flex;flex-direction:column;gap:4px;">
         ${hints.map((h, hi) => `
           <input class="q-hint" type="text" placeholder="힌트 ${hi + 1} (선택)" value="${esc(h)}"
-            style="padding:4px 8px;border-radius:4px;border:1px solid var(--border);font-size:0.85rem;" />
+            style="padding:4px 8px;border-radius:4px;border:1px solid var(--color-border);font-size:0.85rem;" />
         `).join('')}
       </div>
     </div>
