@@ -517,17 +517,41 @@ async function sendToAI(userText, opts = {}) {
   }
 }
 
+async function fetchQuestionsFromWorker(chapterId) {
+  for (const workerUrl of WORKER_URLS) {
+    try {
+      const base = workerUrl.endsWith('/') ? workerUrl.slice(0, -1) : workerUrl;
+      const res = await fetch(`${base}/questions/${chapterId}`);
+      if (res.ok) return await res.json();
+    } catch { /* try next */ }
+  }
+  return null;
+}
+
 async function startAssessment() {
   currentMode = ChatMode.ASSESSMENT;
   assessmentComplete = false;
   updateBadge();
   setSubmitEnabled(false);
 
-  const notice = `\ud615\uc131\ud3c9\uac00\ub97c \uc2dc\uc791\ud569\ub2c8\ub2e4. \ucd1d ${getAssessmentQuestionCount()}\ubb38\ud56d\uc73c\ub85c \uc9c4\ud589\ud569\ub2c8\ub2e4.`;
+  // Worker KV에서 교수 설정 문항 fetch (3초 timeout, 실패시 JSON fallback)
+  let effectiveChapterData = chapterRef;
+  try {
+    const result = await Promise.race([
+      fetchQuestionsFromWorker(chapterRef.id),
+      new Promise((_, r) => setTimeout(() => r(new Error('timeout')), 3000)),
+    ]);
+    if (result?.questions?.questions?.length > 0) {
+      effectiveChapterData = { ...chapterRef, formativeAssessment: result.questions };
+    }
+  } catch { /* use chapterRef fallback */ }
+
+  const totalQ = Number(effectiveChapterData?.formativeAssessment?.totalQuestions) || getAssessmentQuestionCount();
+  const notice = `\ud615\uc131\ud3c9\uac00\ub97c \uc2dc\uc791\ud569\ub2c8\ub2e4. \ucd1d ${totalQ}\ubb38\ud56d\uc73c\ub85c \uc9c4\ud589\ud569\ub2c8\ub2e4.`;
   appendBubble('system', notice);
   pushLogMessage('system', notice, currentMode);
 
-  modelMessages = [{ role: 'system', content: buildAssessmentPrompt(chapterRef) }];
+  modelMessages = [{ role: 'system', content: buildAssessmentPrompt(effectiveChapterData) }];
   persistSession();
 
   await sendToAI('\ud615\uc131\ud3c9\uac00\ub97c \uc2dc\uc791\ud569\ub2c8\ub2e4. Q1\uc744 \uc9c8\ubb38\ud574\uc8fc\uc138\uc694.', { force: true });

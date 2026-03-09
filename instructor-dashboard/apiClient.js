@@ -171,6 +171,23 @@ export async function deleteRosterMember(studentId) {
 }
 
 /**
+ * 챕터별 형성평가 문항 조회
+ * @param {string} chapterId  예: '01', '02'
+ */
+export async function fetchQuestions(chapterId) {
+  return apiGet(`/dashboard/questions/${chapterId}`);
+}
+
+/**
+ * 챕터별 형성평가 문항 저장
+ * @param {string} chapterId
+ * @param {{ questions: Array }} data
+ */
+export async function saveQuestions(chapterId, data) {
+  return apiPost(`/dashboard/questions/${chapterId}`, data);
+}
+
+/**
  * ?뱀젙 ?숈깮???꾩껜 ?쒖텧 ?대젰 議고쉶
  * @param {string} studentId
  */

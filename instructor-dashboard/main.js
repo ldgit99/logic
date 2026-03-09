@@ -10,6 +10,8 @@ import {
   fetchConcepts,
   fetchInterventions,
   fetchRoster,
+  fetchQuestions,
+  saveQuestions,
   clearToken,
   ApiError,
 } from './apiClient.js';
@@ -22,6 +24,7 @@ import { renderFeedbackQuality } from './views/feedbackQuality.js';
 import { renderInteractionAnalysis } from './views/interactionAnalysis.js';
 import { renderStudentReport } from './views/studentReport.js';
 import { renderRoster } from './views/roster.js';
+import { renderQuestions } from './views/questions.js';
 import { openStudentModal } from './views/studentModal.js';
 import { exportCSV } from './utils/csv.js';
 
@@ -267,6 +270,10 @@ async function loadView(view) {
       case 'roster': {
         const data = await fetchRoster();
         renderRoster(data, document.getElementById('roster-wrap'));
+        break;
+      }
+      case 'questions': {
+        renderQuestions(document.getElementById('view-questions'), { fetchQuestions, saveQuestions });
         break;
       }
     }

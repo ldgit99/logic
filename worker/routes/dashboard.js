@@ -40,6 +40,11 @@ export async function handleDashboard(request, env, pathname) {
     if (request.method === 'GET') return handleGetLocks(env);
     if (request.method === 'POST') return handleSetLock(request, env);
   }
+  if (pathname.startsWith('/dashboard/questions/')) {
+    const chapterId = pathname.split('/')[3];
+    if (request.method === 'GET') return handleGetQuestions(env, chapterId);
+    if (request.method === 'POST') return handleSetQuestions(request, env, chapterId);
+  }
 
   return jsonResponse({ error: 'Not Found' }, 404);
 }
@@ -225,6 +230,40 @@ async function handleSendEmail(request, env) {
   }
 
   return jsonResponse({ ok: true });
+}
+
+async function handleGetQuestions(env, chapterId) {
+  if (!chapterId) return jsonResponse({ error: 'missing chapter_id' }, 400);
+  const raw = await env.SUBMISSIONS.get(`config:questions:${chapterId}`).catch(() => null);
+  const questions = raw ? JSON.parse(raw) : null;
+  return jsonResponse({ questions });
+}
+
+async function handleSetQuestions(request, env, chapterId) {
+  if (!chapterId) return jsonResponse({ error: 'missing chapter_id' }, 400);
+  let body;
+  try { body = await request.json(); } catch { return jsonResponse({ error: 'invalid JSON' }, 400); }
+
+  if (!Array.isArray(body.questions)) return jsonResponse({ error: 'questions must be array' }, 400);
+  for (const q of body.questions) {
+    if (!q.question || typeof q.question !== 'string') {
+      return jsonResponse({ error: 'each question must have a question field' }, 400);
+    }
+  }
+
+  const data = {
+    totalQuestions: body.questions.length,
+    questions: body.questions.map((q) => ({
+      bloomLevel: String(q.bloomLevel || ''),
+      concept: String(q.concept || ''),
+      question: String(q.question),
+      keyAnswer: String(q.keyAnswer || ''),
+      hints: Array.isArray(q.hints) ? q.hints.map(String) : [],
+    })),
+  };
+
+  await env.SUBMISSIONS.put(`config:questions:${chapterId}`, JSON.stringify(data));
+  return jsonResponse({ ok: true, chapterId, totalQuestions: data.totalQuestions });
 }
 
 function escHtml(str) {

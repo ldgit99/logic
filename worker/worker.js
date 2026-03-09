@@ -64,6 +64,13 @@ export default {
         response = new Response(JSON.stringify({ locks }), {
           headers: { 'Content-Type': 'application/json' },
         });
+      } else if (request.method === 'GET' && pathname.startsWith('/questions/')) {
+        const chapterId = pathname.split('/')[2];
+        const raw = await env.SUBMISSIONS.get(`config:questions:${chapterId}`).catch(() => null);
+        const questions = raw ? JSON.parse(raw) : null;
+        response = new Response(JSON.stringify({ questions }), {
+          headers: { 'Content-Type': 'application/json' },
+        });
       } else if (request.method === 'POST' && pathname === '/events') {
         response = await handleEvents(request, env);
       } else if (request.method === 'POST' && pathname === '/assessment') {
