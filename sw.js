@@ -8,7 +8,7 @@
  *
  * ⚠️ 배포할 때마다 아래 날짜를 갱신하세요.
  */
-const CACHE_VERSION = '20260309d';
+const CACHE_VERSION = '20260309e';
 const CACHE_NAME = `logic-circuit-v${CACHE_VERSION}`;
 
 const PRECACHE_URLS = [
@@ -19,8 +19,12 @@ const PRECACHE_URLS = [
   './css/content.css',
   './css/chatbot.css',
   './css/modal.css',
-  './js/main.js',
-  './chapters/index.json',
+  './js/main.js?v=20260309e',
+  './js/chatbot.js?v=20260309e',
+  './js/auth.js?v=20260309e',
+  './js/export.js?v=20260309e',
+  './js/instrumentation.js?v=20260309e',
+  './chapters/index.json?v=20260309e',
 ];
 
 // ── 설치: 핵심 자산 사전 캐시 ──────────────────────────────────────

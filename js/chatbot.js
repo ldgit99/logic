@@ -1,5 +1,5 @@
-﻿import { sendEvent } from './instrumentation.js?v=20260309d';
-import { getStudentProfile } from './auth.js?v=20260309d';
+﻿import { sendEvent } from './instrumentation.js?v=20260309e';
+import { getStudentProfile } from './auth.js?v=20260309e';
 
 const LOCAL_ORIGIN_WITH_SLASH = window.location.origin.endsWith('/') ? window.location.origin : (window.location.origin + '/');
 
@@ -11,8 +11,8 @@ const WORKER_URLS = [
 
 const COMPLETION_MARKER = '===\ud615\uc131\ud3c9\uac00\uc644\ub8cc===';
 const ASSESSMENT_TRIGGER = '\ud615\uc131\ud3c9\uac00';
-const SESSION_INDEX_KEY = 'logic_session_index_v3';
-const SESSION_PREFIX = 'logic_session_v3';
+const SESSION_INDEX_KEY = 'logic_session_index_v4';
+const SESSION_PREFIX = 'logic_session_v4';
 const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 30;
 
 const ChatMode = {

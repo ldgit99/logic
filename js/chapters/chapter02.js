@@ -1,4 +1,4 @@
-import { renderChapterWith } from './chapterBase.js?v=20260309d';
+import { renderChapterWith } from './chapterBase.js?v=20260309e';
 import { mountBaseConverter } from '../simulations/baseConverter.js';
 import { mountTwosComplement } from '../simulations/twosComplement.js';
 import { mountBinaryArithmetic } from '../simulations/binaryArithmetic.js';

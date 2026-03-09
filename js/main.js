@@ -5,17 +5,17 @@ let authModuleLoaded = false;
 
 // ??? 梨뺥꽣 紐⑤뱢 ?덉??ㅽ듃由?(?숈쟻 ?꾪룷?? ???
 const CHAPTER_MODULES = {
-  '01': () => import('./chapters/chapter01.js?v=20260309d'),
-  '02': () => import('./chapters/chapter02.js?v=20260309d'),
-  '03': () => import('./chapters/chapter03.js?v=20260309d'),
-  '04': () => import('./chapters/chapter04.js?v=20260309d'),
-  '05': () => import('./chapters/chapter05.js?v=20260309d'),
-  '06': () => import('./chapters/chapter06.js?v=20260309d'),
-  '07': () => import('./chapters/chapter07.js?v=20260309d'),
-  '08': () => import('./chapters/chapter08.js?v=20260309d'),
-  '09': () => import('./chapters/chapter09.js?v=20260309d'),
-  '10': () => import('./chapters/chapter10.js?v=20260309d'),
-  '11': () => import('./chapters/chapter11.js?v=20260309d'),
+  '01': () => import('./chapters/chapter01.js?v=20260309e'),
+  '02': () => import('./chapters/chapter02.js?v=20260309e'),
+  '03': () => import('./chapters/chapter03.js?v=20260309e'),
+  '04': () => import('./chapters/chapter04.js?v=20260309e'),
+  '05': () => import('./chapters/chapter05.js?v=20260309e'),
+  '06': () => import('./chapters/chapter06.js?v=20260309e'),
+  '07': () => import('./chapters/chapter07.js?v=20260309e'),
+  '08': () => import('./chapters/chapter08.js?v=20260309e'),
+  '09': () => import('./chapters/chapter09.js?v=20260309e'),
+  '10': () => import('./chapters/chapter10.js?v=20260309e'),
+  '11': () => import('./chapters/chapter11.js?v=20260309e'),
 };
 
 let currentChapterId = null;
@@ -75,7 +75,7 @@ async function fetchJsonWithTimeout(url, timeoutMs = FETCH_TIMEOUT_MS) {
 
 async function loadRuntimeModules() {
   try {
-    const authMod = await import('./auth.js?v=20260309d');
+    const authMod = await import('./auth.js?v=20260309e');
     if (typeof authMod.initAuthGate === 'function') {
       initAuthGate = authMod.initAuthGate;
       authModuleLoaded = true;
@@ -85,7 +85,7 @@ async function loadRuntimeModules() {
   }
 
   try {
-    const exportMod = await import('./export.js?v=20260309d');
+    const exportMod = await import('./export.js?v=20260309e');
     if (typeof exportMod.initExport === 'function') {
       initExport = exportMod.initExport;
     }
@@ -94,7 +94,7 @@ async function loadRuntimeModules() {
   }
 
   try {
-    const chatbotMod = await import('./chatbot.js?v=20260309d');
+    const chatbotMod = await import('./chatbot.js?v=20260309e');
     if (typeof chatbotMod.initChatbot === 'function') {
       initChatbot = chatbotMod.initChatbot;
     }
@@ -290,7 +290,7 @@ async function loadChapter(id) {
   document.getElementById('content-area').scrollTop = 0;
 
   try {
-    const chapterData = await fetchJsonWithTimeout(`./chapters/${id}.json?v=20260309d`);
+    const chapterData = await fetchJsonWithTimeout(`./chapters/${id}.json?v=20260309e`);
 
     document.getElementById('chapter-indicator').textContent = chapterData.title;
     updateTOCSections(id, chapterData);
@@ -306,9 +306,13 @@ async function loadChapter(id) {
     updateSubmitButtonState(isChapterSubmitted(id));
     setTimeout(setupScrollSpy, 150);
   } catch (err) {
-    console.error(`梨뺥꽣 ${id} 濡쒕뱶 ?ㅽ뙣:`, err);
+    console.error(`챕터 ${id} 로\ub529 실패:`, err);
+    currentChapterId = null;
     document.getElementById('content-inner').innerHTML =
-      `<p style="color:var(--accent-red);padding:32px;">\ucc55\ud130 ${id} \ub85c\ub529\uc5d0 \uc2e4\ud328\ud588\uc2b5\ub2c8\ub2e4.</p>`;
+      `<div style="padding:32px;text-align:center;">
+         <p style="color:var(--accent-red);">\ucc55\ud130 ${id} \ub85c\ub529\uc5d0 \uc2e4\ud328\ud588\uc2b5\ub2c8\ub2e4.</p>
+         <button onclick="window.loadChapter('${id}')" style="margin-top:12px;padding:8px 20px;cursor:pointer;">\ub2e4\uc2dc \uc2dc\ub3c4</button>
+       </div>`;
   }
 }
 
@@ -383,7 +387,7 @@ async function init() {
       initBasicLoginGateFallback();
     }
 
-    const chapters = await fetchJsonWithTimeout('./chapters/index.json?v=20260309d');
+    const chapters = await fetchJsonWithTimeout('./chapters/index.json?v=20260309e');
 
     buildTOC(chapters);
     setupToggleHandlers();
@@ -403,6 +407,8 @@ async function init() {
     }
   }
 }
+
+window.loadChapter = loadChapter;
 
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', init, { once: true });

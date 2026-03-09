@@ -1,4 +1,4 @@
-import { renderChapterWith } from './chapterBase.js?v=20260309d';
+import { renderChapterWith } from './chapterBase.js?v=20260309e';
 import { mountBcdCode } from '../simulations/bcdCode.js';
 import { mountGrayCode } from '../simulations/grayCode.js';
 import { mountParityBit } from '../simulations/parityBit.js';

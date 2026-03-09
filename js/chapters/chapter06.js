@@ -1,4 +1,4 @@
-import { renderChapterWith } from './chapterBase.js?v=20260309d';
+import { renderChapterWith } from './chapterBase.js?v=20260309e';
 import { mountKarnaughMap } from '../simulations/karnaughMap.js';
 import { mountNandNorConvert } from '../simulations/nandNorConvert.js';
 
