@@ -106,36 +106,43 @@ function buildAssessmentPrompt(data) {
     const bloom = q.bloomLevel || q.bloom || '';
     const concept = q.concept || '';
     const keyAnswer = q.keyAnswer || q.answer || '';
-    const hints = (q.hints || []).map((h, j) => `  ?뚰듃${j + 1}: ${h}`).join('\n');
-    return `Q${i + 1} [Bloom: ${bloom}] ?듭떖 媛쒕뀗: ${concept}\n  吏덈Ц: ${q.question}\n  紐⑤쾾 ?듭븞: ${keyAnswer}${hints ? `\n${hints}` : ''}`;
-  }).join('\n\n');
+    const hints = (q.hints || []).map((h, j) => `  \ud78c\ub4dc${j + 1}: ${h}`).join('
+');
+    return `Q${i + 1} [Bloom: ${bloom}] \uac1c\ub150: ${concept}
+  \uc9c8\ubb38: ${q.question}
+  \ubaa8\ubc94\ub2f5\uc548: ${keyAnswer}${hints ? `
+${hints}` : ''}`;
+  }).join('
+
+');
 
   return [
-    `?뱀떊? "?붿????쇰━?뚮줈" 怨쇰ぉ??AI ?쒗꽣?낅땲?? ?뺤꽦?됯?瑜?吏꾪뻾?⑸땲??`,
+    '\uc5ed\ud560: "\ud615\uc131\ud3c9\uac00 \uc2dc\ub098\ub9ac\uc624" AI \uc870\ub825\uc790\uc785\ub2c8\ub2e4. \uc544\ub798 \ubb38\ud56d\uc5d0 \ub530\ub77c \ud559\uc0dd\uc744 \ud3c9\uac00\ud558\uc138\uc694.',
     '',
-    '[?꾩옱 梨뺥꽣]',
+    '[\ud604\uc7ac \ucc55\ud130]',
     title,
     '',
-    '[?숈뒿紐⑺몴]',
+    '[\ud559\uc2b5\ubaa9\ud45c]',
     ...objectives.map((o, i) => `${i + 1}. ${o}`),
     '',
-    '[?듭떖 媛쒕뀗]',
-    keyConcepts.length ? keyConcepts.join(', ') : '梨뺥꽣 ?댁슜 李몄“',
+    '[\ud575\uc2ec \uac1c\ub150]',
+    keyConcepts.length ? keyConcepts.join(', ') : '\ucc55\ud130 \ub0b4\uc6a9 \ucc38\uace0',
     '',
-    `[?뺤꽦?됯? 臾명빆 (珥?${totalQuestions}媛?]`,
+    `[\ud3c9\uac00 \ubb38\ud56d (\uc9c1 ${totalQuestions}\ubb38\ud56d)]`,
     questionsText,
     '',
-    '[?뺤꽦?됯? 吏꾪뻾 洹쒖튃]',
-    '1. Q1遺???쒖꽌?濡?吏덈Ц?⑸땲??',
-    '2. ?ㅻ떟/遺덉땐遺??듬??먮뒗 ?④퀎???뚰듃瑜??쒓났?⑸땲??',
-    '3. ?뚰듃 理쒕? 3?④퀎 ?꾩뿉???ㅻ떟?대㈃ ?뺣떟 ?쒖떆 ???ㅼ쓬 臾명빆?쇰줈 ?대룞?⑸땲??',
-    '4. 紐⑤뱺 臾명빆 醫낅즺 ??寃곌낵瑜??붿빟?⑸땲??',
-    `5. 理쒖쥌 ?묐떟??諛섎뱶??${COMPLETION_MARKER} 臾몄옄?댁쓣 ?ы븿?⑸땲??`,
+    '[\ud3c9\uac00 \uc9c4\ud589 \uc9c0\uc2dc]',
+    '1. Q1\ubd80\ud130 \uc21c\uc11c\ub300\ub85c \uc9c8\ubb38\ud569\ub2c8\ub2e4.',
+    '2. \uc815\ub2f5/\uc624\ub2f5\uc5d0 \ub530\ub77c \ud78c\ub4dc\ub97c \uc81c\uacf5\ud569\ub2c8\ub2e4.',
+    '3. \ud78c\ub4dc \ucd5c\ub300 3\uac1c \uc774\ud6c4 \uc815\ub2f5\uc744 \uc54c\ub824\uc8fc\uace0 \ub2e4\uc74c \ubb38\uc81c\ub85c \ub118\uc5b4\uac11\ub2c8\ub2e4.',
+    '4. \ubaa8\ub4e0 \ubb38\uc81c \uc885\ub8cc \ud6c4 \uacb0\uacfc\ub97c \uc694\uc57d\ud569\ub2c8\ub2e4.',
+    `5. \ucd5c\uc885 \ub2f5\ubcc0 \ub9c8\uc9c0\ub9c9\uc5d0 \ubc18\ub4dc\uc2dc ${COMPLETION_MARKER} \ubb38\uc790\uc5f4\uc744 \ud3ec\ud568\ud558\uc138\uc694.`,
     '',
-    '[?묐떟 洹쒖튃]',
-    '- 諛섎뱶???쒓뎅?대줈 ?듬??⑸땲??',
-    '- ??踰덉뿉 ?섎굹??吏덈Ц留?吏꾪뻾?⑸땲??',
-  ].join('\n');
+    '[\ub2f5\ubcc0 \uc9c0\uce68]',
+    '- \ubc18\ub4dc\uc2dc \ud55c\uad6d\uc5b4\ub85c \ub2f5\ud569\ub2c8\ub2e4.',
+    '- \ud55c \ubc88\uc5d0 \ud558\ub098\uc758 \uc9c8\ubb38\ub9cc \uc9c4\ud589\ud569\ub2c8\ub2e4.',
+  ].join('
+');
 }
 
 function appendBubble(role, text, isStreaming = false) {
