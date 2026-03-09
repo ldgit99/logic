@@ -49,13 +49,18 @@ function normalizeInput(text) {
   return String(text || '').trim();
 }
 
+function getUserScopedKey(base) {
+  const uid = getStudentMeta().studentId || 'anon';
+  return `${base}_${uid}`;
+}
+
 function getSessionStorageKey(id) {
-  return `${SESSION_PREFIX}_${id}`;
+  return `${getUserScopedKey(SESSION_PREFIX)}_${id}`;
 }
 
 function loadSessionIndex() {
   try {
-    return JSON.parse(localStorage.getItem(SESSION_INDEX_KEY) || '{}');
+    return JSON.parse(localStorage.getItem(getUserScopedKey(SESSION_INDEX_KEY)) || '{}');
   } catch {
     return {};
   }
@@ -63,7 +68,7 @@ function loadSessionIndex() {
 
 function saveSessionIndex(index) {
   try {
-    localStorage.setItem(SESSION_INDEX_KEY, JSON.stringify(index));
+    localStorage.setItem(getUserScopedKey(SESSION_INDEX_KEY), JSON.stringify(index));
   } catch {
     // ignore quota error
   }
