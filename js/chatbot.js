@@ -76,23 +76,23 @@ function buildLearningPrompt(data) {
   const { title, objectives } = data;
   const keyConcepts = data.keyConcepts || [];
   return [
-    `?뱀떊? "${title}"??AI ?숈뒿 ?쒗꽣?낅땲??`,
+    `\uc5ed\ud560: "${title}" \ucc55\ud130 AI \ud559\uc2b5 \uc870\ub825\uc790\uc785\ub2c8\ub2e4.`,
     '',
-    '[??븷]',
-    '- ?꾩옱 梨뺥꽣???숈뒿 ?댁슜 吏덈Ц???뺥솗?섍퀬 ?댄빐?섍린 ?쎄쾶 ?듬??⑸땲??',
-    '- ?덉떆, 鍮꾩쑀, ?④퀎蹂??ㅻ챸???ъ슜???숈뒿???뺤뒿?덈떎.',
-    '- ?뺤꽦?됯?瑜??쒖옉?섎젮硫??ъ슜?먭? ?뺥솗??"?뺤꽦?됯?"?쇨퀬 ?낅젰?댁빞 ?쒕떎怨??덈궡?⑸땲??',
+    '[\uc9c0\uce68]',
+    '- \ud559\uc0dd\uc774 \ud559\uc2b5 \ub0b4\uc6a9\uc744 \uc774\ud574\ud558\ub3c4\ub85d \uce5c\uc808\ud558\uace0 \uc0c1\uc138\ud558\uac8c \ub3c4\uc6c0\uc744 \uc90d\ub2c8\ub2e4.',
+    '- \uc608\uc2dc, \ube44\uc720, \ub2e8\uacc4\ubcc4 \uc124\uba85\uc744 \uc801\uadf9 \ud65c\uc6a9\ud569\ub2c8\ub2e4.',
+    '- \ud615\uc131\ud3c9\uac00\ub97c \uc2dc\uc791\ud558\ub824\uba74 \ud559\uc0dd\uc774 "\ud615\uc131\ud3c9\uac00"\ub77c\uace0 \uc785\ub825\ud574\uc57c \ud569\ub2c8\ub2e4.',
     '',
-    '[?숈뒿紐⑺몴]',
+    '[\ud559\uc2b5\ubaa9\ud45c]',
     ...objectives.map((o, i) => `${i + 1}. ${o}`),
     '',
-    '[?듭떖 媛쒕뀗]',
-    keyConcepts.length ? keyConcepts.join(', ') : '梨뺥꽣 ?댁슜 李몄“',
+    '[\ud575\uc2ec \uac1c\ub150]',
+    keyConcepts.length ? keyConcepts.join(', ') : '\ucc55\ud130 \ub0b4\uc6a9 \ucc38\uace0',
     '',
-    '[?묐떟 洹쒖튃]',
-    '- 諛섎뱶???쒓뎅?대줈 ?듬??⑸땲??',
-    '- ?ъ떎怨?異붾줎??援щ텇???ㅻ챸?⑸땲??',
-    '- 遺덊븘?뷀븳 ?λЦ ????듭떖遺??紐낇솗???듬??⑸땲??',
+    '[\ub2f5\ubcc0 \uc6d0\uce59]',
+    '- \ud55c\uad6d\uc5b4\ub85c \ub2f5\ud569\ub2c8\ub2e4.',
+    '- \uaca9\ub824\ud558\uace0 \uae0d\uc815\uc801\uc778 \ud53c\ub4dc\ubc31\uc744 \ub4dc\ub9bd\ub2c8\ub2e4.',
+    '- \ubd88\ud544\uc694\ud55c \uc9c8\ubb38 \uc5c6\uc774 \ud575\uc2ec \uc9c8\ubb38\uc5d0 \ub2f5\ud569\ub2c8\ub2e4.',
   ].join('\n');
 }
 
@@ -106,15 +106,12 @@ function buildAssessmentPrompt(data) {
     const bloom = q.bloomLevel || q.bloom || '';
     const concept = q.concept || '';
     const keyAnswer = q.keyAnswer || q.answer || '';
-    const hints = (q.hints || []).map((h, j) => `  \ud78c\ub4dc${j + 1}: ${h}`).join('
-');
+    const hints = (q.hints || []).map((h, j) => `  \ud78c\ub4dc${j + 1}: ${h}`).join('\n');
     return `Q${i + 1} [Bloom: ${bloom}] \uac1c\ub150: ${concept}
   \uc9c8\ubb38: ${q.question}
   \ubaa8\ubc94\ub2f5\uc548: ${keyAnswer}${hints ? `
 ${hints}` : ''}`;
-  }).join('
-
-');
+  }).join('\n\n');
 
   return [
     '\uc5ed\ud560: "\ud615\uc131\ud3c9\uac00 \uc2dc\ub098\ub9ac\uc624" AI \uc870\ub825\uc790\uc785\ub2c8\ub2e4. \uc544\ub798 \ubb38\ud56d\uc5d0 \ub530\ub77c \ud559\uc0dd\uc744 \ud3c9\uac00\ud558\uc138\uc694.',
@@ -141,8 +138,7 @@ ${hints}` : ''}`;
     '[\ub2f5\ubcc0 \uc9c0\uce68]',
     '- \ubc18\ub4dc\uc2dc \ud55c\uad6d\uc5b4\ub85c \ub2f5\ud569\ub2c8\ub2e4.',
     '- \ud55c \ubc88\uc5d0 \ud558\ub098\uc758 \uc9c8\ubb38\ub9cc \uc9c4\ud589\ud569\ub2c8\ub2e4.',
-  ].join('
-');
+  ].join('\n');
 }
 
 function appendBubble(role, text, isStreaming = false) {
@@ -354,7 +350,7 @@ async function tryRestoreSessionFromServer(chapterData) {
   setSubmitEnabled(assessmentComplete);
 
   appendBubble('system', '\uc774\uc804 \uc138\uc158\uc774 \uc11c\ubc84\uc5d0\uc11c \ubcf5\uc6d0\ub418\uc5c8\uc2b5\ub2c8\ub2e4. \uc774\uc5b4\uc11c \uc9c4\ud589\ud558\uc138\uc694.');
-  pushLogMessage('system', '?몄뀡 蹂듭썝(server)', currentMode);
+  pushLogMessage('system', '\uc138\uc158 \ubcf5\uc6d0(server)', currentMode);
   persistSession();
   return true;
 }
@@ -419,7 +415,7 @@ function handleAssessmentComplete() {
   setSubmitEnabled(true);
 
   appendBubble('system', '\ud615\uc131\ud3c9\uac00\uac00 \uc644\ub8cc\ub418\uc5c8\uc2b5\ub2c8\ub2e4. \ud615\uc131\ud3c9\uac00 \uc81c\ucd9c (PDF) \ubc84\ud2bc\uc73c\ub85c \uc81c\ucd9c\ud558\uc138\uc694.');
-  pushLogMessage('system', '?뺤꽦?됯? ?꾨즺', ChatMode.ASSESSMENT_COMPLETE);
+  pushLogMessage('system', '\ud615\uc131\ud3c9\uac00 \uc644\ub8cc', ChatMode.ASSESSMENT_COMPLETE);
 
   sendEvent('assessment_completed', {
     chapterId: chapterRef?.id || '',
@@ -499,7 +495,7 @@ async function sendToAI(userText, opts = {}) {
     }
   } catch (err) {
     if (textEl) {
-      textEl.textContent = '?ㅻ쪟媛 諛쒖깮?덉뒿?덈떎. ?좎떆 ???ㅼ떆 ?쒕룄?댁＜?몄슂.';
+      textEl.textContent = '\uc624\ub958\uac00 \ubc1c\uc0dd\ud588\uc2b5\ub2c8\ub2e4. \uc7a0\uc2dc \ud6c4 \ub2e4\uc2dc \uc2dc\ub3c4\ud574\uc8fc\uc138\uc694.';
       textEl.style.color = 'var(--accent-red)';
     }
     console.error('Streaming error:', err);
@@ -709,7 +705,7 @@ export async function initChatbot(chapterData) {
     setSubmitEnabled(assessmentComplete);
 
     appendBubble('system', '\uc774\uc804 \uc138\uc158\uc774 \ubcf5\uc6d0\ub418\uc5c8\uc2b5\ub2c8\ub2e4. \uc774\uc5b4\uc11c \uc9c4\ud589\ud558\uc138\uc694.');
-    pushLogMessage('system', '?몄뀡 蹂듭썝(local)', currentMode);
+    pushLogMessage('system', '\uc138\uc158 \ubcf5\uc6d0(local)', currentMode);
     persistSession();
     return;
   }
