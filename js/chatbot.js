@@ -146,7 +146,7 @@ function appendBubble(role, text, isStreaming = false) {
   const bubble = document.createElement('div');
   bubble.className = `chat-bubble ${role}`;
 
-  const avatarText = role === 'ai' ? '?쨼' : role === 'user' ? '?뫀' : '';
+  const avatarText = role === 'ai' ? '🤖' : role === 'user' ? '👤' : '';
 
   if (role === 'system') {
     bubble.innerHTML = `<div class="bubble-text">${escapeHtml(text)}</div>`;
