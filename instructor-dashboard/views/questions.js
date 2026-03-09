@@ -39,7 +39,7 @@ function buildShell() {
   ).join('');
 
   return `
-    <div class="questions-header" style="display:flex;align-items:center;gap:12px;padding:16px 0 8px;flex-wrap:wrap;">
+    <div class="questions-header" style="display:flex;align-items:center;gap:12px;padding:16px 0 8px;flex-wrap:wrap;position:sticky;top:0;background:var(--bg-main,#fff);z-index:10;border-bottom:1px solid var(--border);margin-bottom:8px;">
       <h2 style="margin:0;font-size:1.1rem;">형성평가 문항 관리</h2>
       <select id="q-chapter-select" style="padding:6px 10px;border-radius:6px;border:1px solid var(--border);font-size:0.9rem;">
         ${options}
