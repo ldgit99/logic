@@ -346,7 +346,7 @@ async function tryRestoreSessionFromServer(chapterData) {
   updateBadge();
   setSubmitEnabled(assessmentComplete);
 
-  appendBubble('system', '?댁쟾 ?몄뀡??서버??蹂듭썝?섏뿀?듬땲?? ?댁뼱??吏꾪뻾?섏꽭??');
+  appendBubble('system', '\uc774\uc804 \uc138\uc158\uc774 \uc11c\ubc84\uc5d0\uc11c \ubcf5\uc6d0\ub418\uc5c8\uc2b5\ub2c8\ub2e4. \uc774\uc5b4\uc11c \uc9c4\ud589\ud558\uc138\uc694.');
   pushLogMessage('system', '?몄뀡 蹂듭썝(server)', currentMode);
   persistSession();
   return true;
@@ -411,7 +411,7 @@ function handleAssessmentComplete() {
   updateBadge();
   setSubmitEnabled(true);
 
-  appendBubble('system', '?뺤꽦?됯?媛 ?꾨즺?섏뿀?듬땲?? ?꾨옒 "?뺤꽦?됯? ?쒖텧 (PDF)" 踰꾪듉?쇰줈 ?쒖텧?섏꽭??');
+  appendBubble('system', '\ud615\uc131\ud3c9\uac00\uac00 \uc644\ub8cc\ub418\uc5c8\uc2b5\ub2c8\ub2e4. \ud615\uc131\ud3c9\uac00 \uc81c\ucd9c (PDF) \ubc84\ud2bc\uc73c\ub85c \uc81c\ucd9c\ud558\uc138\uc694.');
   pushLogMessage('system', '?뺤꽦?됯? ?꾨즺', ChatMode.ASSESSMENT_COMPLETE);
 
   sendEvent('assessment_completed', {
@@ -435,7 +435,7 @@ async function sendToAI(userText, opts = {}) {
   const normalized = normalizeInput(userText);
 
   if (!force && currentMode === ChatMode.ASSESSMENT && !assessmentComplete && isLikelyLearningQuestion(normalized)) {
-    const blockedMsg = '?뺤꽦?됯? 吏꾪뻾 以묒엯?덈떎. ?됯?瑜??댁뼱媛?몄슂.';
+    const blockedMsg = '\ud615\uc131\ud3c9\uac00 \uc9c4\ud589 \uc911\uc785\ub2c8\ub2e4. \ud3c9\uac00\ub97c \uc774\uc5b4\uac00\uc8fc\uc138\uc694.';
     appendBubble('system', blockedMsg);
     pushLogMessage('system', blockedMsg, currentMode);
     persistSession();
@@ -523,14 +523,14 @@ async function startAssessment() {
   updateBadge();
   setSubmitEnabled(false);
 
-  const notice = `?뺤꽦?됯? 紐⑤뱶瑜??쒖옉?⑸땲?? 珥?${getAssessmentQuestionCount()}臾명빆??吏꾪뻾?⑸땲??`;
+  const notice = `\ud615\uc131\ud3c9\uac00\ub97c \uc2dc\uc791\ud569\ub2c8\ub2e4. \ucd1d ${getAssessmentQuestionCount()}\ubb38\ud56d\uc73c\ub85c \uc9c4\ud589\ud569\ub2c8\ub2e4.`;
   appendBubble('system', notice);
   pushLogMessage('system', notice, currentMode);
 
   modelMessages = [{ role: 'system', content: buildAssessmentPrompt(chapterRef) }];
   persistSession();
 
-  await sendToAI('?뺤꽦?됯?瑜??쒖옉?⑸땲?? Q1遺??吏덈Ц?댁＜?몄슂.', { force: true });
+  await sendToAI('\ud615\uc131\ud3c9\uac00\ub97c \uc2dc\uc791\ud569\ub2c8\ub2e4. Q1\uc744 \uc9c8\ubb38\ud574\uc8fc\uc138\uc694.', { force: true });
 }
 
 function handleSend() {
@@ -550,7 +550,7 @@ function handleSend() {
   }
 
   if (currentMode === ChatMode.ASSESSMENT_COMPLETE) {
-    const msg = '?뺤꽦?됯?媛 ?꾨즺?섏뿀?듬땲?? PDF ?쒖텧 ???ㅼ쓬 ?숈뒿??吏꾪뻾?섏꽭??';
+    const msg = '\ud615\uc131\ud3c9\uac00\uac00 \uc644\ub8cc\ub418\uc5c8\uc2b5\ub2c8\ub2e4. PDF \uc81c\ucd9c \ud6c4 \ub2e4\uc74c \ud559\uc2b5\uc744 \uc9c4\ud589\ud558\uc138\uc694.';
     appendBubble('system', msg);
     pushLogMessage('system', msg, currentMode);
     persistSession();
@@ -591,7 +591,7 @@ function createNewLearningSession() {
   logMessages = [];
   modelMessages = [{ role: 'system', content: buildLearningPrompt(chapterRef) }];
 
-  const welcome = `?덈뀞?섏꽭?? ${chapterRef.title} ?숈뒿 ?쒗꽣?낅땲?? ?숈뒿 吏덈Ц???먯쑀濡?쾶 ?댁＜?몄슂. ?뺤꽦?됯?瑜??쒖옉?섎젮硫?"?뺤꽦?됯?"瑜??낅젰?섏꽭??`;
+  const welcome = `\uc548\ub155\ud558\uc138\uc694! ${chapterRef.title} \ud559\uc2b5 \ub3c4\uc6b0\ubbf8\uc785\ub2c8\ub2e4. \ud559\uc2b5 \uc9c8\ubb38\uc740 \uc790\uc720\ub86d\uac8c \ud574\uc8fc\uc138\uc694. \ud615\uc131\ud3c9\uac00\ub97c \uc2dc\uc791\ud558\ub824\uba74 "\ud615\uc131\ud3c9\uac00"\ub97c \uc785\ub825\ud558\uc138\uc694.`;
   appendBubble('ai', welcome);
   pushLogMessage('assistant', welcome, currentMode);
   persistSession();
@@ -647,7 +647,7 @@ export async function initChatbot(chapterData) {
     if (chapterLocks[chapterData.id]) {
       const container = getEl('chat-messages');
       if (container) container.innerHTML = '';
-      appendBubble('system', '??梨뺥꽣???꾩옱 援먯닔?먯뿉 ?섑빐 ?좉꺼 ?덉뒿?덈떎. ?묎렐???쒗븳?⑸땲??');
+      appendBubble('system', '\uc774 \ucc55\ud130\ub294 \ud604\uc7ac \uc81c\ud55c \uc911\uc785\ub2c8\ub2e4. \ub2e4\uc74c\uc5d0 \uc774\uc6a9\ud558\uc138\uc694.');
       const input = getEl('chat-input');
       const sendBtn = getEl('chat-send');
       if (input) input.disabled = true;
@@ -677,7 +677,7 @@ export async function initChatbot(chapterData) {
     updateBadge();
     setSubmitEnabled(assessmentComplete);
 
-    appendBubble('system', '?댁쟾 ?몄뀡??蹂듭썝?섏뿀?듬땲?? ?댁뼱??吏꾪뻾?섏꽭??');
+    appendBubble('system', '\uc774\uc804 \uc138\uc158\uc774 \ubcf5\uc6d0\ub418\uc5c8\uc2b5\ub2c8\ub2e4. \uc774\uc5b4\uc11c \uc9c4\ud589\ud558\uc138\uc694.');
     pushLogMessage('system', '?몄뀡 蹂듭썝(local)', currentMode);
     persistSession();
     return;
