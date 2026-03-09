@@ -51,7 +51,10 @@ function buildShell() {
       여기서 저장한 문항이 챗봇 형성평가에 반영됩니다. 저장하지 않으면 기존 JSON 문항이 사용됩니다.
     </p>
     <div id="q-list" style="display:flex;flex-direction:column;gap:16px;"></div>
-    <button id="q-add-btn" style="margin-top:16px;padding:8px 18px;border-radius:6px;border:2px dashed var(--border);background:transparent;cursor:pointer;font-size:0.9rem;width:100%;">+ 문항 추가</button>
+    <div style="display:flex;gap:8px;margin-top:16px;">
+      <button id="q-add-btn" style="flex:1;padding:8px 18px;border-radius:6px;border:2px dashed var(--border);background:transparent;cursor:pointer;font-size:0.9rem;">+ 문항 추가</button>
+      <button id="q-save-btn-bottom" style="padding:8px 24px;background:var(--accent-blue);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:0.9rem;font-weight:600;">저장</button>
+    </div>
   `;
 }
 
@@ -64,6 +67,7 @@ function bindEvents() {
 
   _container.querySelector('#q-save-btn').addEventListener('click', saveChapter);
   _container.querySelector('#q-add-btn').addEventListener('click', addQuestion);
+  _container.querySelector('#q-save-btn-bottom').addEventListener('click', saveChapter);
 }
 
 async function loadChapter(chapterId) {
@@ -82,9 +86,8 @@ async function loadChapter(chapterId) {
 }
 
 async function saveChapter() {
-  const btn = _container.querySelector('#q-save-btn');
-  btn.disabled = true;
-  btn.textContent = '저장 중...';
+  const btns = _container.querySelectorAll('#q-save-btn, #q-save-btn-bottom');
+  btns.forEach((b) => { b.disabled = true; b.textContent = '저장 중...'; });
   try {
     collectFromDOM();
     await _api.saveQuestions(_currentChapterId, { questions: _questions });
@@ -93,8 +96,7 @@ async function saveChapter() {
   } catch {
     setStatus('저장 실패');
   } finally {
-    btn.disabled = false;
-    btn.textContent = '저장';
+    btns.forEach((b) => { b.disabled = false; b.textContent = '저장'; });
   }
 }
 
@@ -155,7 +157,7 @@ function buildCard(q, index) {
     (l) => `<option value="${l}" ${q.bloomLevel === l ? 'selected' : ''}>${l}</option>`
   ).join('');
 
-  const hints = [...(q.hints || []), '', ''].slice(0, 3);
+  const hints = [...(q.hints || []), '', '', ''].slice(0, 3);
 
   return `
     <div class="q-card" style="border:1px solid var(--border);border-radius:8px;padding:16px;background:var(--bg-card, var(--bg-secondary));">
