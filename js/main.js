@@ -48,11 +48,11 @@ export function updateSubmitButtonState(submitted) {
   const btn = document.getElementById('btn-submit-pdf');
   if (!btn) return;
   if (submitted) {
-    btn.textContent = '?쒖텧 ?꾨즺';
+    btn.textContent = '\uc81c\ucd9c \uc644\ub8cc';
     btn.classList.add('submitted');
     btn.disabled = true;
   } else {
-    btn.textContent = '?뺤꽦?됯? ?쒖텧';
+    btn.textContent = '\ud615\uc131\ud3c9\uac00 \uc81c\ucd9c';
     btn.classList.remove('submitted');
     btn.disabled = false;
   }
@@ -150,7 +150,7 @@ function initBasicLoginGateFallback() {
     const studentName = String(nameInput?.value || '').trim();
     const studentId = String(idInput?.value || '').trim();
     if (!studentName || !studentId) {
-      setError('?대쫫怨??숇쾲???낅젰?섏꽭??');
+      setError('\uc774\ub984\uacfc \ud559\ubc88\uc744 \uc785\ub825\ud574\uc8fc\uc138\uc694');
       return;
     }
     setError('');
@@ -253,7 +253,7 @@ function updateTOCSections(chapterId, chapterData) {
   const footer = document.getElementById('sidebar-footer');
   if (footer && chapterData.objectives) {
     footer.innerHTML = `
-      <div class="objectives-title">?숈뒿紐⑺몴</div>
+      <div class="objectives-title">\ud559\uc2b5\ubaa9\ud45c</div>
       ${chapterData.objectives.map(o => `<div class="objective-item">${o}</div>`).join('')}
     `;
   }
@@ -286,7 +286,7 @@ async function loadChapter(id) {
   currentChapterId = id;
 
   document.getElementById('content-inner').innerHTML =
-    '<div id="loading-screen"><div class="spinner"></div><p>肄섑뀗痢좊? 遺덈윭?ㅻ뒗 以?..</p></div>';
+    '<div id="loading-screen"><div class="spinner"></div><p>\ucf58\ud150\uce20\ub97c \ubd88\ub7ec\uc624\ub294 \uc911...</p></div>';
   document.getElementById('content-area').scrollTop = 0;
 
   try {
@@ -308,7 +308,7 @@ async function loadChapter(id) {
   } catch (err) {
     console.error(`梨뺥꽣 ${id} 濡쒕뱶 ?ㅽ뙣:`, err);
     document.getElementById('content-inner').innerHTML =
-      `<p style="color:var(--accent-red);padding:32px;">梨뺥꽣 ${id} 濡쒕뱶???ㅽ뙣?덉뒿?덈떎.</p>`;
+      `<p style="color:var(--accent-red);padding:32px;">\ucc55\ud130 ${id} \ub85c\ub529\uc5d0 \uc2e4\ud328\ud588\uc2b5\ub2c8\ub2e4.</p>`;
   }
 }
 

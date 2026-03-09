@@ -180,13 +180,13 @@ function updateBadge() {
   if (!badge) return;
 
   if (currentMode === ChatMode.ASSESSMENT_COMPLETE) {
-    badge.textContent = '?꾨즺';
+    badge.textContent = '\uc644\ub8cc';
     badge.className = 'badge badge-complete';
   } else if (currentMode === ChatMode.ASSESSMENT) {
-    badge.textContent = '吏꾪뻾 以?;
+    badge.textContent = '\uc9c4\ud589 \uc911';
     badge.className = 'badge badge-active';
   } else {
-    badge.textContent = '?숈뒿 以?;
+    badge.textContent = '\ub300\uae30 \uc911';
     badge.className = 'badge badge-pending';
   }
 }
