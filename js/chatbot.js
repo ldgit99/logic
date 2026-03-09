@@ -148,21 +148,17 @@ function buildReflectionPrompt(data) {
   return [
     `\uc5ed\ud560: "${title}" \ucc55\ud130 \ud559\uc2b5 \uc131\ucc30\uc77c\uc9c0 \uc9c4\ud589\uc790\uc785\ub2c8\ub2e4.`,
     '',
-    '[\uc5ed\ud560 \uc548\ub0b4]',
-    '- \ud559\uc0dd\uc774 \uc774\ubc88 \ucc55\ud130\uc5d0\uc11c \ubc30\uc6b4 \ub0b4\uc6a9\uc744 \uc2a4\uc2a4\ub85c \ub418\uc9da\uc544\ubcf4\ub3c4\ub85d \ub3c4\uc640\uc8fc\uc138\uc694.',
-    '- \ub2e4\uc74c 4\uac00\uc9c0 \uc9c8\ubb38\uc744 \ud55c \ubc88\uc5d0 \ud558\ub098\uc529 \uc21c\uc11c\ub300\ub85c \ubb3b\uc73c\uc138\uc694.',
-    '- \uc9c0\ub098\uce58\uac8c \uad50\uc815\ud558\uc9c0 \ub9d0\uace0, \uc9e7\uc740 \uaca9\ub824 \ud6c4 \ub2e4\uc74c \uc9c8\ubb38\uc73c\ub85c \ub118\uc5b4\uac00\uc138\uc694.',
+    '[\uc9c4\ud589 \ubc29\uc2dd]',
+    '- \uc544\ub798 3\uac00\uc9c0 \uc9c8\ubb38\uc744 \ud55c \ubc88\uc5d0 \ud558\ub098\uc529 \uc21c\uc11c\ub300\ub85c \uc9c1\uc811 \uc81c\uc2dc\ud558\uc138\uc694.',
+    '- \ud559\uc0dd\uc758 \ub2f5\ubcc0\uc744 \uc9e7\uac8c \uc778\uc815\ud55c \ud6c4 \ub2e4\uc74c \uc9c8\ubb38\uc73c\ub85c \ub118\uc5b4\uac00\uc138\uc694.',
+    '- 3\ubc88 \uc9c8\ubb38\uae4c\uc9c0 \ubaa8\ub450 \ub2f5\ubcc0\ubc1b\uc73c\uba74 \ub530\ub73b\ud558\uac8c \uc131\ucc30\uc77c\uc9c0\ub97c \ub9c8\ubb34\ub9ac\ud558\uc138\uc694.',
     '- \uc815\ub2f5\uc774 \uc5c6\ub294 \uc131\ucc30 \ud65c\ub3d9\uc784\uc744 \uac15\uc870\ud558\uc138\uc694.',
-    '- \ud559\uc0dd\uc774 \ucda9\ubd84\ud788 \uc131\ucc30\ud588\ub2e4\uace0 \ud310\ub2e8\ub418\uba74 \ub530\ub73b\ud558\uac8c \ub9c8\ubb34\ub9ac\ud558\uc138\uc694.',
-    '',
-    '[\uc131\ucc30 \uc9c8\ubb38 \ubaa9\ub85d]',
-    '1. \uc774\ubc88 \ucc55\ud130\uc5d0\uc11c \uac00\uc7a5 \uae30\uc5b5\uc5d0 \ub0a8\ub294 \ub0b4\uc6a9\uc740 \ubb34\uc5c7\uc778\uac00\uc694?',
-    '2. \uc5b4\ub835\uac70\ub098 \ud63c\ub780\uc2a4\ub7ec\uc6e0\ub358 \ubd80\ubd84\uc774 \uc788\uc5c8\ub098\uc694?',
-    '3. \uc774\uc804\uc5d0 \uc54c\uace0 \uc788\ub358 \uc9c0\uc2dd\uacfc \uc5b4\ub5bb\uac8c \uc5f0\uacb0\ub418\ub098\uc694?',
-    '4. \uc2e4\uc0dd\ud65c\uc774\ub098 \ub2e4\ub978 \ubd84\uc57c\uc5d0 \uc5b4\ub5bb\uac8c \uc801\uc6a9\ud560 \uc218 \uc788\uc744\uae4c\uc694?',
-    '',
-    '[\ub2f5\ubcc0 \uc9c0\uce68]',
     '- \ubc18\ub4dc\uc2dc \ud55c\uad6d\uc5b4\ub85c \ub2f5\ud569\ub2c8\ub2e4.',
+    '',
+    '[\uc131\ucc30 \uc9c8\ubb38 3\uac00\uc9c0]',
+    '1. \uc774\ubc88 \ub2e8\uc6d0\uc5d0\uc11c \uac00\uc7a5 \uc911\uc694\ud558\ub2e4\uace0 \uc0dd\uac01\ud558\ub294 \uac1c\ub150\uc744 \uc124\uba85\ud574 \ubcf4\uc138\uc694.',
+    '2. \uc774\ubc88 \ub2e8\uc6d0\uc5d0\uc11c \uc5b4\ub824\uc6e0\ub358 \uac1c\ub150\uc744 \uc4f0\uace0, \uc774\uc720\ub97c \uc124\uba85\ud574 \ubcf4\uc138\uc694.',
+    '3. \uc774\ubc88 \ub2e8\uc6d0\uc5d0\uc11c \ubc30\uc6b4 \ub0b4\uc6a9\uc774 \uc774\uc804\uc5d0 \uacf5\ubd80\ud588\ub358 \uc9c0\uc2dd\uacfc \uc5b4\ub5bb\uac8c \uc5f0\uacb0\ub418\ub294\uc9c0 \uc791\uc131\ud574 \ubcf4\uc138\uc694.',
   ].join('\n');
 }
 
@@ -400,10 +396,6 @@ function isLikelyLearningQuestion(input) {
   return hasQuestionMark || patterns.some((p) => text.includes(p));
 }
 
-function getAssessmentQuestionCount() {
-  const total = Number(chapterRef?.formativeAssessment?.totalQuestions);
-  return Number.isInteger(total) && total > 0 ? total : 5;
-}
 
 async function streamFromWorker(messages) {
   let lastError = null;
@@ -560,24 +552,33 @@ async function fetchQuestionsFromWorker(chapterId) {
 }
 
 async function startAssessment() {
-  currentMode = ChatMode.ASSESSMENT;
-  assessmentComplete = false;
-  updateBadge();
   setSubmitEnabled(false);
 
-  // Worker KV에서 교수 설정 문항 fetch (3초 timeout, 실패시 JSON fallback)
-  let effectiveChapterData = chapterRef;
+  // Worker KV에서 교수 설정 문항 fetch (5초 timeout)
+  let instructorQuestions = null;
   try {
     const result = await Promise.race([
       fetchQuestionsFromWorker(chapterRef.id),
-      new Promise((_, r) => setTimeout(() => r(new Error('timeout')), 3000)),
+      new Promise((_, r) => setTimeout(() => r(new Error('timeout')), 5000)),
     ]);
     if (result?.questions?.questions?.length > 0) {
-      effectiveChapterData = { ...chapterRef, formativeAssessment: result.questions };
+      instructorQuestions = result.questions;
     }
-  } catch { /* use chapterRef fallback */ }
+  } catch { /* no questions */ }
 
-  const totalQ = Number(effectiveChapterData?.formativeAssessment?.totalQuestions) || getAssessmentQuestionCount();
+  if (!instructorQuestions) {
+    const msg = '\uc544\uc9c1 \ud615\uc131\ud3c9\uac00 \ubb38\ud56d\uc774 \ub4f1\ub85d\ub418\uc9c0 \uc54a\uc558\uc2b5\ub2c8\ub2e4. \uad50\uc218\ub2d8\uc774 \ubb38\ud56d\uc744 \ub4f1\ub85d\ud558\uc2e0 \ud6c4 \ub2e4\uc2dc \uc2dc\ub3c4\ud574 \uc8fc\uc138\uc694.';
+    appendBubble('system', msg);
+    pushLogMessage('system', msg, currentMode);
+    return;
+  }
+
+  currentMode = ChatMode.ASSESSMENT;
+  assessmentComplete = false;
+  updateBadge();
+
+  const effectiveChapterData = { ...chapterRef, formativeAssessment: instructorQuestions };
+  const totalQ = Number(instructorQuestions.totalQuestions) || instructorQuestions.questions.length;
   const notice = `\ud615\uc131\ud3c9\uac00\ub97c \uc2dc\uc791\ud569\ub2c8\ub2e4. \ucd1d ${totalQ}\ubb38\ud56d\uc73c\ub85c \uc9c4\ud589\ud569\ub2c8\ub2e4.`;
   appendBubble('system', notice);
   pushLogMessage('system', notice, currentMode);
