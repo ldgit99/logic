@@ -41,6 +41,7 @@ let modelMessages = [];
 let reflectionStep = 0;
 let assessmentQuestions = [];
 let assessmentQIdx = 0;
+let assessmentHintCount = 0;
 
 function getEl(id) {
   return document.getElementById(id);
@@ -170,24 +171,26 @@ function buildReflectionAckPrompt() {
   ].join('\n');
 }
 
-function buildAssessmentEvalPrompt(q, idx, total, isLast) {
+function buildAssessmentEvalPrompt(q, idx, total, isLast, hintCount = 0) {
   const hints = (q.hints || []).map((h, i) => `  \ud78c\ud2b8${i + 1}: ${h}`).join('\n');
   const advanceMarker = isLast ? COMPLETION_MARKER : NEXT_QUESTION_MARKER;
+  const remaining = Math.max(0, 3 - hintCount);
   return [
-    `\uc5ed\ud560: \ud615\uc131\ud3c9\uac00 \ucc44\uc810 AI\uc785\ub2c8\ub2e4. \ud604\uc7ac \ubb38\ud56d Q${idx + 1}/${total}\uc744 \ucc44\uc810\ud569\ub2c8\ub2e4.`,
+    `\uc5ed\ud560: \ud615\uc131\ud3c9\uac00 \ucc44\uc810 AI\uc785\ub2c8\ub2e4. \ud604\uc7ac \ubb38\ud56d Q${idx + 1}/${total}.`,
+    `[\ud604\uc7ac \uc0c1\ud0dc] \uc774 \ubb38\ud56d\uc5d0\uc11c \ud78c\ud2b8 ${hintCount}\ubc88 \uc81c\uacf5\ud568. \ub0a8\uc740 \ud78c\ud2b8: ${remaining}\ubc88.`,
     '',
     '[\ubb38\ud56d]',
     q.question || '',
     '',
     '[\ubaa8\ubc94 \ub2f5\uc548]',
     q.keyAnswer || q.answer || '',
-    ...(hints ? ['', '[\ud78c\ud2b8]', hints] : []),
+    ...(hints ? ['', '[\ud78c\ud2b8 \ubaa9\ub85d]', hints] : []),
     '',
-    '[\ucc44\uc810 \uc9c0\uce68]',
-    '- \ud559\uc0dd \ub2f5\ubcc0\uc744 \ubaa8\ubc94 \ub2f5\uc548\uacfc \ube44\uad50\ud558\uc5ec \uc815\uc624\ub2f5\uc744 \ud310\uc815\ud558\uace0 \ud53c\ub4dc\ubc31\uc744 \uc81c\uacf5\ud569\ub2c8\ub2e4.',
-    `- \uc815\ub2f5\uc774\uba74 \uce5c\ucc2c \ud6c4 \uc751\ub2f5 \ub9c8\uc9c0\ub9c9\uc5d0 \ubc18\ub4dc\uc2dc ${advanceMarker} \ub97c \ud3ec\ud568\ud558\uc138\uc694.`,
-    '- \uc624\ub2f5\uc774\uba74 \ud78c\ud2b8\ub97c \ud55c \ubc88\uc529 \ub2e8\uacc4\uc801\uc73c\ub85c \uc81c\uacf5\ud569\ub2c8\ub2e4. (\ucd5c\ub300 3\ud68c)',
-    `- \ud78c\ud2b8 3\ud68c \uc18c\uc9c4 \ud6c4\uc5d0\ub3c4 \uc624\ub2f5\uc774\uba74 \ubaa8\ubc94 \ub2f5\uc548\uc744 \uc54c\ub824\uc8fc\uace0 \uc751\ub2f5 \ub9c8\uc9c0\ub9c9\uc5d0 \ubc18\ub4dc\uc2dc ${advanceMarker} \ub97c \ud3ec\ud568\ud558\uc138\uc694.`,
+    '[\ucc44\uc810 \uaddc\uce59 - \ubc18\ub4dc\uc2dc \uc5c4\uaca9\ud788 \ub530\ub974\uc138\uc694]',
+    `1. \uc815\ub2f5\uc774\uba74: \uce5c\ucc2c + \uc751\ub2f5 \ub9c8\uc9c0\ub9c9\uc5d0 \ubc18\ub4dc\uc2dc ${advanceMarker} \ud3ec\ud568.`,
+    remaining > 0
+      ? `2. \uc624\ub2f5\uc774\uba74: \ud78c\ud2b8 ${hintCount + 1}\ubc88\ub9cc \uc81c\uacf5. ${advanceMarker} \uc808\ub300 \ud3ec\ud568 \uae08\uc9c0.`
+      : `2. \uc624\ub2f5\uc774\uba74: \ud78c\ud2b8\uac00 \uc18c\uc9c4\ub418\uc5c8\uc2b5\ub2c8\ub2e4. \ubaa8\ubc94 \ub2f5\uc548\uc744 \uacf5\uac1c\ud558\uace0 \uc751\ub2f5 \ub9c8\uc9c0\ub9c9\uc5d0 \ubc18\ub4dc\uc2dc ${advanceMarker} \ud3ec\ud568.`,
     '- \ubc18\ub4dc\uc2dc \ud55c\uad6d\uc5b4\ub85c \ub2f5\ud569\ub2c8\ub2e4.',
   ].join('\n');
 }
@@ -588,18 +591,29 @@ async function sendToAI(userText, opts = {}) {
       persistSession();
     }
 
-    // 평가 모드: NEXT_QUESTION_MARKER가 있을 때만 다음 문항으로 진행 (정답 or 힌트 소진)
-    if (currentMode === ChatMode.ASSESSMENT && !assessmentComplete && fullText.includes(NEXT_QUESTION_MARKER)) {
-      fullText = fullText.replace(NEXT_QUESTION_MARKER, '').trimEnd();
-      if (textEl) textEl.textContent = fullText;
-      assessmentQIdx++;
-      if (assessmentQIdx < assessmentQuestions.length) {
-        const nextQ = assessmentQuestions[assessmentQIdx];
+    // 평가 모드: 마커 유무로 분기
+    if (currentMode === ChatMode.ASSESSMENT && !assessmentComplete) {
+      if (fullText.includes(NEXT_QUESTION_MARKER)) {
+        // 정답 or 힌트 소진 → 다음 문항으로 진행
+        fullText = fullText.replace(NEXT_QUESTION_MARKER, '').trimEnd();
+        if (textEl) textEl.textContent = fullText;
+        assessmentHintCount = 0;
+        assessmentQIdx++;
+        if (assessmentQIdx < assessmentQuestions.length) {
+          const nextQ = assessmentQuestions[assessmentQIdx];
+          const isLast = assessmentQIdx === assessmentQuestions.length - 1;
+          const qText = `Q${assessmentQIdx + 1}. ${nextQ.question}`;
+          appendBubble('ai', qText);
+          pushLogMessage('assistant', qText, ChatMode.ASSESSMENT);
+          modelMessages[0] = { role: 'system', content: buildAssessmentEvalPrompt(nextQ, assessmentQIdx, assessmentQuestions.length, isLast, 0) };
+          persistSession();
+        }
+      } else {
+        // 힌트 제공 → 카운트 증가 후 프롬프트 갱신
+        assessmentHintCount++;
+        const q = assessmentQuestions[assessmentQIdx];
         const isLast = assessmentQIdx === assessmentQuestions.length - 1;
-        const qText = `Q${assessmentQIdx + 1}. ${nextQ.question}`;
-        appendBubble('ai', qText);
-        pushLogMessage('assistant', qText, ChatMode.ASSESSMENT);
-        modelMessages[0] = { role: 'system', content: buildAssessmentEvalPrompt(nextQ, assessmentQIdx, assessmentQuestions.length, isLast) };
+        modelMessages[0] = { role: 'system', content: buildAssessmentEvalPrompt(q, assessmentQIdx, assessmentQuestions.length, isLast, assessmentHintCount) };
         persistSession();
       }
     }
@@ -657,6 +671,7 @@ async function startAssessment() {
   assessmentComplete = false;
   assessmentQuestions = instructorQuestions.questions;
   assessmentQIdx = 0;
+  assessmentHintCount = 0;
   updateBadge();
 
   const totalQ = assessmentQuestions.length;
