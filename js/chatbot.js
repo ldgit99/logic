@@ -1,4 +1,4 @@
-﻿import { sendEvent } from './instrumentation.js?v=20260309e';
+import { sendEvent } from './instrumentation.js?v=20260309e';
 import { getStudentProfile } from './auth.js?v=20260309e';
 
 const LOCAL_ORIGIN_WITH_SLASH = window.location.origin.endsWith('/') ? window.location.origin : (window.location.origin + '/');
@@ -11,12 +11,14 @@ const WORKER_URLS = [
 
 const COMPLETION_MARKER = '===\ud615\uc131\ud3c9\uac00\uc644\ub8cc===';
 const ASSESSMENT_TRIGGER = '\ud615\uc131\ud3c9\uac00';
+const REFLECTION_TRIGGER = '\uc131\ucc30';
 const SESSION_INDEX_KEY = 'logic_session_index_v4';
 const SESSION_PREFIX = 'logic_session_v4';
 const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 30;
 
 const ChatMode = {
   LEARNING: 'learning',
+  REFLECTION: 'reflection',
   ASSESSMENT: 'assessment',
   ASSESSMENT_COMPLETE: 'assessment_complete',
 };
@@ -141,6 +143,29 @@ ${hints}` : ''}`;
   ].join('\n');
 }
 
+function buildReflectionPrompt(data) {
+  const { title } = data;
+  return [
+    `\uc5ed\ud560: "${title}" \ucc55\ud130 \ud559\uc2b5 \uc131\ucc30\uc77c\uc9c0 \uc9c4\ud589\uc790\uc785\ub2c8\ub2e4.`,
+    '',
+    '[\uc5ed\ud560 \uc548\ub0b4]',
+    '- \ud559\uc0dd\uc774 \uc774\ubc88 \ucc55\ud130\uc5d0\uc11c \ubc30\uc6b4 \ub0b4\uc6a9\uc744 \uc2a4\uc2a4\ub85c \ub418\uc9da\uc544\ubcf4\ub3c4\ub85d \ub3c4\uc640\uc8fc\uc138\uc694.',
+    '- \ub2e4\uc74c 4\uac00\uc9c0 \uc9c8\ubb38\uc744 \ud55c \ubc88\uc5d0 \ud558\ub098\uc529 \uc21c\uc11c\ub300\ub85c \ubb3b\uc73c\uc138\uc694.',
+    '- \uc9c0\ub098\uce58\uac8c \uad50\uc815\ud558\uc9c0 \ub9d0\uace0, \uc9e7\uc740 \uaca9\ub824 \ud6c4 \ub2e4\uc74c \uc9c8\ubb38\uc73c\ub85c \ub118\uc5b4\uac00\uc138\uc694.',
+    '- \uc815\ub2f5\uc774 \uc5c6\ub294 \uc131\ucc30 \ud65c\ub3d9\uc784\uc744 \uac15\uc870\ud558\uc138\uc694.',
+    '- \ud559\uc0dd\uc774 \ucda9\ubd84\ud788 \uc131\ucc30\ud588\ub2e4\uace0 \ud310\ub2e8\ub418\uba74 \ub530\ub73b\ud558\uac8c \ub9c8\ubb34\ub9ac\ud558\uc138\uc694.',
+    '',
+    '[\uc131\ucc30 \uc9c8\ubb38 \ubaa9\ub85d]',
+    '1. \uc774\ubc88 \ucc55\ud130\uc5d0\uc11c \uac00\uc7a5 \uae30\uc5b5\uc5d0 \ub0a8\ub294 \ub0b4\uc6a9\uc740 \ubb34\uc5c7\uc778\uac00\uc694?',
+    '2. \uc5b4\ub835\uac70\ub098 \ud63c\ub780\uc2a4\ub7ec\uc6e0\ub358 \ubd80\ubd84\uc774 \uc788\uc5c8\ub098\uc694?',
+    '3. \uc774\uc804\uc5d0 \uc54c\uace0 \uc788\ub358 \uc9c0\uc2dd\uacfc \uc5b4\ub5bb\uac8c \uc5f0\uacb0\ub418\ub098\uc694?',
+    '4. \uc2e4\uc0dd\ud65c\uc774\ub098 \ub2e4\ub978 \ubd84\uc57c\uc5d0 \uc5b4\ub5bb\uac8c \uc801\uc6a9\ud560 \uc218 \uc788\uc744\uae4c\uc694?',
+    '',
+    '[\ub2f5\ubcc0 \uc9c0\uce68]',
+    '- \ubc18\ub4dc\uc2dc \ud55c\uad6d\uc5b4\ub85c \ub2f5\ud569\ub2c8\ub2e4.',
+  ].join('\n');
+}
+
 function appendBubble(role, text, isStreaming = false) {
   const container = getEl('chat-messages');
   if (!container) return null;
@@ -186,7 +211,10 @@ function updateBadge() {
     badge.textContent = '\uc644\ub8cc';
     badge.className = 'badge badge-complete';
   } else if (currentMode === ChatMode.ASSESSMENT) {
-    badge.textContent = '\uc9c4\ud589 \uc911';
+    badge.textContent = '\ud3c9\uac00 \uc9c4\ud589';
+    badge.className = 'badge badge-active';
+  } else if (currentMode === ChatMode.REFLECTION) {
+    badge.textContent = '\uc131\ucc30 \uc911';
     badge.className = 'badge badge-active';
   } else {
     badge.textContent = '\ub300\uae30 \uc911';
@@ -560,6 +588,20 @@ async function startAssessment() {
   await sendToAI('\ud615\uc131\ud3c9\uac00\ub97c \uc2dc\uc791\ud569\ub2c8\ub2e4. Q1\uc744 \uc9c8\ubb38\ud574\uc8fc\uc138\uc694.', { force: true });
 }
 
+async function startReflection() {
+  currentMode = ChatMode.REFLECTION;
+  updateBadge();
+
+  const notice = '\uc131\ucc30\uc77c\uc9c0\ub97c \uc2dc\uc791\ud569\ub2c8\ub2e4. AI\uac00 \uc9c8\ubb38\uc744 \ub4e4\uc5b4\ub4dc\ub9ac\uba74 \uc790\uc720\ub86d\uac8c \ub2f5\ud574\uc8fc\uc138\uc694.';
+  appendBubble('system', notice);
+  pushLogMessage('system', notice, currentMode);
+
+  modelMessages = [{ role: 'system', content: buildReflectionPrompt(chapterRef) }];
+  persistSession();
+
+  await sendToAI('\uc131\ucc30\uc77c\uc9c0\ub97c \uc2dc\uc791\ud569\ub2c8\ub2e4. \uccab \ubc88\uc9f8 \uc9c8\ubb38\uc744 \ud574\uc8fc\uc138\uc694.', { force: true });
+}
+
 function handleSend() {
   const input = getEl('chat-input');
   if (!input) return;
@@ -571,7 +613,14 @@ function handleSend() {
   input.style.height = 'auto';
 
   const lower = text.toLowerCase();
-  if (currentMode === ChatMode.LEARNING && lower === ASSESSMENT_TRIGGER.toLowerCase()) {
+
+  if (currentMode === ChatMode.LEARNING && lower === REFLECTION_TRIGGER) {
+    startReflection();
+    return;
+  }
+
+  if (currentMode === ChatMode.LEARNING &&
+      (lower === ASSESSMENT_TRIGGER.toLowerCase() || lower === '\ud3c9\uac00')) {
     startAssessment();
     return;
   }
