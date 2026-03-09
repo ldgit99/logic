@@ -9,8 +9,8 @@ const WORKER_URLS = [
   ...(window.location.origin.includes('localhost') || window.location.origin.includes('127.0.0.1') ? [LOCAL_ORIGIN_WITH_SLASH] : []),
 ];
 
-const COMPLETION_MARKER = '===?뺤꽦?됯??꾨즺===';
-const ASSESSMENT_TRIGGER = '?뺤꽦?됯?';
+const COMPLETION_MARKER = '===\ud615\uc131\ud3c9\uac00\uc644\ub8cc===';
+const ASSESSMENT_TRIGGER = '\ud615\uc131\ud3c9\uac00';
 const SESSION_INDEX_KEY = 'logic_session_index_v2';
 const SESSION_PREFIX = 'logic_session_v2';
 const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 30;

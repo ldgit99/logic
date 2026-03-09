@@ -206,7 +206,7 @@ function buildTOC(chapters) {
     label.innerHTML = `
       <span class="chapter-num">${ch.id}</span>
       <span class="chapter-title">${ch.title}</span>${submittedBadge}
-      <span class="toc-arrow">??/span>
+      <span class="toc-arrow">\u203a</span>
     `;
     label.addEventListener('click', () => loadChapter(ch.id));
 
