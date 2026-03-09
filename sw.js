@@ -8,7 +8,7 @@
  *
  * ⚠️ 배포할 때마다 아래 날짜를 갱신하세요.
  */
-const CACHE_VERSION = '20260309b';
+const CACHE_VERSION = '20260309d';
 const CACHE_NAME = `logic-circuit-v${CACHE_VERSION}`;
 
 const PRECACHE_URLS = [
@@ -82,6 +82,6 @@ self.addEventListener('fetch', (event) => {
         }
         return response;
       })
-      .catch(() => caches.match(event.request))
+      .catch(() => caches.match(event.request, { ignoreSearch: true }))
   );
 });

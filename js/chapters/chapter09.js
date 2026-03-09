@@ -1,4 +1,4 @@
-import { renderChapterWith } from './chapterBase.js?v=20260307i';
+import { renderChapterWith } from './chapterBase.js?v=20260309d';
 import { mountStateMachine } from '../simulations/stateMachine.js';
 import { mountFlipFlopSim } from '../simulations/flipFlopSim.js';
 

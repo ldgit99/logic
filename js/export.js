@@ -26,9 +26,9 @@ function markChapterSubmittedLocal(chapterId) {
   const btn = document.getElementById('btn-submit-pdf');
   if (btn) { btn.textContent = '\uC81C\uCD9C \uC644\uB8CC'; btn.classList.add('submitted'); btn.disabled = true; }
 }
-import { getConversationMessages, getChapterRef, getSessionId } from './chatbot.js?v=20260309c';
-import { getStudentProfile } from './auth.js?v=20260309c';
-import { sendAssessment, sendFeedbackReport } from './instrumentation.js?v=20260309c';
+import { getConversationMessages, getChapterRef, getSessionId } from './chatbot.js?v=20260309d';
+import { getStudentProfile } from './auth.js?v=20260309d';
+import { sendAssessment, sendFeedbackReport } from './instrumentation.js?v=20260309d';
 
 let exportEventsBound = false;
 

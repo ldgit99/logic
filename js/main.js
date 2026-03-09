@@ -5,17 +5,17 @@ let authModuleLoaded = false;
 
 // ??? 梨뺥꽣 紐⑤뱢 ?덉??ㅽ듃由?(?숈쟻 ?꾪룷?? ???
 const CHAPTER_MODULES = {
-  '01': () => import('./chapters/chapter01.js?v=20260309c'),
-  '02': () => import('./chapters/chapter02.js?v=20260309c'),
-  '03': () => import('./chapters/chapter03.js?v=20260309c'),
-  '04': () => import('./chapters/chapter04.js?v=20260309c'),
-  '05': () => import('./chapters/chapter05.js?v=20260309c'),
-  '06': () => import('./chapters/chapter06.js?v=20260309c'),
-  '07': () => import('./chapters/chapter07.js?v=20260309c'),
-  '08': () => import('./chapters/chapter08.js?v=20260309c'),
-  '09': () => import('./chapters/chapter09.js?v=20260309c'),
-  '10': () => import('./chapters/chapter10.js?v=20260309c'),
-  '11': () => import('./chapters/chapter11.js?v=20260309c'),
+  '01': () => import('./chapters/chapter01.js?v=20260309d'),
+  '02': () => import('./chapters/chapter02.js?v=20260309d'),
+  '03': () => import('./chapters/chapter03.js?v=20260309d'),
+  '04': () => import('./chapters/chapter04.js?v=20260309d'),
+  '05': () => import('./chapters/chapter05.js?v=20260309d'),
+  '06': () => import('./chapters/chapter06.js?v=20260309d'),
+  '07': () => import('./chapters/chapter07.js?v=20260309d'),
+  '08': () => import('./chapters/chapter08.js?v=20260309d'),
+  '09': () => import('./chapters/chapter09.js?v=20260309d'),
+  '10': () => import('./chapters/chapter10.js?v=20260309d'),
+  '11': () => import('./chapters/chapter11.js?v=20260309d'),
 };
 
 let currentChapterId = null;
@@ -75,7 +75,7 @@ async function fetchJsonWithTimeout(url, timeoutMs = FETCH_TIMEOUT_MS) {
 
 async function loadRuntimeModules() {
   try {
-    const authMod = await import('./auth.js?v=20260309c');
+    const authMod = await import('./auth.js?v=20260309d');
     if (typeof authMod.initAuthGate === 'function') {
       initAuthGate = authMod.initAuthGate;
       authModuleLoaded = true;
@@ -85,7 +85,7 @@ async function loadRuntimeModules() {
   }
 
   try {
-    const exportMod = await import('./export.js?v=20260309c');
+    const exportMod = await import('./export.js?v=20260309d');
     if (typeof exportMod.initExport === 'function') {
       initExport = exportMod.initExport;
     }
@@ -94,7 +94,7 @@ async function loadRuntimeModules() {
   }
 
   try {
-    const chatbotMod = await import('./chatbot.js?v=20260309c');
+    const chatbotMod = await import('./chatbot.js?v=20260309d');
     if (typeof chatbotMod.initChatbot === 'function') {
       initChatbot = chatbotMod.initChatbot;
     }
@@ -290,7 +290,7 @@ async function loadChapter(id) {
   document.getElementById('content-area').scrollTop = 0;
 
   try {
-    const chapterData = await fetchJsonWithTimeout(`./chapters/${id}.json?v=20260309c`);
+    const chapterData = await fetchJsonWithTimeout(`./chapters/${id}.json?v=20260309d`);
 
     document.getElementById('chapter-indicator').textContent = chapterData.title;
     updateTOCSections(id, chapterData);
@@ -383,7 +383,7 @@ async function init() {
       initBasicLoginGateFallback();
     }
 
-    const chapters = await fetchJsonWithTimeout('./chapters/index.json?v=20260309c');
+    const chapters = await fetchJsonWithTimeout('./chapters/index.json?v=20260309d');
 
     buildTOC(chapters);
     setupToggleHandlers();
@@ -391,12 +391,16 @@ async function init() {
 
     await loadChapter(chapters[0].id);
   } catch (err) {
-    console.error('??珥덇린???ㅽ뙣:', err);
-    document.getElementById('loading-screen').innerHTML = `
-      <p style="color:var(--accent-red);text-align:center;">
-        肄섑뀗痢?濡쒕뱶 ?ㅽ뙣.<br>
-        <small>濡쒖뺄?먯꽌 ?ㅽ뻾 ??<code>python -m http.server</code> ?먮뒗 Live Server瑜??ъ슜?섏꽭??</small>
-      </p>`;
+    console.error('앱 초기화 실패:', err);
+    const inner = document.getElementById('content-inner');
+    if (inner) {
+      inner.innerHTML = `
+        <div style="padding:48px 32px;text-align:center;color:var(--text-primary)">
+          <p style="font-size:1.1rem;color:var(--accent-red);margin-bottom:16px;">콘텐츠를 불러오지 못했습니다.</p>
+          <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:24px;font-family:monospace;">${String(err?.message || err)}</p>
+          <button onclick="location.reload()" style="background:var(--accent-blue);color:#fff;border:none;border-radius:var(--radius);padding:10px 24px;font-size:0.9rem;cursor:pointer;">새로고침</button>
+        </div>`;
+    }
   }
 }
 
