@@ -16,6 +16,12 @@ const SESSION_INDEX_KEY = 'logic_session_index_v4';
 const SESSION_PREFIX = 'logic_session_v4';
 const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 30;
 
+const REFLECTION_QUESTIONS = [
+  '1. \uc774\ubc88 \ub2e8\uc6d0\uc5d0\uc11c \uac00\uc7a5 \uc911\uc694\ud558\ub2e4\uace0 \uc0dd\uac01\ud558\ub294 \uac1c\ub150\uc744 \uc124\uba85\ud574 \ubcf4\uc138\uc694.',
+  '2. \uc774\ubc88 \ub2e8\uc6d0\uc5d0\uc11c \uc5b4\ub824\uc6e0\ub358 \uac1c\ub150\uc744 \uc4f0\uace0, \uc774\uc720\ub97c \uc124\uba85\ud574 \ubcf4\uc138\uc694.',
+  '3. \uc774\ubc88 \ub2e8\uc6d0\uc5d0\uc11c \ubc30\uc6b4 \ub0b4\uc6a9\uc774 \uc774\uc804\uc5d0 \uacf5\ubd80\ud588\ub358 \uc9c0\uc2dd\uacfc \uc5b4\ub5bb\uac8c \uc5f0\uacb0\ub418\ub294\uc9c0 \uc791\uc131\ud574 \ubcf4\uc138\uc694.',
+];
+
 const ChatMode = {
   LEARNING: 'learning',
   REFLECTION: 'reflection',
@@ -31,6 +37,9 @@ let currentMode = ChatMode.LEARNING;
 let sessionId = '';
 let logMessages = [];
 let modelMessages = [];
+let reflectionStep = 0;
+let assessmentQuestions = [];
+let assessmentQIdx = 0;
 
 function getEl(id) {
   return document.getElementById(id);
@@ -148,22 +157,35 @@ ${hints}` : ''}`;
   ].join('\n');
 }
 
-function buildReflectionPrompt(data) {
-  const { title } = data;
+
+function buildReflectionAckPrompt() {
   return [
-    `\uc5ed\ud560: "${title}" \ucc55\ud130 \ud559\uc2b5 \uc131\ucc30\uc77c\uc9c0 \uc9c4\ud589\uc790\uc785\ub2c8\ub2e4.`,
+    '\uc5ed\ud560: \ud559\uc0dd\uc758 \uc131\ucc30 \ub2f5\ubcc0\uc5d0 \uc9e7\uace0 \ub530\ub73b\ud558\uac8c \uaca9\ub824\ud558\ub294 \ub3c4\uc6b0\ubbf8\uc785\ub2c8\ub2e4.',
     '',
-    '[\uc9c4\ud589 \ubc29\uc2dd]',
-    '- \uc544\ub798 3\uac00\uc9c0 \uc9c8\ubb38\uc744 \ud55c \ubc88\uc5d0 \ud558\ub098\uc529 \uc21c\uc11c\ub300\ub85c \uc9c1\uc811 \uc81c\uc2dc\ud558\uc138\uc694.',
-    '- \ud559\uc0dd\uc758 \ub2f5\ubcc0\uc744 \uc9e7\uac8c \uc778\uc815\ud55c \ud6c4 \ub2e4\uc74c \uc9c8\ubb38\uc73c\ub85c \ub118\uc5b4\uac00\uc138\uc694.',
-    '- 3\ubc88 \uc9c8\ubb38\uae4c\uc9c0 \ubaa8\ub450 \ub2f5\ubcc0\ubc1b\uc73c\uba74 \ub530\ub73b\ud558\uac8c \uc131\ucc30\uc77c\uc9c0\ub97c \ub9c8\ubb34\ub9ac\ud558\uc138\uc694.',
-    '- \uc815\ub2f5\uc774 \uc5c6\ub294 \uc131\ucc30 \ud65c\ub3d9\uc784\uc744 \uac15\uc870\ud558\uc138\uc694.',
+    '[\uc9c0\uce68]',
+    '- \ud559\uc0dd \ub2f5\ubcc0\uc744 \uadf8\ub300\ub85c \uc778\uc815\ud558\uace0 1~2\ubb38\uc7a5\uc73c\ub85c\ub9cc \uaca9\ub824\ud569\ub2c8\ub2e4.',
+    '- \ucd94\uac00 \uc9c8\ubb38\uc744 \ud558\uc9c0 \uc54a\uc2b5\ub2c8\ub2e4. \ub2e4\uc74c \uc9c8\ubb38\uc740 \uc2dc\uc2a4\ud15c\uc774 \uc81c\uc2dc\ud569\ub2c8\ub2e4.',
     '- \ubc18\ub4dc\uc2dc \ud55c\uad6d\uc5b4\ub85c \ub2f5\ud569\ub2c8\ub2e4.',
+  ].join('\n');
+}
+
+function buildAssessmentEvalPrompt(q, idx, total, isLast) {
+  const hints = (q.hints || []).map((h, i) => `  \ud78c\ud2b8${i + 1}: ${h}`).join('\n');
+  return [
+    `\uc5ed\ud560: \ud615\uc131\ud3c9\uac00 \ucc44\uc810 AI\uc785\ub2c8\ub2e4. \ud604\uc7ac \ubb38\ud56d Q${idx + 1}/${total}\uc744 \ucc44\uc810\ud569\ub2c8\ub2e4.`,
     '',
-    '[\uc131\ucc30 \uc9c8\ubb38 3\uac00\uc9c0]',
-    '1. \uc774\ubc88 \ub2e8\uc6d0\uc5d0\uc11c \uac00\uc7a5 \uc911\uc694\ud558\ub2e4\uace0 \uc0dd\uac01\ud558\ub294 \uac1c\ub150\uc744 \uc124\uba85\ud574 \ubcf4\uc138\uc694.',
-    '2. \uc774\ubc88 \ub2e8\uc6d0\uc5d0\uc11c \uc5b4\ub824\uc6e0\ub358 \uac1c\ub150\uc744 \uc4f0\uace0, \uc774\uc720\ub97c \uc124\uba85\ud574 \ubcf4\uc138\uc694.',
-    '3. \uc774\ubc88 \ub2e8\uc6d0\uc5d0\uc11c \ubc30\uc6b4 \ub0b4\uc6a9\uc774 \uc774\uc804\uc5d0 \uacf5\ubd80\ud588\ub358 \uc9c0\uc2dd\uacfc \uc5b4\ub5bb\uac8c \uc5f0\uacb0\ub418\ub294\uc9c0 \uc791\uc131\ud574 \ubcf4\uc138\uc694.',
+    '[\ubb38\ud56d]',
+    q.question || '',
+    '',
+    '[\ubaa8\ubc94 \ub2f5\uc548]',
+    q.keyAnswer || q.answer || '',
+    ...(hints ? ['', '[\ud78c\ud2b8]', hints] : []),
+    '',
+    '[\ucc44\uc810 \uc9c0\uce68]',
+    '- \ud559\uc0dd \ub2f5\ubcc0\uc744 \ubaa8\ubc94 \ub2f5\uc548\uacfc \ube44\uad50\ud558\uc5ec \uc815\uc624\ub2f5\uc744 \ud310\uc815\ud558\uace0 \ud53c\ub4dc\ubc31\uc744 \uc81c\uacf5\ud569\ub2c8\ub2e4.',
+    '- \uc624\ub2f5\uc774\uba74 \ud78c\ud2b8\ub97c \ub2e8\uacc4\uc801\uc73c\ub85c \uc81c\uacf5\ud569\ub2c8\ub2e4. (\ucd5c\ub300 3\ud68c)',
+    ...(isLast ? [`- \ub9c8\uc9c0\ub9c9 \ubb38\ud56d\uc785\ub2c8\ub2e4. \ucc44\uc810 \uc644\ub8cc \ud6c4 \ubc18\ub4dc\uc2dc ${COMPLETION_MARKER} \ubb38\uc790\uc5f4\uc744 \ud3ec\ud568\ud558\uc138\uc694.`] : []),
+    '- \ubc18\ub4dc\uc2dc \ud55c\uad6d\uc5b4\ub85c \ub2f5\ud569\ub2c8\ub2e4.',
   ].join('\n');
 }
 
@@ -336,7 +358,9 @@ function getServerToken() {
 function rebuildModelMessagesFromLogs(chapterData, messages, mode) {
   const prompt = mode === ChatMode.ASSESSMENT || mode === ChatMode.ASSESSMENT_COMPLETE
     ? buildAssessmentPrompt(chapterData)
-    : buildLearningPrompt(chapterData);
+    : mode === ChatMode.REFLECTION
+      ? buildReflectionAckPrompt()
+      : buildLearningPrompt(chapterData);
 
   const restored = [{ role: 'system', content: prompt }];
   (messages || []).forEach((m) => {
@@ -542,6 +566,38 @@ async function sendToAI(userText, opts = {}) {
     modelMessages.push({ role: 'assistant', content: fullText });
     pushLogMessage('assistant', fullText, currentMode);
     persistSession();
+
+    // 성찰 모드: AI 격려 완료 후 다음 질문 직접 출력
+    if (currentMode === ChatMode.REFLECTION) {
+      if (reflectionStep < REFLECTION_QUESTIONS.length) {
+        const nextQ = REFLECTION_QUESTIONS[reflectionStep];
+        appendBubble('ai', nextQ);
+        pushLogMessage('assistant', nextQ, ChatMode.REFLECTION);
+        reflectionStep++;
+      } else {
+        reflectionStep = 0;
+        currentMode = ChatMode.LEARNING;
+        updateBadge();
+        const done = '\uc131\ucc30\uc77c\uc9c0 \uc791\uc131\uc774 \uc644\ub8cc\ub418\uc5c8\uc2b5\ub2c8\ub2e4. \uc218\uace0\ud558\uc168\uc2b5\ub2c8\ub2e4.';
+        appendBubble('system', done);
+        pushLogMessage('system', done, ChatMode.REFLECTION);
+      }
+      persistSession();
+    }
+
+    // 평가 모드: AI 채점 완료 후 다음 문항 직접 출력
+    if (currentMode === ChatMode.ASSESSMENT && !assessmentComplete) {
+      assessmentQIdx++;
+      if (assessmentQIdx < assessmentQuestions.length) {
+        const nextQ = assessmentQuestions[assessmentQIdx];
+        const isLast = assessmentQIdx === assessmentQuestions.length - 1;
+        const qText = `Q${assessmentQIdx + 1}. ${nextQ.question}`;
+        appendBubble('ai', qText);
+        pushLogMessage('assistant', qText, ChatMode.ASSESSMENT);
+        modelMessages[0] = { role: 'system', content: buildAssessmentEvalPrompt(nextQ, assessmentQIdx, assessmentQuestions.length, isLast) };
+        persistSession();
+      }
+    }
   }
 }
 
@@ -559,7 +615,15 @@ async function fetchQuestionsFromWorker(chapterId) {
 async function startAssessment() {
   setSubmitEnabled(false);
 
-  // Worker KV에서 교수 설정 문항 fetch (5초 timeout)
+  // fetch 중 입력 차단
+  const input = getEl('chat-input');
+  const sendBtn = getEl('chat-send');
+  if (input) input.disabled = true;
+  if (sendBtn) sendBtn.disabled = true;
+
+  const loadingMsg = '\ud615\uc131\ud3c9\uac00 \ubb38\ud56d\uc744 \ubd88\ub7ec\uc624\ub294 \uc911\uc785\ub2c8\ub2e4...';
+  const loadingBubble = appendBubble('system', loadingMsg);
+
   let instructorQuestions = null;
   try {
     const result = await Promise.race([
@@ -571,6 +635,12 @@ async function startAssessment() {
     }
   } catch { /* no questions */ }
 
+  // 로딩 버블 제거
+  loadingBubble?.remove();
+
+  if (input) { input.disabled = false; }
+  if (sendBtn) { sendBtn.disabled = false; }
+
   if (!instructorQuestions) {
     const msg = '\uc544\uc9c1 \ud615\uc131\ud3c9\uac00 \ubb38\ud56d\uc774 \ub4f1\ub85d\ub418\uc9c0 \uc54a\uc558\uc2b5\ub2c8\ub2e4. \uad50\uc218\ub2d8\uc774 \ubb38\ud56d\uc744 \ub4f1\ub85d\ud558\uc2e0 \ud6c4 \ub2e4\uc2dc \uc2dc\ub3c4\ud574 \uc8fc\uc138\uc694.';
     appendBubble('system', msg);
@@ -580,32 +650,41 @@ async function startAssessment() {
 
   currentMode = ChatMode.ASSESSMENT;
   assessmentComplete = false;
+  assessmentQuestions = instructorQuestions.questions;
+  assessmentQIdx = 0;
   updateBadge();
 
-  const effectiveChapterData = { ...chapterRef, formativeAssessment: instructorQuestions };
-  const totalQ = Number(instructorQuestions.totalQuestions) || instructorQuestions.questions.length;
+  const totalQ = assessmentQuestions.length;
   const notice = `\ud615\uc131\ud3c9\uac00\ub97c \uc2dc\uc791\ud569\ub2c8\ub2e4. \ucd1d ${totalQ}\ubb38\ud56d\uc73c\ub85c \uc9c4\ud589\ud569\ub2c8\ub2e4.`;
   appendBubble('system', notice);
   pushLogMessage('system', notice, currentMode);
 
-  modelMessages = [{ role: 'system', content: buildAssessmentPrompt(effectiveChapterData) }];
-  persistSession();
+  // Q1 직접 출력 (가짜 user 버블 없음)
+  const isLast = totalQ === 1;
+  const q1 = assessmentQuestions[0];
+  const q1Text = `Q1. ${q1.question}`;
+  appendBubble('ai', q1Text);
+  pushLogMessage('assistant', q1Text, currentMode);
 
-  await sendToAI('\ud615\uc131\ud3c9\uac00\ub97c \uc2dc\uc791\ud569\ub2c8\ub2e4. Q1\uc744 \uc9c8\ubb38\ud574\uc8fc\uc138\uc694.', { force: true });
+  modelMessages = [{ role: 'system', content: buildAssessmentEvalPrompt(q1, 0, totalQ, isLast) }];
+  persistSession();
 }
 
-async function startReflection() {
+function startReflection() {
   currentMode = ChatMode.REFLECTION;
+  reflectionStep = 1;
   updateBadge();
 
-  const notice = '\uc131\ucc30\uc77c\uc9c0\ub97c \uc2dc\uc791\ud569\ub2c8\ub2e4. AI\uac00 \uc9c8\ubb38\uc744 \ub4e4\uc5b4\ub4dc\ub9ac\uba74 \uc790\uc720\ub86d\uac8c \ub2f5\ud574\uc8fc\uc138\uc694.';
+  const notice = '\uc131\ucc30\uc77c\uc9c0\ub97c \uc2dc\uc791\ud569\ub2c8\ub2e4. \uc138 \uac00\uc9c0 \uc9c8\ubb38\uc5d0 \uc21c\uc11c\ub300\ub85c \ub2f5\ud574 \uc8fc\uc138\uc694.';
   appendBubble('system', notice);
   pushLogMessage('system', notice, currentMode);
 
-  modelMessages = [{ role: 'system', content: buildReflectionPrompt(chapterRef) }];
-  persistSession();
+  // Q1 직접 출력 (API 호출 없음)
+  appendBubble('ai', REFLECTION_QUESTIONS[0]);
+  pushLogMessage('assistant', REFLECTION_QUESTIONS[0], currentMode);
 
-  await sendToAI('\uc131\ucc30\uc77c\uc9c0\ub97c \uc2dc\uc791\ud569\ub2c8\ub2e4. \uccab \ubc88\uc9f8 \uc9c8\ubb38\uc744 \ud574\uc8fc\uc138\uc694.', { force: true });
+  modelMessages = [{ role: 'system', content: buildReflectionAckPrompt() }];
+  persistSession();
 }
 
 function handleSend() {
