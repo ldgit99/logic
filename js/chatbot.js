@@ -605,10 +605,7 @@ async function fetchQuestionsFromWorker(chapterId) {
   for (const workerUrl of WORKER_URLS) {
     try {
       const base = workerUrl.endsWith('/') ? workerUrl.slice(0, -1) : workerUrl;
-      const token = getStudentProfile?.()?.token || '';
-      const res = await fetch(`${base}/dashboard/questions/${chapterId}`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
+      const res = await fetch(`${base}/questions/${chapterId}`);
       if (res.ok) return await res.json();
     } catch { /* try next */ }
   }
