@@ -364,7 +364,7 @@ function restoreUIFromLogs() {
 function isLikelyLearningQuestion(input) {
   const text = normalizeInput(input);
   if (!text) return false;
-  const patterns = ['?ㅻ챸', '??, '臾댁뾿', '萸먯빞', '?먮━', '媛쒕뀗', '?숈뒿'];
+  const patterns = ['\uc124\uba85', '\uc774\ud574', '\ubb34\uc5c7', '\ub450\uc57c', '\uc6d0\ub9ac', '\uac1c\ub150', '\ud559\uc2b5'];
   const hasQuestionMark = text.includes('?');
   return hasQuestionMark || patterns.some((p) => text.includes(p));
 }

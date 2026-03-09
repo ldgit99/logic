@@ -31,7 +31,7 @@ export function markChapterSubmitted(chapterId) {
   if (chapterEl && !chapterEl.querySelector('.toc-submitted-badge')) {
     const badge = document.createElement('span');
     badge.className = 'toc-submitted-badge';
-    badge.textContent = '??;
+    badge.textContent = '\u2713';
     chapterEl.querySelector('.chapter-title')?.after(badge);
   }
   // ?쒖텧 踰꾪듉 ?곹깭 ?낅뜲?댄듃
@@ -201,7 +201,7 @@ function buildTOC(chapters) {
     const label = document.createElement('div');
     label.className = 'toc-chapter-label';
     const submittedBadge = isChapterSubmitted(ch.id)
-      ? '<span class="toc-submitted-badge">??/span>'
+      ? '<span class="toc-submitted-badge">\u2713</span>'
       : '';
     label.innerHTML = `
       <span class="chapter-num">${ch.id}</span>
