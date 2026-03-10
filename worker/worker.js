@@ -8,6 +8,7 @@ import { handleFeedbackReports } from './routes/feedbackReports.js';
 import { handleDashboard } from './routes/dashboard.js';
 import { handleStudentAuth } from './routes/studentAuth.js';
 import { handleSessions } from './routes/sessions.js';
+import { handleReflections } from './routes/reflections.js';
 import { authenticate } from './services/auth.js';
 
 const ALLOWED_ORIGINS = [
@@ -71,6 +72,8 @@ export default {
         response = new Response(JSON.stringify({ questions }), {
           headers: { 'Content-Type': 'application/json' },
         });
+      } else if (request.method === 'POST' && pathname === '/reflections') {
+        response = await handleReflections(request, env);
       } else if (request.method === 'POST' && pathname === '/events') {
         response = await handleEvents(request, env);
       } else if (request.method === 'POST' && pathname === '/assessment') {

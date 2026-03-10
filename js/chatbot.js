@@ -549,9 +549,7 @@ async function sendToAI(userText, opts = {}) {
     modelMessages.push({ role: 'assistant', content: fullText });
     pushLogMessage('assistant', fullText, currentMode);
     persistSession();
-
-      persistSession();
-    }
+  }
 
     // 평가 모드: 마커 유무로 분기
     if (currentMode === ChatMode.ASSESSMENT && !assessmentComplete) {
@@ -579,8 +577,8 @@ async function sendToAI(userText, opts = {}) {
         persistSession();
       }
     }
-  }
 }
+
 
 async function fetchQuestionsFromWorker(chapterId) {
   for (const workerUrl of WORKER_URLS) {
