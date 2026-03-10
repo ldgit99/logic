@@ -36,6 +36,9 @@ export async function handleDashboard(request, env, pathname) {
   if (request.method === 'POST' && pathname === '/dashboard/send-email') {
     return handleSendEmail(request, env);
   }
+  if (request.method === 'POST' && pathname === '/dashboard/submissions/delete') {
+    return handleDeleteSubmission(request, env);
+  }
   if (pathname === '/dashboard/reflections') {
     return handleGetReflections(env, params);
   }
@@ -273,6 +276,51 @@ async function handleSetQuestions(request, env, chapterId) {
 
   await env.SUBMISSIONS.put(`config:questions:${chapterId}`, JSON.stringify(data));
   return jsonResponse({ ok: true, chapterId, totalQuestions: data.totalQuestions });
+}
+
+async function handleDeleteSubmission(request, env) {
+  const actor = resolveDashboardActor(request, env);
+  if (actor !== 'professor' && actor !== 'admin') {
+    return jsonResponse({ error: 'forbidden' }, 403);
+  }
+
+  let body;
+  try { body = await request.json(); } catch { return jsonResponse({ error: 'invalid JSON' }, 400); }
+
+  const studentId = String(body.student_id || '').trim();
+  const chapterId = String(body.chapter_id || '').trim();
+  const sessionId = String(body.session_id || '').trim();
+  const submittedAt = String(body.submitted_at || '').trim();
+  if (!studentId || !chapterId || !sessionId) {
+    return jsonResponse({ error: 'missing fields' }, 400);
+  }
+
+  const assessmentKey = `assessment:${studentId}:${chapterId}:${sessionId}`;
+  const feedbackKey = `feedback:${studentId}:${chapterId}:${sessionId}`;
+
+  await env.SUBMISSIONS.delete(assessmentKey);
+  await env.SUBMISSIONS.delete(feedbackKey);
+
+  const idxCandidates = [];
+  if (submittedAt) {
+    idxCandidates.push(`assessmentidx:${submittedAt}:${studentId}:${chapterId}`);
+  }
+
+  let cursor;
+  do {
+    const listed = await env.SUBMISSIONS.list({ prefix: 'assessmentidx:', limit: 1000, cursor });
+    for (const key of (listed.keys || [])) {
+      const name = key.name;
+      if (!name.endsWith(`:${studentId}:${chapterId}`)) continue;
+      const mapped = await env.SUBMISSIONS.get(name);
+      if (mapped === assessmentKey) idxCandidates.push(name);
+    }
+    cursor = listed.list_complete ? undefined : listed.cursor;
+  } while (cursor);
+
+  await Promise.all([...new Set(idxCandidates)].map((k) => env.SUBMISSIONS.delete(k)));
+
+  return jsonResponse({ ok: true });
 }
 
 async function handleGetReflections(env, params) {

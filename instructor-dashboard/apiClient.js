@@ -195,6 +195,14 @@ export async function restoreReflection(payload) {
 }
 
 /**
+ * Delete one formative-assessment submission from summary tab.
+ * @param {{ student_id: string, chapter_id: string, session_id: string, submitted_at?: string }} payload
+ */
+export async function deleteSubmission(payload) {
+  return apiPost('/dashboard/submissions/delete', payload);
+}
+
+/**
  * 챕터별 형성평가 문항 조회
  * @param {string} chapterId  예: '01', '02'
  */

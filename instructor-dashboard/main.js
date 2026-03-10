@@ -12,6 +12,7 @@ import {
   fetchRoster,
   fetchQuestions,
   fetchReflections,
+  deleteSubmission,
   deleteReflection,
   restoreReflection,
   saveQuestions,
@@ -225,6 +226,29 @@ async function loadView(view) {
         renderSummaryCards(summary, document.getElementById('summary-cards'));
         renderSummaryTable(allSubmissions, document.getElementById('summary-table-body'), {
           onRowClick: (submission) => openStudentModal(submission),
+          onDelete: async (submission) => {
+            const studentId = String(submission.student_id || submission.studentId || '');
+            const studentName = String(submission.student_name || submission.studentName || '');
+            const chapterId = String(submission.chapter_id || submission.chapterId || '');
+            const sessionId = String(submission.session_id || '');
+            const submittedAt = String(submission.submitted_at || submission.submittedAt || '');
+            if (!studentId || !chapterId || !sessionId) return;
+
+            const ok = window.confirm(`[${studentId}] ${studentName}의 Ch.${chapterId} 제출 기록을 삭제하시겠습니까?`);
+            if (!ok) return;
+
+            try {
+              await deleteSubmission({
+                student_id: studentId,
+                chapter_id: chapterId,
+                session_id: sessionId,
+                submitted_at: submittedAt,
+              });
+              await loadView('summary');
+            } catch (e) {
+              console.error('[summary delete]', e);
+            }
+          },
         });
         document.getElementById('summary-empty').classList.toggle('hidden', allSubmissions.length > 0);
         updateResultCount(allSubmissions.length);
