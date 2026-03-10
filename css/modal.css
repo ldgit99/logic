@@ -336,3 +336,106 @@
   color: var(--accent-red);
   font-size: 0.8rem;
 }
+
+/* ─── 성찰일지 모달 ─── */
+.reflection-modal-box {
+  width: min(620px, 95vw);
+  max-height: 88vh;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  overflow: hidden;
+}
+
+.reflection-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.reflection-modal-header h2 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.reflection-modal-header button {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  line-height: 1;
+  transition: var(--transition);
+}
+
+.reflection-modal-header button:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.reflection-modal-body {
+  overflow-y: auto;
+  flex: 1;
+  padding: 16px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.reflection-q-block {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.reflection-q-label {
+  font-size: 0.83rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.reflection-textarea {
+  width: 100%;
+  padding: 10px 12px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 0.88rem;
+  line-height: 1.65;
+  resize: vertical;
+  min-height: 80px;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+
+.reflection-textarea:focus {
+  outline: none;
+  border-color: var(--accent-blue);
+}
+
+.reflection-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+  gap: 12px;
+}
+
+.reflection-saved-at {
+  font-size: 0.76rem;
+  color: var(--text-muted);
+  flex: 1;
+}

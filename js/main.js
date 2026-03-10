@@ -1,6 +1,7 @@
 ﻿let initChatbot = () => {};
 let initExport = () => {};
 let initAuthGate = async () => null;
+let getStudentProfile = () => null;
 let authModuleLoaded = false;
 
 // ??? 梨뺥꽣 紐⑤뱢 ?덉??ㅽ듃由?(?숈쟻 ?꾪룷?? ???
@@ -44,6 +45,104 @@ function isChapterSubmitted(chapterId) {
   return localStorage.getItem(`${SUBMITTED_KEY_PREFIX}${chapterId}`) === '1';
 }
 
+// ─── 성찰일지 저장/불러오기 ───
+let reflectionCurrentChapterId = null;
+
+function getReflectionKey(chapterId) {
+  const uid = getStudentProfile()?.studentId || 'default';
+  return `logic_reflection_${chapterId}_${uid}`;
+}
+
+function loadReflection(chapterId) {
+  try {
+    const raw = localStorage.getItem(getReflectionKey(chapterId));
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+}
+
+function saveReflectionData(chapterId, answers) {
+  try {
+    localStorage.setItem(getReflectionKey(chapterId), JSON.stringify({
+      answers,
+      savedAt: new Date().toISOString(),
+    }));
+  } catch { /* ignore */ }
+}
+
+function hasReflection(chapterId) {
+  const data = loadReflection(chapterId);
+  return !!(data?.answers?.some(a => a && a.trim()));
+}
+
+function refreshTocReflectionBadges() {
+  document.querySelectorAll('.toc-reflection-btn').forEach(btn => {
+    const id = btn.dataset.chapterId;
+    if (id) btn.classList.toggle('has-entry', hasReflection(id));
+  });
+}
+
+function openReflectionModal(chapterId, chapterTitle) {
+  reflectionCurrentChapterId = chapterId;
+  const titleEl = document.getElementById('reflection-modal-title');
+  if (titleEl) titleEl.textContent = `\uc81c${chapterId}\uc7a5 \uc131\ucc30\uc77c\uc9c0`;
+
+  const data = loadReflection(chapterId);
+  for (let i = 1; i <= 3; i++) {
+    const el = document.getElementById(`reflection-a${i}`);
+    if (el) el.value = data?.answers?.[i - 1] || '';
+  }
+
+  const savedEl = document.getElementById('reflection-saved-at');
+  if (savedEl) {
+    if (data?.savedAt) {
+      const d = new Date(data.savedAt);
+      savedEl.textContent = `\ub9c8\uc9c0\ub9c9 \uc800\uc7a5: ${d.toLocaleDateString('ko-KR')} ${d.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}`;
+    } else {
+      savedEl.textContent = '';
+    }
+  }
+
+  document.getElementById('reflection-modal')?.classList.remove('hidden');
+  document.getElementById('reflection-a1')?.focus();
+}
+
+function bindReflectionModal() {
+  const modal = document.getElementById('reflection-modal');
+  const closeBtn = document.getElementById('reflection-modal-close');
+  const cancelBtn = document.getElementById('reflection-modal-cancel');
+  const saveBtn = document.getElementById('reflection-modal-save');
+
+  function close() { modal?.classList.add('hidden'); }
+
+  closeBtn?.addEventListener('click', close);
+  cancelBtn?.addEventListener('click', close);
+  modal?.addEventListener('click', e => { if (e.target === modal) close(); });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && !modal?.classList.contains('hidden')) close();
+  });
+
+  saveBtn?.addEventListener('click', () => {
+    if (!reflectionCurrentChapterId) return;
+    const answers = [1, 2, 3].map(i => {
+      return document.getElementById(`reflection-a${i}`)?.value.trim() || '';
+    });
+    saveReflectionData(reflectionCurrentChapterId, answers);
+
+    const savedEl = document.getElementById('reflection-saved-at');
+    if (savedEl) {
+      const d = new Date();
+      savedEl.textContent = `\ub9c8\uc9c0\ub9c9 \uc800\uc7a5: ${d.toLocaleDateString('ko-KR')} ${d.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}`;
+    }
+
+    // TOC 배지 업데이트
+    const btn = document.querySelector(`.toc-reflection-btn[data-chapter-id="${reflectionCurrentChapterId}"]`);
+    if (btn) btn.classList.toggle('has-entry', answers.some(a => a));
+
+    showToast('\uc131\ucc30\uc77c\uc9c0\uac00 \uc800\uc7a5\ub418\uc5c8\uc2b5\ub2c8\ub2e4.', 'success');
+    close();
+  });
+}
+
 export function updateSubmitButtonState(submitted) {
   const btn = document.getElementById('btn-submit-pdf');
   if (!btn) return;
@@ -79,6 +178,9 @@ async function loadRuntimeModules() {
     if (typeof authMod.initAuthGate === 'function') {
       initAuthGate = authMod.initAuthGate;
       authModuleLoaded = true;
+    }
+    if (typeof authMod.getStudentProfile === 'function') {
+      getStudentProfile = authMod.getStudentProfile;
     }
   } catch (e) {
     console.error('auth module load failed:', e);
@@ -203,12 +305,18 @@ function buildTOC(chapters) {
     const submittedBadge = isChapterSubmitted(ch.id)
       ? '<span class="toc-submitted-badge">\u2713</span>'
       : '';
+    const hasEntry = hasReflection(ch.id);
     label.innerHTML = `
       <span class="chapter-num">${ch.id}</span>
       <span class="chapter-title">${ch.title}</span>${submittedBadge}
+      <button class="toc-reflection-btn${hasEntry ? ' has-entry' : ''}" data-chapter-id="${ch.id}" title="\uc131\ucc30\uc77c\uc9c0 \uc791\uc131" type="button">\ud83d\udcdd</button>
       <span class="toc-arrow">\u203a</span>
     `;
     label.addEventListener('click', () => loadChapter(ch.id));
+    label.querySelector('.toc-reflection-btn').addEventListener('click', e => {
+      e.stopPropagation();
+      openReflectionModal(ch.id, ch.title);
+    });
 
     const sections = document.createElement('ul');
     sections.className = 'toc-sections';
@@ -380,9 +488,11 @@ async function init() {
     await loadRuntimeModules();
 
     if (authModuleLoaded) {
-      initAuthGate().catch((e) => {
-        console.error('auth gate init failed:', e);
-      });
+      initAuthGate()
+        .then(() => refreshTocReflectionBadges())
+        .catch((e) => {
+          console.error('auth gate init failed:', e);
+        });
     } else {
       initBasicLoginGateFallback();
     }
@@ -390,6 +500,7 @@ async function init() {
     const chapters = await fetchJsonWithTimeout('./chapters/index.json?v=20260309e');
 
     buildTOC(chapters);
+    bindReflectionModal();
     setupToggleHandlers();
     initExport();
 

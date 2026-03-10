@@ -212,6 +212,37 @@
   <!-- ─── PDF 출력용 숨겨진 컨테이너 ─── -->
   <div id="pdf-export-container" aria-hidden="true"></div>
 
+  <!-- ─── 성찰일지 모달 ─── -->
+  <div id="reflection-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="reflection-modal-title">
+    <div class="modal-box reflection-modal-box">
+      <div class="reflection-modal-header">
+        <h2 id="reflection-modal-title">성찰일지</h2>
+        <button id="reflection-modal-close" aria-label="닫기">✕</button>
+      </div>
+      <div class="reflection-modal-body">
+        <div class="reflection-q-block">
+          <label class="reflection-q-label">1. 이번 단원에서 가장 중요하다고 생각하는 개념을 설명해 보세요.</label>
+          <textarea id="reflection-a1" class="reflection-textarea" rows="4" placeholder="답변을 입력하세요..."></textarea>
+        </div>
+        <div class="reflection-q-block">
+          <label class="reflection-q-label">2. 이번 단원에서 어려웠던 개념을 쓰고, 이유를 설명해 보세요.</label>
+          <textarea id="reflection-a2" class="reflection-textarea" rows="4" placeholder="답변을 입력하세요..."></textarea>
+        </div>
+        <div class="reflection-q-block">
+          <label class="reflection-q-label">3. 이번 단원에서 배운 내용이 이전에 공부했던 지식과 어떻게 연결되는지 작성해 보세요.</label>
+          <textarea id="reflection-a3" class="reflection-textarea" rows="4" placeholder="답변을 입력하세요..."></textarea>
+        </div>
+      </div>
+      <div class="reflection-modal-footer">
+        <span id="reflection-saved-at" class="reflection-saved-at"></span>
+        <div class="modal-actions">
+          <button id="reflection-modal-cancel" class="btn-secondary" type="button">닫기</button>
+          <button id="reflection-modal-save" class="btn-primary" type="button">저장</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- ─── 외부 라이브러리 ─── -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
