@@ -35,6 +35,10 @@ export async function handleReflections(request, env) {
     student_name,
     chapter_id: chapterId,
     answers,
+    is_deleted: false,
+    deleted_at: null,
+    deleted_by: null,
+    delete_reason: '',
     saved_at: new Date().toISOString(),
   };
 

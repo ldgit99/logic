@@ -11,6 +11,9 @@ import {
   fetchInterventions,
   fetchRoster,
   fetchQuestions,
+  fetchReflections,
+  deleteReflection,
+  restoreReflection,
   saveQuestions,
   clearToken,
   ApiError,
@@ -25,6 +28,7 @@ import { renderInteractionAnalysis } from './views/interactionAnalysis.js';
 import { renderStudentReport } from './views/studentReport.js';
 import { renderRoster } from './views/roster.js';
 import { renderQuestions } from './views/questions.js';
+import { renderReflectionAnalysis } from './views/reflectionAnalysis.js';
 import { openStudentModal } from './views/studentModal.js';
 import { exportCSV } from './utils/csv.js';
 
@@ -274,6 +278,32 @@ async function loadView(view) {
       }
       case 'questions': {
         renderQuestions(document.getElementById('view-questions'), { fetchQuestions, saveQuestions });
+        break;
+      }
+      case 'reflection-analysis': {
+        const chapterId = currentFilters.chapter || '';
+        const [reflData, studData, qData] = await Promise.all([
+          fetchReflections({
+            chapter_id: chapterId,
+            student_id: currentFilters.studentId || '',
+            from: currentFilters.from || '',
+            to: currentFilters.to || '',
+            include_deleted: '1',
+          }),
+          fetchStudents(currentFilters),
+          chapterId ? fetchQuestions(chapterId) : Promise.resolve({ questions: null }),
+        ]);
+        renderReflectionAnalysis(
+          document.getElementById('reflection-analysis-wrap'),
+          {
+            reflData,
+            studData,
+            qData,
+            chapterId,
+            actions: { deleteReflection, restoreReflection },
+            reload: () => loadView('reflection-analysis'),
+          },
+        );
         break;
       }
     }

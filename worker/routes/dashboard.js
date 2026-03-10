@@ -36,6 +36,15 @@ export async function handleDashboard(request, env, pathname) {
   if (request.method === 'POST' && pathname === '/dashboard/send-email') {
     return handleSendEmail(request, env);
   }
+  if (pathname === '/dashboard/reflections') {
+    return handleGetReflections(env, params);
+  }
+  if (request.method === 'POST' && pathname === '/dashboard/reflections/delete') {
+    return handleDeleteReflection(request, env);
+  }
+  if (request.method === 'POST' && pathname === '/dashboard/reflections/restore') {
+    return handleRestoreReflection(request, env);
+  }
   if (pathname === '/dashboard/locks') {
     if (request.method === 'GET') return handleGetLocks(env);
     if (request.method === 'POST') return handleSetLock(request, env);
@@ -264,6 +273,136 @@ async function handleSetQuestions(request, env, chapterId) {
 
   await env.SUBMISSIONS.put(`config:questions:${chapterId}`, JSON.stringify(data));
   return jsonResponse({ ok: true, chapterId, totalQuestions: data.totalQuestions });
+}
+
+async function handleGetReflections(env, params) {
+  const chapterId = params.chapter_id || '';
+  const studentQuery = String(params.student_id || '').trim().toLowerCase();
+  const includeDeleted = String(params.include_deleted || '') === '1';
+  const from = String(params.from || '').trim();
+  const to = String(params.to || '').trim();
+
+  const prefix = chapterId ? `reflectionidx:${chapterId}:` : 'reflectionidx:';
+  const listed = await env.SUBMISSIONS.list({ prefix, limit: 1000 });
+
+  const reflections = await Promise.all(
+    listed.keys.map(async (k) => {
+      const parts = k.name.split(':'); // reflectionidx:{chId}:{stId}
+      const chId = parts[1];
+      const stId = parts.slice(2).join(':');
+      const raw = await env.SUBMISSIONS.get(`reflection:${stId}:${chId}`);
+      if (!raw) return null;
+      try {
+        const parsed = JSON.parse(raw);
+        if (!parsed) return null;
+
+        const sid = String(parsed.student_id || '');
+        const sname = String(parsed.student_name || '');
+        const savedAt = String(parsed.saved_at || '');
+        const isDeleted = Boolean(parsed.is_deleted);
+
+        if (!includeDeleted && isDeleted) return null;
+        if (
+          studentQuery
+          && !sid.toLowerCase().includes(studentQuery)
+          && !sname.toLowerCase().includes(studentQuery)
+        ) {
+          return null;
+        }
+        if (from && savedAt && savedAt < `${from}T00:00:00.000Z`) return null;
+        if (to && savedAt && savedAt > `${to}T23:59:59.999Z`) return null;
+
+        return {
+          student_id: sid,
+          student_name: sname,
+          chapter_id: String(parsed.chapter_id || chId),
+          answers: Array.isArray(parsed.answers) ? parsed.answers.map((v) => String(v || '')) : [],
+          saved_at: savedAt,
+          is_deleted: isDeleted,
+          deleted_at: parsed.deleted_at || null,
+          deleted_by: parsed.deleted_by || null,
+          delete_reason: String(parsed.delete_reason || ''),
+        };
+      } catch {
+        return null;
+      }
+    }),
+  );
+
+  const rows = reflections
+    .filter(Boolean)
+    .sort((a, b) => String(b.saved_at || '').localeCompare(String(a.saved_at || '')));
+
+  return jsonResponse({ reflections: rows, total: rows.length });
+}
+
+async function handleDeleteReflection(request, env) {
+  const actor = resolveDashboardActor(request, env);
+  if (actor !== 'professor' && actor !== 'admin') {
+    return jsonResponse({ error: 'forbidden' }, 403);
+  }
+
+  let body;
+  try { body = await request.json(); } catch { return jsonResponse({ error: 'invalid JSON' }, 400); }
+
+  const studentId = String(body.student_id || '').trim();
+  const chapterId = String(body.chapter_id || '').trim();
+  const reason = String(body.reason || '').trim();
+  if (!studentId || !chapterId) return jsonResponse({ error: 'missing fields' }, 400);
+
+  const key = `reflection:${studentId}:${chapterId}`;
+  const raw = await env.SUBMISSIONS.get(key);
+  if (!raw) return jsonResponse({ error: 'reflection not found' }, 404);
+
+  let parsed;
+  try { parsed = JSON.parse(raw); } catch { return jsonResponse({ error: 'invalid reflection data' }, 500); }
+
+  parsed.is_deleted = true;
+  parsed.deleted_at = new Date().toISOString();
+  parsed.deleted_by = actor;
+  parsed.delete_reason = reason;
+  await env.SUBMISSIONS.put(key, JSON.stringify(parsed), { expirationTtl: 60 * 60 * 24 * 180 });
+
+  return jsonResponse({ ok: true });
+}
+
+async function handleRestoreReflection(request, env) {
+  const actor = resolveDashboardActor(request, env);
+  if (actor !== 'professor' && actor !== 'admin') {
+    return jsonResponse({ error: 'forbidden' }, 403);
+  }
+
+  let body;
+  try { body = await request.json(); } catch { return jsonResponse({ error: 'invalid JSON' }, 400); }
+
+  const studentId = String(body.student_id || '').trim();
+  const chapterId = String(body.chapter_id || '').trim();
+  if (!studentId || !chapterId) return jsonResponse({ error: 'missing fields' }, 400);
+
+  const key = `reflection:${studentId}:${chapterId}`;
+  const raw = await env.SUBMISSIONS.get(key);
+  if (!raw) return jsonResponse({ error: 'reflection not found' }, 404);
+
+  let parsed;
+  try { parsed = JSON.parse(raw); } catch { return jsonResponse({ error: 'invalid reflection data' }, 500); }
+
+  parsed.is_deleted = false;
+  parsed.deleted_at = null;
+  parsed.deleted_by = null;
+  parsed.delete_reason = '';
+  await env.SUBMISSIONS.put(key, JSON.stringify(parsed), { expirationTtl: 60 * 60 * 24 * 180 });
+
+  return jsonResponse({ ok: true });
+}
+
+function resolveDashboardActor(request, env) {
+  const auth = String(request.headers.get('Authorization') || '');
+  if (!auth.startsWith('Bearer ')) return null;
+  const token = auth.slice(7).trim();
+  if (env.DASHBOARD_TOKEN && token === env.DASHBOARD_TOKEN) return 'professor';
+  if (env.ADMIN_TOKEN && token === env.ADMIN_TOKEN) return 'admin';
+  if (env.TA_TOKEN && token === env.TA_TOKEN) return 'ta';
+  return null;
 }
 
 function escHtml(str) {

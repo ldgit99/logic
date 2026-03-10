@@ -171,6 +171,30 @@ export async function deleteRosterMember(studentId) {
 }
 
 /**
+ * 성찰일지 목록 조회
+ * @param {{ chapter_id?: string, student_id?: string }} filters
+ */
+export async function fetchReflections(filters = {}) {
+  return apiGet('/dashboard/reflections', cleanParams(filters));
+}
+
+/**
+ * Soft-delete reflection record.
+ * @param {{ student_id: string, chapter_id: string, reason?: string }} payload
+ */
+export async function deleteReflection(payload) {
+  return apiPost('/dashboard/reflections/delete', payload);
+}
+
+/**
+ * Restore soft-deleted reflection record.
+ * @param {{ student_id: string, chapter_id: string }} payload
+ */
+export async function restoreReflection(payload) {
+  return apiPost('/dashboard/reflections/restore', payload);
+}
+
+/**
  * 챕터별 형성평가 문항 조회
  * @param {string} chapterId  예: '01', '02'
  */
