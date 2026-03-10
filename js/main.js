@@ -60,13 +60,64 @@ function loadReflection(chapterId) {
   } catch { return null; }
 }
 
-function saveReflectionData(chapterId, answers) {
+const REFLECTION_WORKER_URLS = Array.from(new Set([
+  'https://logic.dongkuklee99.workers.dev',
+  'https://logic-proxy.dongkuklee99.workers.dev',
+  'https://logic-proxy.ldgit99.workers.dev',
+  ...((window.location.origin.includes('localhost')
+    || window.location.origin.includes('127.0.0.1')
+    || /(^|\.)workers\.dev$/i.test(window.location.hostname || ''))
+      ? [window.location.origin]
+      : []),
+].filter(Boolean)));
+
+async function postReflectionToServer(token, chapterId, answers) {
+  let lastError = null;
+  for (const base of REFLECTION_WORKER_URLS) {
+    try {
+      const res = await fetch(`${base}/reflections`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ chapter_id: chapterId, answers }),
+      });
+      if (!res.ok) {
+        let errMsg = `request failed: ${res.status}`;
+        try {
+          const data = await res.json();
+          if (data?.error) errMsg = String(data.error);
+        } catch { /* ignore */ }
+        throw new Error(errMsg);
+      }
+      return true;
+    } catch (e) {
+      lastError = e;
+    }
+  }
+  throw lastError || new Error('network error');
+}
+
+async function saveReflectionData(chapterId, answers) {
   try {
     localStorage.setItem(getReflectionKey(chapterId), JSON.stringify({
       answers,
       savedAt: new Date().toISOString(),
     }));
   } catch { /* ignore */ }
+
+  const profile = getStudentProfile();
+  if (!profile?.token) {
+    return { localSaved: true, serverSaved: false, reason: 'no_token' };
+  }
+
+  try {
+    await postReflectionToServer(profile.token, chapterId, answers);
+    return { localSaved: true, serverSaved: true, reason: '' };
+  } catch (e) {
+    return { localSaved: true, serverSaved: false, reason: String(e?.message || 'network error') };
+  }
 }
 
 function hasReflection(chapterId) {
@@ -121,12 +172,13 @@ function bindReflectionModal() {
     if (e.key === 'Escape' && !modal?.classList.contains('hidden')) close();
   });
 
-  saveBtn?.addEventListener('click', () => {
+  saveBtn?.addEventListener('click', async () => {
     if (!reflectionCurrentChapterId) return;
     const answers = [1, 2, 3].map(i => {
       return document.getElementById(`reflection-a${i}`)?.value.trim() || '';
     });
-    saveReflectionData(reflectionCurrentChapterId, answers);
+    saveBtn.disabled = true;
+    const result = await saveReflectionData(reflectionCurrentChapterId, answers);
 
     const savedEl = document.getElementById('reflection-saved-at');
     if (savedEl) {
@@ -138,8 +190,16 @@ function bindReflectionModal() {
     const btn = document.querySelector(`.toc-reflection-btn[data-chapter-id="${reflectionCurrentChapterId}"]`);
     if (btn) btn.classList.toggle('has-entry', answers.some(a => a));
 
-    showToast('\uc131\ucc30\uc77c\uc9c0\uac00 \uc800\uc7a5\ub418\uc5c8\uc2b5\ub2c8\ub2e4.', 'success');
-    close();
+    if (result.serverSaved) {
+      showToast('\uc131\ucc30\uc77c\uc9c0\uac00 \uc81c\ucd9c\ub418\uc5c8\uc2b5\ub2c8\ub2e4. (\uad50\uc218 \ub300\uc2dc\ubcf4\ub4dc \ubc18\uc601)', 'success');
+      close();
+    } else {
+      const msg = result.reason === 'no_token'
+        ? '\ub85c\uadf8\uc778 \uc815\ubcf4\uac00 \uc5c6\uc5b4 \ub85c\uceec\uc5d0\ub9cc \uc800\uc7a5\ub418\uc5c8\uc2b5\ub2c8\ub2e4. \ub2e4\uc2dc \ub85c\uadf8\uc778 \ud6c4 \uc81c\ucd9c\ud574\uc8fc\uc138\uc694.'
+        : `\uc11c\ubc84 \uc81c\ucd9c\uc5d0 \uc2e4\ud328\ud588\uc2b5\ub2c8\ub2e4: ${result.reason}`;
+      showToast(msg, 'error');
+    }
+    saveBtn.disabled = false;
   });
 }
 
@@ -196,7 +256,7 @@ async function loadRuntimeModules() {
   }
 
   try {
-    const chatbotMod = await import('./chatbot.js?v=20260309e');
+    const chatbotMod = await import('./chatbot.js?v=20260310');
     if (typeof chatbotMod.initChatbot === 'function') {
       initChatbot = chatbotMod.initChatbot;
     }
