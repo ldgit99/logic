@@ -3,10 +3,13 @@
  * Worker API????듭떊???대떦?섎뒗 ?대씪?댁뼵???좏떥由ы떚
  */
 
-const WORKER_BASE_URLS = [
+const ORIGIN = (typeof window !== 'undefined' && window.location?.origin) ? window.location.origin : '';
+const WORKER_BASE_URLS = Array.from(new Set([
+  ORIGIN,
+  'https://logic.dongkuklee99.workers.dev',
   'https://logic-proxy.dongkuklee99.workers.dev',
   'https://logic-proxy.ldgit99.workers.dev',
-];
+].filter(Boolean)));
 
 let _token = null;
 
