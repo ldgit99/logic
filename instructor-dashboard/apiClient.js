@@ -4,11 +4,15 @@
  */
 
 const ORIGIN = (typeof window !== 'undefined' && window.location?.origin) ? window.location.origin : '';
+const isWorkerOrigin =
+  typeof window !== 'undefined'
+  && /(^|\.)workers\.dev$/i.test(window.location.hostname || '');
+
 const WORKER_BASE_URLS = Array.from(new Set([
-  ORIGIN,
   'https://logic.dongkuklee99.workers.dev',
   'https://logic-proxy.dongkuklee99.workers.dev',
   'https://logic-proxy.ldgit99.workers.dev',
+  ...(isWorkerOrigin ? [ORIGIN] : []),
 ].filter(Boolean)));
 
 let _token = null;
@@ -54,7 +58,13 @@ export async function apiGet(path, params = {}) {
 
       return await res.json();
     } catch (err) {
-      if (err instanceof ApiError) throw err;
+      if (err instanceof ApiError) {
+        if (err.status === 404 || err.status >= 500) {
+          lastError = err;
+          continue;
+        }
+        throw err;
+      }
       lastError = err;
     }
   }
@@ -88,7 +98,13 @@ export async function apiPost(path, body) {
       const text = await res.text();
       return text ? JSON.parse(text) : null;
     } catch (err) {
-      if (err instanceof ApiError) throw err;
+      if (err instanceof ApiError) {
+        if (err.status === 404 || err.status >= 500) {
+          lastError = err;
+          continue;
+        }
+        throw err;
+      }
       lastError = err;
     }
   }
