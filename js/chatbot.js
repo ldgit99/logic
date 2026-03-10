@@ -12,20 +12,13 @@ const WORKER_URLS = [
 const COMPLETION_MARKER = '===\ud615\uc131\ud3c9\uac00\uc644\ub8cc===';
 const NEXT_QUESTION_MARKER = '===\ub2e4\uc74c\ubb38\ud56d===';
 const ASSESSMENT_TRIGGER = '\ud615\uc131\ud3c9\uac00';
-const REFLECTION_TRIGGER = '\uc131\ucc30';
 const SESSION_INDEX_KEY = 'logic_session_index_v4';
 const SESSION_PREFIX = 'logic_session_v4';
 const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 30;
 
-const REFLECTION_QUESTIONS = [
-  '1. \uc774\ubc88 \ub2e8\uc6d0\uc5d0\uc11c \uac00\uc7a5 \uc911\uc694\ud558\ub2e4\uace0 \uc0dd\uac01\ud558\ub294 \uac1c\ub150\uc744 \uc124\uba85\ud574 \ubcf4\uc138\uc694.',
-  '2. \uc774\ubc88 \ub2e8\uc6d0\uc5d0\uc11c \uc5b4\ub824\uc6e0\ub358 \uac1c\ub150\uc744 \uc4f0\uace0, \uc774\uc720\ub97c \uc124\uba85\ud574 \ubcf4\uc138\uc694.',
-  '3. \uc774\ubc88 \ub2e8\uc6d0\uc5d0\uc11c \ubc30\uc6b4 \ub0b4\uc6a9\uc774 \uc774\uc804\uc5d0 \uacf5\ubd80\ud588\ub358 \uc9c0\uc2dd\uacfc \uc5b4\ub5bb\uac8c \uc5f0\uacb0\ub418\ub294\uc9c0 \uc791\uc131\ud574 \ubcf4\uc138\uc694.',
-];
 
 const ChatMode = {
   LEARNING: 'learning',
-  REFLECTION: 'reflection',
   ASSESSMENT: 'assessment',
   ASSESSMENT_COMPLETE: 'assessment_complete',
 };
@@ -38,7 +31,6 @@ let currentMode = ChatMode.LEARNING;
 let sessionId = '';
 let logMessages = [];
 let modelMessages = [];
-let reflectionStep = 0;
 let assessmentQuestions = [];
 let assessmentQIdx = 0;
 let assessmentHintCount = 0;
@@ -160,16 +152,6 @@ ${hints}` : ''}`;
 }
 
 
-function buildReflectionAckPrompt() {
-  return [
-    '\uc5ed\ud560: \ud559\uc0dd\uc758 \uc131\ucc30 \ub2f5\ubcc0\uc5d0 \uc9e7\uace0 \ub530\ub73b\ud558\uac8c \uaca9\ub824\ud558\ub294 \ub3c4\uc6b0\ubbf8\uc785\ub2c8\ub2e4.',
-    '',
-    '[\uc9c0\uce68]',
-    '- \ud559\uc0dd \ub2f5\ubcc0\uc744 \uadf8\ub300\ub85c \uc778\uc815\ud558\uace0 1~2\ubb38\uc7a5\uc73c\ub85c\ub9cc \uaca9\ub824\ud569\ub2c8\ub2e4.',
-    '- \ucd94\uac00 \uc9c8\ubb38\uc744 \ud558\uc9c0 \uc54a\uc2b5\ub2c8\ub2e4. \ub2e4\uc74c \uc9c8\ubb38\uc740 \uc2dc\uc2a4\ud15c\uc774 \uc81c\uc2dc\ud569\ub2c8\ub2e4.',
-    '- \ubc18\ub4dc\uc2dc \ud55c\uad6d\uc5b4\ub85c \ub2f5\ud569\ub2c8\ub2e4.',
-  ].join('\n');
-}
 
 function buildAssessmentEvalPrompt(q, idx, total, isLast, hintCount = 0) {
   const hints = (q.hints || []).map((h, i) => `  \ud78c\ud2b8${i + 1}: ${h}`).join('\n');
@@ -241,9 +223,6 @@ function updateBadge() {
     badge.className = 'badge badge-complete';
   } else if (currentMode === ChatMode.ASSESSMENT) {
     badge.textContent = '\ud3c9\uac00 \uc9c4\ud589';
-    badge.className = 'badge badge-active';
-  } else if (currentMode === ChatMode.REFLECTION) {
-    badge.textContent = '\uc131\ucc30 \uc911';
     badge.className = 'badge badge-active';
   } else {
     badge.textContent = '\ub300\uae30 \uc911';
@@ -364,9 +343,7 @@ function getServerToken() {
 function rebuildModelMessagesFromLogs(chapterData, messages, mode) {
   const prompt = mode === ChatMode.ASSESSMENT || mode === ChatMode.ASSESSMENT_COMPLETE
     ? buildAssessmentPrompt(chapterData)
-    : mode === ChatMode.REFLECTION
-      ? buildReflectionAckPrompt()
-      : buildLearningPrompt(chapterData);
+    : buildLearningPrompt(chapterData);
 
   const restored = [{ role: 'system', content: prompt }];
   (messages || []).forEach((m) => {
@@ -573,21 +550,6 @@ async function sendToAI(userText, opts = {}) {
     pushLogMessage('assistant', fullText, currentMode);
     persistSession();
 
-    // 성찰 모드: AI 격려 완료 후 다음 질문 직접 출력
-    if (currentMode === ChatMode.REFLECTION) {
-      if (reflectionStep < REFLECTION_QUESTIONS.length) {
-        const nextQ = REFLECTION_QUESTIONS[reflectionStep];
-        appendBubble('ai', nextQ);
-        pushLogMessage('assistant', nextQ, ChatMode.REFLECTION);
-        reflectionStep++;
-      } else {
-        reflectionStep = 0;
-        currentMode = ChatMode.LEARNING;
-        updateBadge();
-        const done = '\uc131\ucc30\uc77c\uc9c0 \uc791\uc131\uc774 \uc644\ub8cc\ub418\uc5c8\uc2b5\ub2c8\ub2e4. \uc218\uace0\ud558\uc168\uc2b5\ub2c8\ub2e4.';
-        appendBubble('system', done);
-        pushLogMessage('system', done, ChatMode.REFLECTION);
-      }
       persistSession();
     }
 
@@ -690,22 +652,6 @@ async function startAssessment() {
   persistSession();
 }
 
-function startReflection() {
-  currentMode = ChatMode.REFLECTION;
-  reflectionStep = 1;
-  updateBadge();
-
-  const notice = '\uc131\ucc30\uc77c\uc9c0\ub97c \uc2dc\uc791\ud569\ub2c8\ub2e4. \uc138 \uac00\uc9c0 \uc9c8\ubb38\uc5d0 \uc21c\uc11c\ub300\ub85c \ub2f5\ud574 \uc8fc\uc138\uc694.';
-  appendBubble('system', notice);
-  pushLogMessage('system', notice, currentMode);
-
-  // Q1 직접 출력 (API 호출 없음)
-  appendBubble('ai', REFLECTION_QUESTIONS[0]);
-  pushLogMessage('assistant', REFLECTION_QUESTIONS[0], currentMode);
-
-  modelMessages = [{ role: 'system', content: buildReflectionAckPrompt() }];
-  persistSession();
-}
 
 function handleSend() {
   const input = getEl('chat-input');
@@ -719,10 +665,6 @@ function handleSend() {
 
   const lower = text.toLowerCase();
 
-  if (currentMode === ChatMode.LEARNING && lower === REFLECTION_TRIGGER) {
-    startReflection();
-    return;
-  }
 
   if (currentMode === ChatMode.LEARNING &&
       (lower === ASSESSMENT_TRIGGER.toLowerCase() || lower === '\ud3c9\uac00')) {
@@ -772,7 +714,7 @@ function createNewLearningSession() {
   logMessages = [];
   modelMessages = [{ role: 'system', content: buildLearningPrompt(chapterRef) }];
 
-  const welcome = `\uc548\ub155\ud558\uc138\uc694. \ubb34\uc5c7\uc744 \ub3c4\uc640\ub4dc\ub9b4\uae4c\uc694? \uad81\uae08\ud55c \uc810\uc774\ub098 \ud544\uc694\ud55c \uc815\ubcf4\uac00 \uc788\ub2e4\uba74 \ub9d0\uc500\ud574 \uc8fc\uc138\uc694. \uac01 \uc7a5\ubcc4 \ub9c8\uc9c0\ub9c9\uc5d0\ub294 '\uc131\ucc30'\uc774\ub77c\uace0 \uc785\ub825\ud558\uba74 \uc131\ucc30\uc77c\uc9c0\ub97c \uc791\uc131\ud560 \uc218 \uc788\uace0, '\ud3c9\uac00'\ub97c \uc785\ub825\ud558\uba74 \ud615\uc131\ud3c9\uac00\ub97c \ud480 \uc218 \uc788\uc2b5\ub2c8\ub2e4. \ubaa8\ub4e0 \ub300\ud654 \ub0b4\uc6a9\uc740 \ub85c\uadf8\ub370\uc774\ud130\ub85c \uae30\ub85d\ub418\uba70, \ud3c9\uac00\uc758 \uadfc\uac70\ub85c \ud65c\uc6a9\ub429\ub2c8\ub2e4. \uc81c\ucd9c\uc740 \uac01 \uc7a5\uc758 \ub9c8\uc9c0\ub9c9 \ud65c\ub3d9 \ub2e8\uacc4\uc5d0\uc11c \uc774\ub8e8\uc5b4\uc9d1\ub2c8\ub2e4.`;
+  const welcome = `\uc548\ub155\ud558\uc138\uc694. \ubb34\uc5c7\uc744 \ub3c4\uc640\ub4dc\ub9b4\uae4c\uc694? \uad81\uae08\ud55c \uc810\uc774\ub098 \ud544\uc694\ud55c \uc815\ubcf4\uac00 \uc788\ub2e4\uba74 \ub9d0\uc500\ud574 \uc8fc\uc138\uc694. '\ud3c9\uac00'\ub97c \uc785\ub825\ud558\uba74 \ud615\uc131\ud3c9\uac00\ub97c \ud480 \uc218 \uc788\uc2b5\ub2c8\ub2e4. \ubaa8\ub4e0 \ub300\ud654 \ub0b4\uc6a9\uc740 \ub85c\uadf8\ub370\uc774\ud130\ub85c \uae30\ub85d\ub418\uba70, \ud3c9\uac00\uc758 \uadfc\uac70\ub85c \ud65c\uc6a9\ub429\ub2c8\ub2e4. \uc81c\ucd9c\uc740 \uac01 \uc7a5\uc758 \ub9c8\uc9c0\ub9c9 \ud65c\ub3d9 \ub2e8\uacc4\uc5d0\uc11c \uc774\ub8e8\uc5b4\uc9d1\ub2c8\ub2e4.`
   appendBubble('ai', welcome);
   pushLogMessage('assistant', welcome, currentMode);
   persistSession();
