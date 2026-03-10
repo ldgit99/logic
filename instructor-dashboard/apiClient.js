@@ -9,8 +9,8 @@ const isWorkerOrigin =
   && /(^|\.)workers\.dev$/i.test(window.location.hostname || '');
 
 const WORKER_BASE_URLS = Array.from(new Set([
-  'https://logic.dongkuklee99.workers.dev',
   'https://logic-proxy.dongkuklee99.workers.dev',
+  'https://logic.dongkuklee99.workers.dev',
   'https://logic-proxy.ldgit99.workers.dev',
   ...(isWorkerOrigin ? [ORIGIN] : []),
 ].filter(Boolean)));
@@ -59,11 +59,8 @@ export async function apiGet(path, params = {}) {
       return await res.json();
     } catch (err) {
       if (err instanceof ApiError) {
-        if (err.status === 404 || err.status >= 500) {
-          lastError = err;
-          continue;
-        }
-        throw err;
+        lastError = err;
+        continue;
       }
       lastError = err;
     }
@@ -99,11 +96,8 @@ export async function apiPost(path, body) {
       return text ? JSON.parse(text) : null;
     } catch (err) {
       if (err instanceof ApiError) {
-        if (err.status === 404 || err.status >= 500) {
-          lastError = err;
-          continue;
-        }
-        throw err;
+        lastError = err;
+        continue;
       }
       lastError = err;
     }
