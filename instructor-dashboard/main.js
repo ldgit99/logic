@@ -4,6 +4,7 @@
  */
 
 import {
+  setToken,
   verifyToken,
   fetchSummary,
   fetchStudents,
@@ -18,20 +19,20 @@ import {
   saveQuestions,
   clearToken,
   ApiError,
-} from './apiClient.js';
+} from './apiClient.js?v=20260310';
 
-import { renderSummaryCards, renderSummaryTable } from './views/summary.js';
-import { renderInterventions } from './views/interventions.js';
-import { renderAchievement } from './views/achievement.js';
-import { renderConcepts } from './views/concepts.js';
-import { renderFeedbackQuality } from './views/feedbackQuality.js';
-import { renderInteractionAnalysis } from './views/interactionAnalysis.js';
-import { renderStudentReport } from './views/studentReport.js';
-import { renderRoster } from './views/roster.js';
-import { renderQuestions } from './views/questions.js';
-import { renderReflectionAnalysis } from './views/reflectionAnalysis.js';
-import { openStudentModal } from './views/studentModal.js';
-import { exportCSV } from './utils/csv.js';
+import { renderSummaryCards, renderSummaryTable } from './views/summary.js?v=20260310';
+import { renderInterventions } from './views/interventions.js?v=20260310';
+import { renderAchievement } from './views/achievement.js?v=20260310';
+import { renderConcepts } from './views/concepts.js?v=20260310';
+import { renderFeedbackQuality } from './views/feedbackQuality.js?v=20260310';
+import { renderInteractionAnalysis } from './views/interactionAnalysis.js?v=20260310';
+import { renderStudentReport } from './views/studentReport.js?v=20260310';
+import { renderRoster } from './views/roster.js?v=20260310';
+import { renderQuestions } from './views/questions.js?v=20260310';
+import { renderReflectionAnalysis } from './views/reflectionAnalysis.js?v=20260310';
+import { openStudentModal } from './views/studentModal.js?v=20260310';
+import { exportCSV } from './utils/csv.js?v=20260310';
 
 // ── 상태 ─────────────────────────────────────────────────────────
 
@@ -82,9 +83,12 @@ function bindAuthForm() {
         sessionStorage.setItem('dash_token', token);
         showDashboard(token);
       } else {
+        errorEl.textContent = '인증에 실패했습니다. 토큰을 확인하세요.';
         errorEl.classList.remove('hidden');
       }
-    } catch {
+    } catch (err) {
+      console.error('Login error:', err);
+      errorEl.textContent = `오류: ${err?.message || String(err)}`;
       errorEl.classList.remove('hidden');
     }
   });
@@ -93,6 +97,7 @@ function bindAuthForm() {
 // ── 대시보드 화면 ─────────────────────────────────────────────────
 
 async function showDashboard(token) {
+  setToken(token);
   document.getElementById('auth-screen').classList.add('hidden');
   document.getElementById('dashboard-screen').classList.remove('hidden');
   await loadView(currentView);

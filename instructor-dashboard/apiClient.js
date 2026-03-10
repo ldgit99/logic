@@ -41,6 +41,7 @@ export async function apiGet(path, params = {}) {
   const query = new URLSearchParams(params).toString();
   const suffix = query ? `${path}?${query}` : path;
   let lastError;
+  let firstApiError = null;
 
   for (const base of WORKER_BASE_URLS) {
     try {
@@ -59,6 +60,7 @@ export async function apiGet(path, params = {}) {
       return await res.json();
     } catch (err) {
       if (err instanceof ApiError) {
+        if (!firstApiError) firstApiError = err;
         lastError = err;
         continue;
       }
@@ -66,7 +68,7 @@ export async function apiGet(path, params = {}) {
     }
   }
 
-  throw lastError || new Error('API ?붿껌 ?ㅽ뙣');
+  throw firstApiError || lastError || new Error('API ?붿껌 ?ㅽ뙣');
 }
 
 /**
@@ -76,6 +78,7 @@ export async function apiGet(path, params = {}) {
  */
 export async function apiPost(path, body) {
   let lastError;
+  let firstApiError = null;
 
   for (const base of WORKER_BASE_URLS) {
     try {
@@ -96,6 +99,7 @@ export async function apiPost(path, body) {
       return text ? JSON.parse(text) : null;
     } catch (err) {
       if (err instanceof ApiError) {
+        if (!firstApiError) firstApiError = err;
         lastError = err;
         continue;
       }
@@ -103,7 +107,7 @@ export async function apiPost(path, body) {
     }
   }
 
-  throw lastError || new Error('API ?붿껌 ?ㅽ뙣');
+  throw firstApiError || lastError || new Error('API ?붿껌 ?ㅽ뙣');
 }
 
 export class ApiError extends Error {
