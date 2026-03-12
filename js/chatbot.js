@@ -388,7 +388,7 @@ async function tryRestoreSessionFromServer(chapterData) {
 
   restoreUIFromLogs();
   updateBadge();
-  setSubmitEnabled(assessmentComplete);
+  setSubmitEnabled(true);
 
   appendBubble('system', '\uc774\uc804 \uc138\uc158\uc774 \uc11c\ubc84\uc5d0\uc11c \ubcf5\uc6d0\ub418\uc5c8\uc2b5\ub2c8\ub2e4. \uc774\uc5b4\uc11c \uc9c4\ud589\ud558\uc138\uc694.');
   pushLogMessage('system', '\uc138\uc158 \ubcf5\uc6d0(server)', currentMode);
@@ -673,6 +673,7 @@ async function startAssessment(startIdx = 0) {
 
   modelMessages = [{ role: 'system', content: buildAssessmentEvalPrompt(q, startIdx, totalQ, isLast) }];
   persistSession();
+  setSubmitEnabled(true);
 }
 
 
@@ -739,6 +740,7 @@ function createNewLearningSession() {
   appendBubble('ai', welcome);
   pushLogMessage('assistant', welcome, currentMode);
   persistSession();
+  setSubmitEnabled(true);
 
   sendEvent('session_started', {
     chapterId: chapterRef?.id || '',
@@ -785,7 +787,6 @@ export function resetChatSession() {
   // UI 초기화
   const container = getEl('chat-messages');
   if (container) container.innerHTML = '';
-  setSubmitEnabled(false);
   updateBadge();
 
   // 새 세션 시작
@@ -847,7 +848,7 @@ export async function initChatbot(chapterData) {
 
     restoreUIFromLogs();
     updateBadge();
-    setSubmitEnabled(assessmentComplete);
+    setSubmitEnabled(true);
 
     appendBubble('system', '\uc774\uc804 \uc138\uc158\uc774 \ubcf5\uc6d0\ub418\uc5c8\uc2b5\ub2c8\ub2e4. \uc774\uc5b4\uc11c \uc9c4\ud589\ud558\uc138\uc694.');
     pushLogMessage('system', '\uc138\uc158 \ubcf5\uc6d0(local)', currentMode);
@@ -856,7 +857,6 @@ export async function initChatbot(chapterData) {
   }
 
   updateBadge();
-  setSubmitEnabled(false);
 
   const container = getEl('chat-messages');
   if (container) container.innerHTML = '';
