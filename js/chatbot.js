@@ -497,6 +497,7 @@ async function sendToAI(userText, opts = {}) {
   const aiBubble = appendBubble('ai', '', true);
   const textEl = aiBubble?.querySelector('.bubble-text');
   let fullText = '';
+  let streamError = false;
 
   try {
     const body = await streamFromWorker(modelMessages);
@@ -531,9 +532,14 @@ async function sendToAI(userText, opts = {}) {
       }
     }
   } catch (err) {
+    streamError = true;
+    // 오류 발생 시 빈 AI 버블을 시스템 오류 메시지로 교체
+    if (aiBubble) {
+      aiBubble.classList.remove('ai');
+      aiBubble.classList.add('system');
+    }
     if (textEl) {
-      textEl.textContent = '\uc624\ub958\uac00 \ubc1c\uc0dd\ud588\uc2b5\ub2c8\ub2e4. \uc7a0\uc2dc \ud6c4 \ub2e4\uc2dc \uc2dc\ub3c4\ud574\uc8fc\uc138\uc694.';
-      textEl.style.color = 'var(--accent-red)';
+      textEl.textContent = '\uc751\ub2f5 \uc911 \uc624\ub958\uac00 \ubc1c\uc0dd\ud588\uc2b5\ub2c8\ub2e4. \uc7a0\uc2dc \ud6c4 \ub2e4\uc2dc \uc2dc\ub3c4\ud574\uc8fc\uc138\uc694.';
     }
     console.error('Streaming error:', err);
   } finally {
@@ -545,15 +551,18 @@ async function sendToAI(userText, opts = {}) {
     }
     if (sendBtn) sendBtn.disabled = false;
 
-    if (fullText.includes(COMPLETION_MARKER) && currentMode === ChatMode.ASSESSMENT) {
-      fullText = fullText.replace(COMPLETION_MARKER, '').trimEnd();
-      if (textEl) textEl.textContent = fullText;
-      handleAssessmentComplete();
-    }
+    // 오류 시 빈 메시지를 대화 기록에 추가하지 않음
+    if (!streamError && fullText) {
+      if (fullText.includes(COMPLETION_MARKER) && currentMode === ChatMode.ASSESSMENT) {
+        fullText = fullText.replace(COMPLETION_MARKER, '').trimEnd();
+        if (textEl) textEl.textContent = fullText;
+        handleAssessmentComplete();
+      }
 
-    modelMessages.push({ role: 'assistant', content: fullText });
-    pushLogMessage('assistant', fullText, currentMode);
-    persistSession();
+      modelMessages.push({ role: 'assistant', content: fullText });
+      pushLogMessage('assistant', fullText, currentMode);
+      persistSession();
+    }
   }
 
     // 평가 모드: 마커 유무로 분기
