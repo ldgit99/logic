@@ -62,6 +62,12 @@ function clearAuth() {
   }
 }
 
+function emitAuthChanged(profile) {
+  window.dispatchEvent(new CustomEvent('logic:auth-changed', {
+    detail: profile || null,
+  }));
+}
+
 function normalizeProfile(raw) {
   if (!raw) return null;
   const token = sanitize(raw.token);
@@ -232,6 +238,7 @@ function bindLogoutOnce() {
     const current = getStudentProfile();
     if (current?.token) await logout(current.token);
     clearAuth();
+    emitAuthChanged(null);
     location.reload();
   });
 }
@@ -382,6 +389,7 @@ export async function initAuthGate() {
       saveAuth(normalized);
       updateHeaderProfile(normalized);
       hideLoginGate();
+      emitAuthChanged(normalized);
       resolve(normalized);
     };
 

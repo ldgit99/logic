@@ -14,20 +14,8 @@ function showToast(message, type = 'info') {
   setTimeout(() => toast.remove(), 4000);
 }
 
-function markChapterSubmittedLocal(chapterId) {
-  localStorage.setItem(`logic_submitted_${chapterId}`, '1');
-  const chapterEl = document.querySelector(`.toc-chapter[data-chapter-id="${chapterId}"]`);
-  if (chapterEl && !chapterEl.querySelector('.toc-submitted-badge')) {
-    const badge = document.createElement('span');
-    badge.className = 'toc-submitted-badge';
-    badge.textContent = '\u2713';
-    chapterEl.querySelector('.chapter-title')?.after(badge);
-  }
-  const btn = document.getElementById('btn-submit-pdf');
-  if (btn) { btn.textContent = '\uC81C\uCD9C \uC644\uB8CC'; btn.classList.add('submitted'); btn.disabled = true; }
-}
-import { getConversationMessages, getChapterRef, getSessionId } from './chatbot.js?v=20260309e';
-import { getStudentProfile } from './auth.js?v=20260309e';
+import { getConversationMessages, getChapterRef, getSessionId } from './chatbot.js?v=20260312a';
+import { getStudentProfile } from './auth.js?v=20260311c';
 import { sendAssessment, sendFeedbackReport } from './instrumentation.js?v=20260309e';
 
 let exportEventsBound = false;
@@ -43,6 +31,74 @@ function escapeHtml(text) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
+}
+
+function getUserScopedKey(base, studentId) {
+  return `${base}_${studentId || 'anon'}`;
+}
+
+function getStoredSessionId(studentId, chapterId) {
+  try {
+    const raw = localStorage.getItem(getUserScopedKey('logic_session_index_v4', studentId));
+    const index = raw ? JSON.parse(raw) : {};
+    const sessionId = index?.[chapterId];
+    return typeof sessionId === 'string' ? sessionId : '';
+  } catch {
+    return '';
+  }
+}
+
+function getStoredMessages(studentId, chapterId, currentSessionId = '') {
+  const candidates = [];
+  if (currentSessionId) candidates.push(currentSessionId);
+  const indexedSessionId = getStoredSessionId(studentId, chapterId);
+  if (indexedSessionId && !candidates.includes(indexedSessionId)) candidates.push(indexedSessionId);
+
+  for (const sessionId of candidates) {
+    try {
+      const key = `${getUserScopedKey('logic_session_v4', studentId)}_${sessionId}`;
+      const raw = localStorage.getItem(key);
+      if (!raw) continue;
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed?.logMessages)) continue;
+      const messages = parsed.logMessages.filter((m) => m && typeof m.content === 'string');
+      if (messages.length > 0) return messages;
+    } catch {
+      // ignore and try next
+    }
+  }
+
+  return [];
+}
+
+function getDomMessages() {
+  const container = document.getElementById('chat-messages');
+  if (!container) return [];
+
+  return Array.from(container.querySelectorAll('.chat-bubble')).map((bubble) => {
+    const isUser = bubble.classList.contains('user');
+    const isAi = bubble.classList.contains('ai');
+    const text = bubble.querySelector('.bubble-text')?.textContent?.trim() || '';
+    if (!text) return null;
+    return {
+      role: isUser ? 'user' : isAi ? 'assistant' : 'system',
+      content: text,
+    };
+  }).filter(Boolean);
+}
+
+function resolveConversationMessages({ studentId, chapterId, sessionId }) {
+  const liveMessages = getConversationMessages();
+  if (Array.isArray(liveMessages) && liveMessages.length > 0) {
+    return liveMessages;
+  }
+
+  const storedMessages = getStoredMessages(studentId, chapterId, sessionId);
+  if (storedMessages.length > 0) {
+    return storedMessages;
+  }
+
+  return getDomMessages();
 }
 
 function setLoading(visible, message = '\uD53C\uB4DC\uBC31\uC744 \uC0DD\uC131\uD558\uB294 \uC911\uC785\uB2C8\uB2E4...') {
@@ -206,7 +262,12 @@ async function handleConfirmSubmit() {
   }
 
   const chapterData = getChapterRef();
-  const messages = getConversationMessages();
+  const sessionId = getSessionId();
+  const messages = resolveConversationMessages({
+    studentId,
+    chapterId: chapterData?.id || '',
+    sessionId,
+  });
   if (!chapterData || !Array.isArray(messages) || messages.length === 0) {
     showToast('\uC81C\uCD9C\uD560 \uB300\uD654 \uB370\uC774\uD130\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4.', 'error');
     return;
@@ -222,11 +283,11 @@ async function handleConfirmSubmit() {
 
     // ?쒕쾭 ?꾩넚 ??PDF? ?낅┰?곸쑝濡??ㅽ뻾 (?ㅽ뙣?대룄 ?ъ슜?먯뿉寃??뚮━吏 ?딆쓬)
     const submittedAt = new Date().toISOString();
-    const sessionId = getSessionId() || ((typeof crypto !== 'undefined' && crypto.randomUUID)
+    const reportSessionId = sessionId || ((typeof crypto !== 'undefined' && crypto.randomUUID)
       ? crypto.randomUUID()
       : `${chapterData.id}_${studentId}_${Date.now()}`);
     sendAssessment({
-      session_id: sessionId,
+      session_id: reportSessionId,
       student_id: studentId,
       student_name: studentName,
       chapter_id: chapterData.id,
@@ -242,7 +303,7 @@ async function handleConfirmSubmit() {
       messages: messages.filter((m) => m.role !== 'system'),
     });
     sendFeedbackReport({
-      session_id: sessionId,
+      session_id: reportSessionId,
       student_id: studentId,
       chapter_id: chapterData.id,
       submitted_at: submittedAt,
@@ -251,7 +312,6 @@ async function handleConfirmSubmit() {
       feed_forward: feedback.feedForward,
     });
 
-    markChapterSubmittedLocal(chapterData.id);
     showToast('PDF \uC0DD\uC131\uC774 \uC644\uB8CC\uB418\uC5C8\uC2B5\uB2C8\uB2E4.', 'success');
   } catch (err) {
     console.error('PDF export error:', err);

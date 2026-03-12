@@ -1,5 +1,5 @@
 import { sendEvent } from './instrumentation.js?v=20260309e';
-import { getStudentProfile } from './auth.js?v=20260309e';
+import { getStudentProfile } from './auth.js?v=20260311c';
 
 const LOCAL_ORIGIN_WITH_SLASH = window.location.origin.endsWith('/') ? window.location.origin : (window.location.origin + '/');
 
@@ -168,8 +168,13 @@ function buildAssessmentEvalPrompt(q, idx, total, isLast, hintCount = 0) {
     q.keyAnswer || q.answer || '',
     ...(hints ? ['', '[\ud78c\ud2b8 \ubaa9\ub85d]', hints] : []),
     '',
-    '[\ucc44\uc810 \uaddc\uce59 - \ubc18\ub4dc\uc2dc \uc5c4\uaca9\ud788 \ub530\ub974\uc138\uc694]',
-    `1. \uc815\ub2f5\uc774\uba74: \uce5c\ucc2c + \uc751\ub2f5 \ub9c8\uc9c0\ub9c9\uc5d0 \ubc18\ub4dc\uc2dc ${advanceMarker} \ud3ec\ud568.`,
+    '[\ucc44\uc810 \uaddc\uce59 - \ubc18\ub4dc\uc2dc \ub530\ub974\uc138\uc694]',
+    '[\uc815\ub2f5 \ud310\ub2e8 \uae30\uc900] \ub2e4\uc74c \uc870\uac74 \uc911 \ud558\ub098\ub77c\ub3c4 \ucda9\uc871\ud558\uba74 \uc815\ub2f5\uc73c\ub85c \ucc98\ub9ac\ud569\ub2c8\ub2e4:',
+    '  a) \ubaa8\ubc94 \ub2f5\uc548\uc758 \ud575\uc2ec \uac1c\ub150(\ud575\uc2ec \uc5b4\ud718 \ud3ec\ud568)\ub97c \ub300\uccb4\ub85c \ud3ec\ud568\ud55c \uacbd\uc6b0',
+    '  b) \ud45c\ud604\uc774 \ub2e4\ub974\ub354\ub77c\ub3c4 \uc758\ubbf8\uc801\uc73c\ub85c \ubaa8\ubc94 \ub2f5\uc548\uacfc \ub3d9\ub4f1\ud55c \uacbd\uc6b0',
+    '  c) \uc77c\ubd80 \ubd80\uc815\ud655\ud558\uc9c0\ub9cc \ud575\uc2ec \ub0b4\uc6a9\uc774 \ub9de\ub294 \uacbd\uc6b0 (\ubd80\ubd84 \uc815\ub2f5)',
+    '[\uc624\ub2f5 \ud310\ub2e8 \uae30\uc900] \ud575\uc2ec \uac1c\ub150\uc774 \ube60\uc9c0\uac70\ub098 \uc798\ubabb \uc774\ud574\ud558\uace0 \uc788\ub294 \uacbd\uc6b0\ub9cc \uc624\ub2f5\uc73c\ub85c \ucc98\ub9ac\ud569\ub2c8\ub2e4.',
+    `1. \uc815\ub2f5/\uc720\uc0ac\uc815\ub2f5\uc774\uba74: \uce5c\ucc2c + \uc751\ub2f5 \ub9c8\uc9c0\ub9c9\uc5d0 \ubc18\ub4dc\uc2dc ${advanceMarker} \ud3ec\ud568.`,
     remaining > 0
       ? `2. \uc624\ub2f5\uc774\uba74: \ud78c\ud2b8 ${hintCount + 1}\ubc88\ub9cc \uc81c\uacf5. ${advanceMarker} \uc808\ub300 \ud3ec\ud568 \uae08\uc9c0.`
       : `2. \uc624\ub2f5\uc774\uba74: \ud78c\ud2b8\uac00 \uc18c\uc9c4\ub418\uc5c8\uc2b5\ub2c8\ub2e4. \ubaa8\ubc94 \ub2f5\uc548\uc744 \uacf5\uac1c\ud558\uace0 \uc751\ub2f5 \ub9c8\uc9c0\ub9c9\uc5d0 \ubc18\ub4dc\uc2dc ${advanceMarker} \ud3ec\ud568.`,
@@ -739,6 +744,34 @@ export function getChapterRef() {
 
 export function getSessionId() {
   return sessionId;
+}
+
+export function resetChatSession() {
+  if (!chapterRef) return;
+
+  // 로컬 세션 데이터 삭제
+  if (sessionId) {
+    try { localStorage.removeItem(getSessionStorageKey(sessionId)); } catch { /* ignore */ }
+  }
+  const index = loadSessionIndex();
+  delete index[chapterRef.id];
+  saveSessionIndex(index);
+
+  // 상태 초기화
+  sessionId = '';
+  logMessages = [];
+  modelMessages = [];
+  assessmentComplete = false;
+  currentMode = ChatMode.LEARNING;
+
+  // UI 초기화
+  const container = getEl('chat-messages');
+  if (container) container.innerHTML = '';
+  setSubmitEnabled(false);
+  updateBadge();
+
+  // 새 세션 시작
+  createNewLearningSession();
 }
 
 let chapterLocks = {};

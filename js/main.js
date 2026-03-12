@@ -1,5 +1,6 @@
 ﻿let initChatbot = () => {};
 let initExport = () => {};
+let resetChatSession = () => {};
 let initAuthGate = async () => null;
 let getStudentProfile = () => null;
 let authModuleLoaded = false;
@@ -23,27 +24,6 @@ let currentChapterId = null;
 let scrollObserver = null;
 
 // ??? ?쒖텧 ?꾨즺 ?곹깭 ???
-const SUBMITTED_KEY_PREFIX = 'logic_submitted_';
-
-export function markChapterSubmitted(chapterId) {
-  localStorage.setItem(`${SUBMITTED_KEY_PREFIX}${chapterId}`, '1');
-  // TOC 諭껋? ?낅뜲?댄듃
-  const chapterEl = document.querySelector(`.toc-chapter[data-chapter-id="${chapterId}"]`);
-  if (chapterEl && !chapterEl.querySelector('.toc-submitted-badge')) {
-    const badge = document.createElement('span');
-    badge.className = 'toc-submitted-badge';
-    badge.textContent = '\u2713';
-    chapterEl.querySelector('.chapter-title')?.after(badge);
-  }
-  // ?쒖텧 踰꾪듉 ?곹깭 ?낅뜲?댄듃
-  if (chapterId === currentChapterId) {
-    updateSubmitButtonState(true);
-  }
-}
-
-function isChapterSubmitted(chapterId) {
-  return localStorage.getItem(`${SUBMITTED_KEY_PREFIX}${chapterId}`) === '1';
-}
 
 // ─── 성찰일지 저장/불러오기 ───
 let reflectionCurrentChapterId = null;
@@ -203,19 +183,6 @@ function bindReflectionModal() {
   });
 }
 
-export function updateSubmitButtonState(submitted) {
-  const btn = document.getElementById('btn-submit-pdf');
-  if (!btn) return;
-  if (submitted) {
-    btn.textContent = '\uc81c\ucd9c \uc644\ub8cc';
-    btn.classList.add('submitted');
-    btn.disabled = true;
-  } else {
-    btn.textContent = '\ud615\uc131\ud3c9\uac00 \uc81c\ucd9c';
-    btn.classList.remove('submitted');
-    btn.disabled = false;
-  }
-}
 
 const FETCH_TIMEOUT_MS = 10000;
 const AUTH_FALLBACK_KEY = 'logic_basic_auth_v1';
@@ -234,7 +201,7 @@ async function fetchJsonWithTimeout(url, timeoutMs = FETCH_TIMEOUT_MS) {
 
 async function loadRuntimeModules() {
   try {
-    const authMod = await import('./auth.js?v=20260309e');
+    const authMod = await import('./auth.js?v=20260311c');
     if (typeof authMod.initAuthGate === 'function') {
       initAuthGate = authMod.initAuthGate;
       authModuleLoaded = true;
@@ -247,7 +214,7 @@ async function loadRuntimeModules() {
   }
 
   try {
-    const exportMod = await import('./export.js?v=20260309e');
+    const exportMod = await import('./export.js?v=20260311c');
     if (typeof exportMod.initExport === 'function') {
       initExport = exportMod.initExport;
     }
@@ -256,9 +223,12 @@ async function loadRuntimeModules() {
   }
 
   try {
-    const chatbotMod = await import('./chatbot.js?v=20260310');
+    const chatbotMod = await import('./chatbot.js?v=20260312a');
     if (typeof chatbotMod.initChatbot === 'function') {
       initChatbot = chatbotMod.initChatbot;
+    }
+    if (typeof chatbotMod.resetChatSession === 'function') {
+      resetChatSession = chatbotMod.resetChatSession;
     }
   } catch (e) {
     console.error('chatbot module load failed:', e);
@@ -362,13 +332,10 @@ function buildTOC(chapters) {
 
     const label = document.createElement('div');
     label.className = 'toc-chapter-label';
-    const submittedBadge = isChapterSubmitted(ch.id)
-      ? '<span class="toc-submitted-badge">\u2713</span>'
-      : '';
     const hasEntry = hasReflection(ch.id);
     label.innerHTML = `
       <span class="chapter-num">${ch.id}</span>
-      <span class="chapter-title">${ch.title}</span>${submittedBadge}
+      <span class="chapter-title">${ch.title}</span>
       <button class="toc-reflection-btn${hasEntry ? ' has-entry' : ''}" data-chapter-id="${ch.id}" title="\uc131\ucc30\uc77c\uc9c0 \uc791\uc131" type="button">\ud83d\udcdd</button>
       <span class="toc-arrow">\u203a</span>
     `;
@@ -449,8 +416,8 @@ function setupScrollSpy() {
 }
 
 // ??? 梨뺥꽣 濡쒕뱶 ???
-async function loadChapter(id) {
-  if (id === currentChapterId) return;
+async function loadChapter(id, { force = false } = {}) {
+  if (id === currentChapterId && !force) return;
   currentChapterId = id;
 
   document.getElementById('content-inner').innerHTML =
@@ -471,7 +438,6 @@ async function loadChapter(id) {
     } catch (e) {
       console.error('chatbot init failed:', e);
     }
-    updateSubmitButtonState(isChapterSubmitted(id));
     setTimeout(setupScrollSpy, 150);
   } catch (err) {
     console.error(`챕터 ${id} 로\ub529 실패:`, err);
@@ -485,6 +451,16 @@ async function loadChapter(id) {
 }
 
 // ??? ?ъ씠?쒕컮 / 梨쀫큸 ?좉? ???
+function bindChatResetButton() {
+  const btn = document.getElementById('btn-reset-chat');
+  if (!btn) return;
+  btn.addEventListener('click', () => {
+    if (!currentChapterId) return;
+    if (!confirm('현재 장의 AI 튜터 대화를 초기화합니다. 계속하시겠습니까?')) return;
+    resetChatSession();
+  });
+}
+
 function setupToggleHandlers() {
   const appBody = document.getElementById('app-body');
   const sidebar = document.getElementById('sidebar');
@@ -542,10 +518,26 @@ function setupToggleHandlers() {
   });
 }
 
+function bindAuthRefreshHandler() {
+  if (window.__logicAuthRefreshBound) return;
+  window.__logicAuthRefreshBound = true;
+
+  window.addEventListener('logic:auth-changed', async () => {
+    refreshTocReflectionBadges();
+    if (!currentChapterId) return;
+    try {
+      await loadChapter(currentChapterId, { force: true });
+    } catch (e) {
+      console.error('chapter reload after auth failed:', e);
+    }
+  });
+}
+
 // ??? ??珥덇린?????
 async function init() {
   try {
     await loadRuntimeModules();
+    bindAuthRefreshHandler();
 
     if (authModuleLoaded) {
       initAuthGate()
@@ -562,6 +554,7 @@ async function init() {
     buildTOC(chapters);
     bindReflectionModal();
     setupToggleHandlers();
+    bindChatResetButton();
     initExport();
 
     await loadChapter(chapters[0].id);

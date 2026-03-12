@@ -73,7 +73,10 @@
           <div id="chatbot-title">AI 튜터</div>
           <div id="chatbot-subtitle">형성평가 진행 중</div>
         </div>
-        <div id="assessment-badge" class="badge badge-pending">대기 중</div>
+        <div id="chatbot-header-right">
+          <div id="assessment-badge" class="badge badge-pending">대기 중</div>
+          <button id="btn-reset-chat" title="대화 초기화" aria-label="대화 초기화">&#8635;</button>
+        </div>
       </div>
 
       <div id="chat-messages" role="log" aria-live="polite">
@@ -248,7 +251,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
   <!-- ─── 앱 진입점 (ES Module) ─── -->
-  <script type="module" src="js/main.js?v=20260310b"></script>
+  <script type="module" src="js/main.js?v=20260312a"></script>
 
   <!-- ─── 테마 토글 로직 ─── -->
   <script>
