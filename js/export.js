@@ -14,7 +14,7 @@ function showToast(message, type = 'info') {
   setTimeout(() => toast.remove(), 4000);
 }
 
-import { getConversationMessages, getChapterRef, getSessionId } from './chatbot.js?v=20260312a';
+import { getConversationMessages, getChapterRef, getSessionId } from './chatbot.js?v=20260312b';
 import { getStudentProfile } from './auth.js?v=20260311c';
 import { sendAssessment, sendFeedbackReport } from './instrumentation.js?v=20260309e';
 

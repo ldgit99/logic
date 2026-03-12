@@ -596,37 +596,56 @@ async function fetchQuestionsFromWorker(chapterId) {
   return null;
 }
 
-async function startAssessment() {
+// "형성평가", "2번 형성평가", "형성평가 3번" 등에서 시작 인덱스(0-based) 파싱
+// 트리거가 아니면 null 반환
+function parseAssessmentTrigger(text) {
+  const t = text.trim();
+  if (t === '형성평가' || t === '평가') return 0;
+  if (t.includes('형성평가') || t.includes('평가')) {
+    const m = t.match(/(\d+)\s*번/);
+    if (m) return Math.max(0, parseInt(m[1], 10) - 1);
+  }
+  return null;
+}
+
+async function startAssessment(startIdx = 0) {
   setSubmitEnabled(false);
 
-  // fetch 중 입력 차단
   const input = getEl('chat-input');
   const sendBtn = getEl('chat-send');
   if (input) input.disabled = true;
   if (sendBtn) sendBtn.disabled = true;
 
-  const loadingMsg = '\ud615\uc131\ud3c9\uac00 \ubb38\ud56d\uc744 \ubd88\ub7ec\uc624\ub294 \uc911\uc785\ub2c8\ub2e4...';
-  const loadingBubble = appendBubble('system', loadingMsg);
+  // startIdx > 0 이고 이미 문항이 로드된 경우 재사용, 아니면 서버에서 가져옴
+  let questions = null;
+  if (startIdx > 0 && assessmentQuestions.length > 0) {
+    questions = assessmentQuestions;
+  } else {
+    const loadingBubble = appendBubble('system', '\ud615\uc131\ud3c9\uac00 \ubb38\ud56d\uc744 \ubd88\ub7ec\uc624\ub294 \uc911\uc785\ub2c8\ub2e4...');
+    try {
+      const result = await Promise.race([
+        fetchQuestionsFromWorker(chapterRef.id),
+        new Promise((_, r) => setTimeout(() => r(new Error('timeout')), 5000)),
+      ]);
+      if (result?.questions?.questions?.length > 0) {
+        questions = result.questions.questions;
+      }
+    } catch { /* no questions */ }
+    loadingBubble?.remove();
+  }
 
-  let instructorQuestions = null;
-  try {
-    const result = await Promise.race([
-      fetchQuestionsFromWorker(chapterRef.id),
-      new Promise((_, r) => setTimeout(() => r(new Error('timeout')), 5000)),
-    ]);
-    if (result?.questions?.questions?.length > 0) {
-      instructorQuestions = result.questions;
-    }
-  } catch { /* no questions */ }
+  if (input) input.disabled = false;
+  if (sendBtn) sendBtn.disabled = false;
 
-  // 로딩 버블 제거
-  loadingBubble?.remove();
-
-  if (input) { input.disabled = false; }
-  if (sendBtn) { sendBtn.disabled = false; }
-
-  if (!instructorQuestions) {
+  if (!questions) {
     const msg = '\uc544\uc9c1 \ud615\uc131\ud3c9\uac00 \ubb38\ud56d\uc774 \ub4f1\ub85d\ub418\uc9c0 \uc54a\uc558\uc2b5\ub2c8\ub2e4. \uad50\uc218\ub2d8\uc774 \ubb38\ud56d\uc744 \ub4f1\ub85d\ud558\uc2e0 \ud6c4 \ub2e4\uc2dc \uc2dc\ub3c4\ud574 \uc8fc\uc138\uc694.';
+    appendBubble('system', msg);
+    pushLogMessage('system', msg, currentMode);
+    return;
+  }
+
+  if (startIdx >= questions.length) {
+    const msg = `${startIdx + 1}\ubc88 \ubb38\ud56d\uc740 \uc5c6\uc2b5\ub2c8\ub2e4. (\ucd1d ${questions.length}\ubb38\ud56d)`;
     appendBubble('system', msg);
     pushLogMessage('system', msg, currentMode);
     return;
@@ -634,24 +653,25 @@ async function startAssessment() {
 
   currentMode = ChatMode.ASSESSMENT;
   assessmentComplete = false;
-  assessmentQuestions = instructorQuestions.questions;
-  assessmentQIdx = 0;
+  assessmentQuestions = questions;
+  assessmentQIdx = startIdx;
   assessmentHintCount = 0;
   updateBadge();
 
   const totalQ = assessmentQuestions.length;
-  const notice = `\ud615\uc131\ud3c9\uac00\ub97c \uc2dc\uc791\ud569\ub2c8\ub2e4. \ucd1d ${totalQ}\ubb38\ud56d\uc73c\ub85c \uc9c4\ud589\ud569\ub2c8\ub2e4.`;
+  const notice = startIdx === 0
+    ? `\ud615\uc131\ud3c9\uac00\ub97c \uc2dc\uc791\ud569\ub2c8\ub2e4. \ucd1d ${totalQ}\ubb38\ud56d\uc73c\ub85c \uc9c4\ud589\ud569\ub2c8\ub2e4.`
+    : `${startIdx + 1}\ubc88 \ubb38\ud56d\ubd80\ud130 \ud615\uc131\ud3c9\uac00\ub97c \ub2e4\uc2dc \uc2dc\uc791\ud569\ub2c8\ub2e4. (\ucd1d ${totalQ}\ubb38\ud56d)`;
   appendBubble('system', notice);
   pushLogMessage('system', notice, currentMode);
 
-  // Q1 직접 출력 (가짜 user 버블 없음)
-  const isLast = totalQ === 1;
-  const q1 = assessmentQuestions[0];
-  const q1Text = `Q1. ${q1.question}`;
-  appendBubble('ai', q1Text);
-  pushLogMessage('assistant', q1Text, currentMode);
+  const isLast = startIdx === totalQ - 1;
+  const q = assessmentQuestions[startIdx];
+  const qText = `Q${startIdx + 1}. ${q.question}`;
+  appendBubble('ai', qText);
+  pushLogMessage('assistant', qText, currentMode);
 
-  modelMessages = [{ role: 'system', content: buildAssessmentEvalPrompt(q1, 0, totalQ, isLast) }];
+  modelMessages = [{ role: 'system', content: buildAssessmentEvalPrompt(q, startIdx, totalQ, isLast) }];
   persistSession();
 }
 
@@ -666,17 +686,15 @@ function handleSend() {
   input.value = '';
   input.style.height = 'auto';
 
-  const lower = text.toLowerCase();
-
-
-  if (currentMode === ChatMode.LEARNING &&
-      (lower === ASSESSMENT_TRIGGER.toLowerCase() || lower === '\ud3c9\uac00')) {
-    startAssessment();
+  // 형성평가 트리거 — 모든 모드에서 허용
+  const triggerIdx = parseAssessmentTrigger(text);
+  if (triggerIdx !== null) {
+    startAssessment(triggerIdx);
     return;
   }
 
   if (currentMode === ChatMode.ASSESSMENT_COMPLETE) {
-    const msg = '\ud615\uc131\ud3c9\uac00\uac00 \uc644\ub8cc\ub418\uc5c8\uc2b5\ub2c8\ub2e4. PDF \uc81c\ucd9c \ud6c4 \ub2e4\uc74c \ud559\uc2b5\uc744 \uc9c4\ud589\ud558\uc138\uc694.';
+    const msg = '\ud615\uc131\ud3c9\uac00\uac00 \uc644\ub8cc\ub418\uc5c8\uc2b5\ub2c8\ub2e4. \ub2e4\uc2dc \ud558\ub824\uba74 \'\ud615\uc131\ud3c9\uac00\'\ub97c \uc785\ub825\ud558\uc138\uc694.';
     appendBubble('system', msg);
     pushLogMessage('system', msg, currentMode);
     persistSession();

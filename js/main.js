@@ -223,7 +223,7 @@ async function loadRuntimeModules() {
   }
 
   try {
-    const chatbotMod = await import('./chatbot.js?v=20260312a');
+    const chatbotMod = await import('./chatbot.js?v=20260312b');
     if (typeof chatbotMod.initChatbot === 'function') {
       initChatbot = chatbotMod.initChatbot;
     }
