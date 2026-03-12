@@ -14,7 +14,7 @@ function showToast(message, type = 'info') {
   setTimeout(() => toast.remove(), 4000);
 }
 
-import { getConversationMessages, getChapterRef, getSessionId } from './chatbot.js?v=20260312b';
+import { getConversationMessages, getChapterRef, getSessionId } from './chatbot.js?v=20260312c';
 import { getStudentProfile } from './auth.js?v=20260311c';
 import { sendAssessment, sendFeedbackReport } from './instrumentation.js?v=20260309e';
 
@@ -278,7 +278,7 @@ async function handleConfirmSubmit() {
 
   try {
     const rawFeedback = await generateFeedback(chapterData, messages);
-    const feedback = normalizeFeedback(rawFeedback, chapterData.formativeAssessment.totalQuestions);
+    const feedback = normalizeFeedback(rawFeedback, chapterData.formativeAssessment?.totalQuestions ?? 0);
     await savePdf(studentName, studentId, chapterData, messages, feedback);
 
     // ?쒕쾭 ?꾩넚 ??PDF? ?낅┰?곸쑝濡??ㅽ뻾 (?ㅽ뙣?대룄 ?ъ슜?먯뿉寃??뚮━吏 ?딆쓬)

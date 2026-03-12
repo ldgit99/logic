@@ -11,11 +11,12 @@ function buildFeedbackPrompt(chapterData, messages) {
     .map((m) => `[${m.role === 'user' ? '학생' : 'AI 튜터'}]\n${m.content}`)
     .join('\n\n---\n\n');
 
+  const totalQuestions = chapterData.formativeAssessment?.totalQuestions ?? 0;
   return `당신은 디지털 논리회로 과목의 엄격한 평가자입니다.
 아래 대화 로그를 분석하여, 칭찬은 짧게 하고 개선점은 매우 비판적이고 구체적으로 작성하세요.
 
 [챕터] ${chapterData.title}
-[문항 수] ${chapterData.formativeAssessment.totalQuestions}
+[문항 수] ${totalQuestions}
 
 [대화 로그]
 ${chatLog}
@@ -35,7 +36,7 @@ ${chatLog}
 아래 스키마를 반드시 지키세요:
 {
   "correctCount": number,
-  "totalCount": ${chapterData.formativeAssessment.totalQuestions},
+  "totalCount": ${totalQuestions},
   "score": number,
   "weakConcepts": ["string"],
   "feedUp": "string",
@@ -50,7 +51,10 @@ export async function generateFeedback(chapterData, messages) {
 
   for (const url of WORKER_URLS) {
     try {
-      const res = await fetch(url, {
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('feedback timeout')), 30000)
+      );
+      const res = await Promise.race([fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -68,7 +72,7 @@ export async function generateFeedback(chapterData, messages) {
           max_tokens: 1400,
           response_format: { type: 'json_object' },
         }),
-      });
+      }), timeoutPromise]);
 
       if (!res.ok) {
         const errText = await res.text();
@@ -79,7 +83,11 @@ export async function generateFeedback(chapterData, messages) {
       const content = data?.choices?.[0]?.message?.content;
       if (!content) throw new Error('Empty feedback response');
 
-      return JSON.parse(content);
+      try {
+        return JSON.parse(content);
+      } catch {
+        return { correctCount: 0, totalCount: 0, score: 0, weakConcepts: [], feedUp: '', feedBack: '', feedForward: '' };
+      }
     } catch (err) {
       lastError = err;
     }

@@ -279,6 +279,8 @@ function persistSession() {
     chapterId: chapterRef.id,
     currentMode,
     assessmentComplete,
+    assessmentQuestions,
+    assessmentQIdx,
     logMessages,
     modelMessages,
     savedAt: Date.now(),
@@ -385,6 +387,19 @@ async function tryRestoreSessionFromServer(chapterData) {
   currentMode = Object.values(ChatMode).includes(lastMode) ? lastMode : ChatMode.LEARNING;
   assessmentComplete = currentMode === ChatMode.ASSESSMENT_COMPLETE;
   modelMessages = rebuildModelMessagesFromLogs(chapterData, logMessages, currentMode);
+
+  if (currentMode === ChatMode.ASSESSMENT) {
+    const localSession = loadSessionForChapter(chapterData.id);
+    if (localSession && Array.isArray(localSession.assessmentQuestions) && localSession.assessmentQuestions.length > 0) {
+      assessmentQuestions = localSession.assessmentQuestions;
+      assessmentQIdx = typeof localSession.assessmentQIdx === 'number' ? localSession.assessmentQIdx : 0;
+      const q = assessmentQuestions[assessmentQIdx];
+      if (q) {
+        const isLast = assessmentQIdx === assessmentQuestions.length - 1;
+        modelMessages[0] = { role: 'system', content: buildAssessmentEvalPrompt(q, assessmentQIdx, assessmentQuestions.length, isLast, 0) };
+      }
+    }
+  }
 
   restoreUIFromLogs();
   updateBadge();
@@ -559,38 +574,33 @@ async function sendToAI(userText, opts = {}) {
         handleAssessmentComplete();
       }
 
+      if (currentMode === ChatMode.ASSESSMENT && !assessmentComplete) {
+        if (fullText.includes(NEXT_QUESTION_MARKER)) {
+          fullText = fullText.replace(NEXT_QUESTION_MARKER, '').trimEnd();
+          if (textEl) textEl.textContent = fullText;
+          assessmentHintCount = 0;
+          assessmentQIdx++;
+          if (assessmentQIdx < assessmentQuestions.length) {
+            const nextQ = assessmentQuestions[assessmentQIdx];
+            const isLast = assessmentQIdx === assessmentQuestions.length - 1;
+            const qText = `Q${assessmentQIdx + 1}. ${nextQ.question}`;
+            appendBubble('ai', qText);
+            pushLogMessage('assistant', qText, ChatMode.ASSESSMENT);
+            modelMessages[0] = { role: 'system', content: buildAssessmentEvalPrompt(nextQ, assessmentQIdx, assessmentQuestions.length, isLast, 0) };
+          }
+        } else {
+          assessmentHintCount++;
+          const q = assessmentQuestions[assessmentQIdx];
+          const isLast = assessmentQIdx === assessmentQuestions.length - 1;
+          modelMessages[0] = { role: 'system', content: buildAssessmentEvalPrompt(q, assessmentQIdx, assessmentQuestions.length, isLast, assessmentHintCount) };
+        }
+      }
+
       modelMessages.push({ role: 'assistant', content: fullText });
       pushLogMessage('assistant', fullText, currentMode);
       persistSession();
     }
   }
-
-    // 평가 모드: 마커 유무로 분기
-    if (currentMode === ChatMode.ASSESSMENT && !assessmentComplete) {
-      if (fullText.includes(NEXT_QUESTION_MARKER)) {
-        // 정답 or 힌트 소진 → 다음 문항으로 진행
-        fullText = fullText.replace(NEXT_QUESTION_MARKER, '').trimEnd();
-        if (textEl) textEl.textContent = fullText;
-        assessmentHintCount = 0;
-        assessmentQIdx++;
-        if (assessmentQIdx < assessmentQuestions.length) {
-          const nextQ = assessmentQuestions[assessmentQIdx];
-          const isLast = assessmentQIdx === assessmentQuestions.length - 1;
-          const qText = `Q${assessmentQIdx + 1}. ${nextQ.question}`;
-          appendBubble('ai', qText);
-          pushLogMessage('assistant', qText, ChatMode.ASSESSMENT);
-          modelMessages[0] = { role: 'system', content: buildAssessmentEvalPrompt(nextQ, assessmentQIdx, assessmentQuestions.length, isLast, 0) };
-          persistSession();
-        }
-      } else {
-        // 힌트 제공 → 카운트 증가 후 프롬프트 갱신
-        assessmentHintCount++;
-        const q = assessmentQuestions[assessmentQIdx];
-        const isLast = assessmentQIdx === assessmentQuestions.length - 1;
-        modelMessages[0] = { role: 'system', content: buildAssessmentEvalPrompt(q, assessmentQIdx, assessmentQuestions.length, isLast, assessmentHintCount) };
-        persistSession();
-      }
-    }
 }
 
 
@@ -610,7 +620,7 @@ async function fetchQuestionsFromWorker(chapterId) {
 function parseAssessmentTrigger(text) {
   const t = text.trim();
   if (t === '형성평가' || t === '평가') return 0;
-  if (t.includes('형성평가') || t.includes('평가')) {
+  if (t.includes('형성평가')) {
     const m = t.match(/(\d+)\s*번/);
     if (m) return Math.max(0, parseInt(m[1], 10) - 1);
   }
@@ -850,10 +860,20 @@ export async function initChatbot(chapterData) {
     sessionId = restored.sessionId;
     currentMode = restored.currentMode || ChatMode.LEARNING;
     assessmentComplete = Boolean(restored.assessmentComplete);
+    assessmentQuestions = Array.isArray(restored.assessmentQuestions) ? restored.assessmentQuestions : [];
+    assessmentQIdx = typeof restored.assessmentQIdx === 'number' ? restored.assessmentQIdx : 0;
     logMessages = Array.isArray(restored.logMessages) ? restored.logMessages : [];
     modelMessages = Array.isArray(restored.modelMessages)
       ? restored.modelMessages
       : rebuildModelMessagesFromLogs(chapterData, logMessages, currentMode);
+
+    if (currentMode === ChatMode.ASSESSMENT && assessmentQuestions.length > 0) {
+      const q = assessmentQuestions[assessmentQIdx];
+      if (q) {
+        const isLast = assessmentQIdx === assessmentQuestions.length - 1;
+        modelMessages[0] = { role: 'system', content: buildAssessmentEvalPrompt(q, assessmentQIdx, assessmentQuestions.length, isLast, 0) };
+      }
+    }
 
     restoreUIFromLogs();
     updateBadge();
