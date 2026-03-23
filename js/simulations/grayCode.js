@@ -32,13 +32,6 @@ function renderBitRow(bits, color, label, changedIdx = -1) {
   </div>`;
 }
 
-function diffBits(a, b) {
-  for (let i = 0; i < a.length; i++) {
-    if (a[i] !== b[i]) return i;
-  }
-  return -1;
-}
-
 export function mountGrayCode(container) {
   container.innerHTML = `
     <div style="display:flex;flex-direction:column;gap:14px;">
@@ -66,7 +59,7 @@ export function mountGrayCode(container) {
       <!-- 0~15 대조표 -->
       <div style="border-top:1px solid var(--border);padding-top:14px;">
         <div style="font-size:0.75rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;
-          letter-spacing:0.05em;margin-bottom:8px;">0~15 2진수 vs 그레이 코드 비교 (노란색 = 변화된 비트)</div>
+          letter-spacing:0.05em;margin-bottom:8px;">0~15 2진수 vs 그레이 코드 비교</div>
         <div id="gc-table" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:4px;"></div>
       </div>
 
@@ -129,14 +122,10 @@ export function mountGrayCode(container) {
     tableEl.innerHTML = Array.from({ length: 16 }, (_, i) => {
       const bin = i.toString(2).padStart(4, '0');
       const gray = binToGray(bin);
-      const prevBin = i > 0 ? (i - 1).toString(2).padStart(4, '0') : null;
-      const prevGray = prevBin ? binToGray(prevBin) : null;
-      const changed = prevGray ? diffBits(prevGray, gray) : -1;
-
       const isHighlight = i === highlight;
-      const grayBits = gray.split('').map((b, j) => `<span style="
+      const grayBits = gray.split('').map((b) => `<span style="
         font-weight:700;font-family:monospace;
-        color:${j === changed ? 'var(--accent-yellow)' : b === '1' ? 'var(--accent-green)' : 'var(--text-muted)'};
+        color:${b === '1' ? 'var(--accent-green)' : 'var(--text-muted)'};
       ">${b}</span>`).join('');
 
       return `<div style="
@@ -148,7 +137,6 @@ export function mountGrayCode(container) {
         <span style="font-family:monospace;font-size:0.82rem;color:var(--accent-blue);">${bin}</span>
         <span style="color:var(--text-muted);font-size:0.8rem;">→</span>
         <span style="font-family:monospace;font-size:0.82rem;">${grayBits}</span>
-        ${changed >= 0 ? `<span style="font-size:0.68rem;color:var(--accent-yellow);">1비트↑</span>` : ''}
       </div>`;
     }).join('');
   }
