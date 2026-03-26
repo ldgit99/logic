@@ -27,7 +27,7 @@ import { renderInterventions } from './views/interventions.js?v=20260310';
 import { renderAchievement } from './views/achievement.js?v=20260310';
 import { renderConcepts } from './views/concepts.js?v=20260310';
 import { renderFeedbackQuality } from './views/feedbackQuality.js?v=20260310';
-import { renderInteractionAnalysis } from './views/interactionAnalysis.js?v=20260326b';
+import { renderInteractionAnalysis } from './views/interactionAnalysis.js?v=20260326c';
 import { renderStudentReport } from './views/studentReport.js?v=20260310';
 import { renderRoster } from './views/roster.js?v=20260310';
 import { renderQuestions } from './views/questions.js?v=20260310';
@@ -292,12 +292,20 @@ async function loadView(view) {
       case 'interaction-analysis': {
         const wrap = document.getElementById('interaction-analysis-wrap');
         try {
-          const [data, research] = await Promise.all([
+          const [data, researchResult] = await Promise.allSettled([
             fetchStudents(currentFilters),
             fetchResearchExport(currentFilters),
           ]);
+          if (data.status !== 'fulfilled') {
+            throw data.reason;
+          }
+          const research = researchResult.status === 'fulfilled'
+            ? researchResult.value
+            : {
+                warning: 'Research export data is unavailable. Showing base interaction metrics only.',
+              };
           renderInteractionAnalysis(
-            data.submissions || [],
+            data.value?.submissions || [],
             wrap,
             research,
           );
