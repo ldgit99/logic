@@ -20,21 +20,21 @@ import {
   saveQuestions,
   clearToken,
   ApiError,
-} from './apiClient.js?v=20260310';
+} from './apiClient.js?v=20260326a';
 
-import { renderSummaryCards, renderSummaryTable } from './views/summary.js?v=20260310';
-import { renderInterventions } from './views/interventions.js?v=20260310';
-import { renderAchievement } from './views/achievement.js?v=20260310';
-import { renderConcepts } from './views/concepts.js?v=20260310';
-import { renderFeedbackQuality } from './views/feedbackQuality.js?v=20260310';
+import { renderSummaryCards, renderSummaryTable } from './views/summary.js?v=20260326a';
+import { renderInterventions } from './views/interventions.js?v=20260326a';
+import { renderAchievement } from './views/achievement.js?v=20260326a';
+import { renderConcepts } from './views/concepts.js?v=20260326a';
+import { renderFeedbackQuality } from './views/feedbackQuality.js?v=20260326a';
 import { renderInteractionAnalysis } from './views/interactionAnalysis.js?v=20260326c';
-import { renderStudentReport } from './views/studentReport.js?v=20260310';
-import { renderRoster } from './views/roster.js?v=20260310';
-import { renderQuestions } from './views/questions.js?v=20260310';
-import { renderReflectionAnalysis } from './views/reflectionAnalysis.js?v=20260310';
-import { openStudentModal } from './views/studentModal.js?v=20260310';
-import { exportCSV } from './utils/csv.js?v=20260310';
-import { escapeHtml } from './utils/format.js?v=20260310';
+import { renderStudentReport } from './views/studentReport.js?v=20260326a';
+import { renderRoster } from './views/roster.js?v=20260326a';
+import { renderQuestions } from './views/questions.js?v=20260326a';
+import { renderReflectionAnalysis } from './views/reflectionAnalysis.js?v=20260326a';
+import { openStudentModal } from './views/studentModal.js?v=20260326a';
+import { exportCSV } from './utils/csv.js?v=20260326a';
+import { escapeHtml } from './utils/format.js?v=20260326a';
 
 // ── 상태 ─────────────────────────────────────────────────────────
 
@@ -297,23 +297,36 @@ async function loadView(view) {
             fetchStudents(currentFilters),
             fetchResearchExport(currentFilters),
           ]);
-          if (data.status !== 'fulfilled') {
+          const studentPayload = data.status === 'fulfilled'
+            ? data.value
+            : { submissions: Array.isArray(allSubmissions) ? allSubmissions : [] };
+          if (data.status !== 'fulfilled' && !studentPayload.submissions.length) {
             throw data.reason;
+          }
+          const warnings = [];
+          if (data.status !== 'fulfilled' && studentPayload.submissions.length) {
+            warnings.push('Student dataset API failed. Showing cached submissions.');
+          }
+          if (researchResult.status !== 'fulfilled') {
+            warnings.push('Research export data is unavailable. Showing base interaction metrics only.');
           }
           const research = researchResult.status === 'fulfilled'
             ? researchResult.value
             : {
-                warning: 'Research export data is unavailable. Showing base interaction metrics only.',
+                warning: warnings.join(' '),
               };
+          if (researchResult.status === 'fulfilled' && warnings.length) {
+            research.warning = [research.warning, ...warnings].filter(Boolean).join(' ');
+          }
           try {
             renderInteractionAnalysis(
-              data.value?.submissions || [],
+              studentPayload.submissions || [],
               wrap,
               research,
             );
           } catch (renderErr) {
             console.error('[interaction-analysis:render]', renderErr);
-            renderInteractionAnalysisFallback(data.value?.submissions || [], wrap, renderErr, research);
+            renderInteractionAnalysisFallback(studentPayload.submissions || [], wrap, renderErr, research);
           }
         } catch (err) {
           console.error('[interaction-analysis]', err);
