@@ -34,6 +34,7 @@ import { renderQuestions } from './views/questions.js?v=20260310';
 import { renderReflectionAnalysis } from './views/reflectionAnalysis.js?v=20260310';
 import { openStudentModal } from './views/studentModal.js?v=20260310';
 import { exportCSV } from './utils/csv.js?v=20260310';
+import { escapeHtml } from './utils/format.js?v=20260310';
 
 // ── 상태 ─────────────────────────────────────────────────────────
 
@@ -304,17 +305,21 @@ async function loadView(view) {
             : {
                 warning: 'Research export data is unavailable. Showing base interaction metrics only.',
               };
-          renderInteractionAnalysis(
-            data.value?.submissions || [],
-            wrap,
-            research,
-          );
+          try {
+            renderInteractionAnalysis(
+              data.value?.submissions || [],
+              wrap,
+              research,
+            );
+          } catch (renderErr) {
+            console.error('[interaction-analysis:render]', renderErr);
+            renderInteractionAnalysisFallback(data.value?.submissions || [], wrap, renderErr, research);
+          }
         } catch (err) {
           console.error('[interaction-analysis]', err);
           if (wrap) {
-            wrap.innerHTML = '<p class="empty-msg">상호작용 분석을 불러오지 못했습니다. 새로고침 후 다시 시도해 주세요.</p>';
+            wrap.innerHTML = `<div class="ia-card"><p class="empty-msg">상호작용 분석을 불러오지 못했습니다. 새로고침 후 다시 시도해 주세요.</p><p class="ia-footnote">${escapeHtml(err?.message || String(err))}</p></div>`;
           }
-          throw err;
         }
         break;
       }
@@ -441,4 +446,39 @@ function handleApiError(err) {
   } else {
     console.error('[Dashboard]', err);
   }
+}
+
+function renderInteractionAnalysisFallback(submissions, wrap, err, research = {}) {
+  if (!wrap) return;
+  const rows = Array.isArray(submissions) ? submissions : [];
+  const avgScore = rows.length
+    ? (rows.reduce((sum, row) => sum + Number(row?.score || 0), 0) / rows.length).toFixed(1)
+    : '0.0';
+  const chapterCounts = rows.reduce((acc, row) => {
+    const chapterId = String(row?.chapter_id || row?.chapterId || '').trim() || '-';
+    acc[chapterId] = (acc[chapterId] || 0) + 1;
+    return acc;
+  }, {});
+  const chapterSummary = Object.entries(chapterCounts)
+    .sort((a, b) => a[0].localeCompare(b[0], undefined, { numeric: true }))
+    .map(([chapterId, count]) => `<tr><td>${escapeHtml(chapterId)}</td><td>${count}</td></tr>`)
+    .join('');
+  const warning = research?.warning ? `<p class="ia-footnote">${escapeHtml(research.warning)}</p>` : '';
+
+  wrap.innerHTML = `
+    <div class="ia-card">
+      <h3 class="chart-title">Interaction Analysis Fallback</h3>
+      <p class="empty-msg">상세 시각화 렌더링에 실패해 기본 요약만 표시합니다.</p>
+      <p class="ia-footnote">${escapeHtml(err?.message || String(err))}</p>
+      ${warning}
+      <div class="ia-stat-grid">
+        <div class="ia-mini-stat"><span class="ia-mini-stat__label">Submissions</span><strong class="ia-mini-stat__value">${rows.length}</strong></div>
+        <div class="ia-mini-stat"><span class="ia-mini-stat__label">Average score</span><strong class="ia-mini-stat__value">${avgScore}</strong></div>
+      </div>
+      <table class="dash-table" style="margin-top:16px;">
+        <thead><tr><th>Chapter</th><th>Count</th></tr></thead>
+        <tbody>${chapterSummary || '<tr><td colspan="2">No data</td></tr>'}</tbody>
+      </table>
+    </div>
+  `;
 }
