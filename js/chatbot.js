@@ -465,7 +465,7 @@ async function respondAssessment(userText) {
     assessmentHintCount = 0;
     assessmentTrace = [];
     badge();
-    setSubmit(false);
+    setSubmit(true);
     persist();
     return;
   }
@@ -625,7 +625,7 @@ async function sendToAI(text, opts = {}) {
 }
 async function startAssessment(startIdx = 0) {
   setBusy(true);
-  setSubmit(false);
+  setSubmit(true);
   const loading = bubble('system', '형성평가 문항을 불러오는 중입니다...');
   let questions = null;
 
@@ -735,7 +735,7 @@ function newLearningSession() {
   memorySummary = emptyMemory();
   qualityMetrics = emptyMetrics();
   badge();
-  setSubmit(false);
+  setSubmit(true);
 
   const msg = `안녕하세요. ${chapterRef?.title || '현재 챕터'} 학습을 도와드리겠습니다. 개념 설명, 비교, 예시, 계산 과정 등을 질문하시면 챕터 문맥에 맞춰 답변하겠습니다. 형성평가를 시작하려면 "형성평가"를 입력해 주세요.`;
   bubble('ai', msg);
@@ -774,7 +774,7 @@ async function restoreServer(chapterData) {
   hydrateServerState(latest.state || {});
   restoreUI();
   badge();
-  setSubmit(currentMode === ChatMode.DONE || assessmentComplete);
+  setSubmit(true);
   bubble('system', '이전 세션을 서버에서 복원했습니다. 이어서 진행해 주세요.');
   pushLog('system', '세션 복원(server)', currentMode);
   persist();
@@ -833,7 +833,7 @@ export async function initChatbot(chapterData) {
     hydrate(local);
     restoreUI();
     badge();
-    setSubmit(currentMode === ChatMode.DONE || assessmentComplete);
+    setSubmit(true);
     bubble('system', '이전 세션을 복원했습니다. 이어서 진행해 주세요.');
     pushLog('system', '세션 복원(local)', currentMode);
     persist();
