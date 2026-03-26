@@ -214,6 +214,7 @@ export async function upsertSessionIndexes(env, args) {
   const mode = String(args.mode || '');
   const lastUpdated = toIsoOrNow(args.timestamp);
   const incrementMessageCount = Boolean(args.incrementMessageCount);
+  const nextState = args.state && typeof args.state === 'object' ? args.state : null;
 
   const metaK = sessionMetaKey(studentId, chapterId, sessionId);
   let current = null;
@@ -232,6 +233,7 @@ export async function upsertSessionIndexes(env, args) {
     message_count: Number(current?.message_count || 0) + (incrementMessageCount ? 1 : 0),
     last_updated: lastUpdated,
     created_at: current?.created_at || lastUpdated,
+    state: nextState || current?.state || null,
   };
 
   await env.SUBMISSIONS.put(metaK, JSON.stringify(next), { expirationTtl: EVENTS_TTL_SECONDS });
@@ -260,6 +262,9 @@ export async function getLatestSessionForStudentChapter(env, studentId, chapterI
       session_id: parsed.session_id,
       chapter_id: parsed.chapter_id || chapter,
       updated_at: parsed.updated_at || '',
+      mode: parsed.mode || '',
+      message_count: Number(parsed.message_count || 0),
+      state: parsed.state || null,
     };
   } catch {
     return null;

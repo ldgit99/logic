@@ -14,7 +14,7 @@ function showToast(message, type = 'info') {
   setTimeout(() => toast.remove(), 4000);
 }
 
-import { getConversationMessages, getChapterRef, getSessionId, getChatSessionSnapshot } from './chatbot.js?v=20260326a';
+import { getConversationMessages, getChapterRef, getSessionId, getChatSessionSnapshot } from './chatbot.js?v=20260326b';
 import { getStudentProfile } from './auth.js?v=20260311c';
 import { sendAssessment, sendFeedbackReport } from './instrumentation.js?v=20260309e';
 
@@ -39,7 +39,7 @@ function getUserScopedKey(base, studentId) {
 
 function getStoredSessionId(studentId, chapterId) {
   try {
-    const raw = localStorage.getItem(getUserScopedKey('logic_session_index_v4', studentId));
+    const raw = localStorage.getItem(getUserScopedKey('logic_session_index_v5', studentId));
     const index = raw ? JSON.parse(raw) : {};
     const sessionId = index?.[chapterId];
     return typeof sessionId === 'string' ? sessionId : '';
@@ -56,7 +56,7 @@ function getStoredMessages(studentId, chapterId, currentSessionId = '') {
 
   for (const sessionId of candidates) {
     try {
-      const key = `${getUserScopedKey('logic_session_v4', studentId)}_${sessionId}`;
+      const key = `${getUserScopedKey('logic_session_v5', studentId)}_${sessionId}`;
       const raw = localStorage.getItem(key);
       if (!raw) continue;
       const parsed = JSON.parse(raw);
@@ -304,6 +304,7 @@ async function handleConfirmSubmit() {
       feed_forward: feedback.feedForward,
       chat_summary: chatSnapshot.memorySummary || {},
       chat_metrics: chatSnapshot.qualityMetrics || {},
+      assessment_trace: chatSnapshot.assessmentTrace || [],
       feedback_meta: feedback.qualityMetrics || {},
       messages: messages.filter((m) => m.role !== 'system'),
     });

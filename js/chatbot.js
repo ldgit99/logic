@@ -132,6 +132,39 @@ function snapshot() {
     savedAt: Date.now(),
   };
 }
+function serializableAssessmentQuestions() {
+  return (assessmentQuestions || []).map((q, i) => ({
+    id: q?.id || `Q${i + 1}`,
+    question: q?.question || '',
+    concept: q?.concept || '',
+    bloomLevel: q?.bloomLevel || q?.bloom || '',
+    keyAnswer: q?.keyAnswer || q?.answer || '',
+    answer: q?.answer || q?.keyAnswer || '',
+    hints: Array.isArray(q?.hints) ? q.hints : [],
+  }));
+}
+function sessionStateSnapshot() {
+  return {
+    mode: currentMode,
+    assessmentComplete,
+    assessmentQIdx,
+    assessmentHintCount,
+    assessmentQuestions: serializableAssessmentQuestions(),
+    assessmentTrace: Array.isArray(assessmentTrace) ? [...assessmentTrace] : [],
+    memorySummary: { ...memorySummary },
+    qualityMetrics: derivedMetrics(),
+  };
+}
+function hydrateServerState(state = {}) {
+  currentMode = state.mode || ChatMode.LEARNING;
+  assessmentComplete = Boolean(state.assessmentComplete);
+  assessmentQuestions = Array.isArray(state.assessmentQuestions) ? state.assessmentQuestions : [];
+  assessmentQIdx = typeof state.assessmentQIdx === 'number' ? state.assessmentQIdx : 0;
+  assessmentHintCount = typeof state.assessmentHintCount === 'number' ? state.assessmentHintCount : 0;
+  assessmentTrace = Array.isArray(state.assessmentTrace) ? state.assessmentTrace : [];
+  memorySummary = state.memorySummary ? { ...emptyMemory(), ...state.memorySummary } : emptyMemory();
+  qualityMetrics = state.qualityMetrics ? { ...emptyMetrics(), ...state.qualityMetrics } : emptyMetrics();
+}
 function persist() {
   if (!chapterRef?.id || !sessionId) return;
   try {
@@ -269,7 +302,7 @@ function flushSummary(source) {
       sessionId,
       studentId: s.studentId,
       studentName: s.studentName,
-      payload: { source, summary: memorySummary, quality_metrics: derivedMetrics() },
+      payload: { source, summary: memorySummary, quality_metrics: derivedMetrics(), mode: currentMode, session_state: sessionStateSnapshot() },
     });
   }, 1200);
 }
@@ -421,7 +454,21 @@ async function respondLearning(userText) {
 }
 async function respondAssessment(userText) {
   const question = assessmentQuestions[assessmentQIdx];
-  if (!question) return;
+  if (!question) {
+    const msg = '형성평가 상태를 복원하지 못했습니다. "형성평가"를 다시 입력해 평가를 다시 시작해 주세요.';
+    bubble('system', msg);
+    pushLog('system', msg, currentMode);
+    currentMode = ChatMode.LEARNING;
+    assessmentComplete = false;
+    assessmentQuestions = [];
+    assessmentQIdx = 0;
+    assessmentHintCount = 0;
+    assessmentTrace = [];
+    badge();
+    setSubmit(false);
+    persist();
+    return;
+  }
   const isLast = assessmentQIdx === assessmentQuestions.length - 1;
   let result = null;
 
@@ -486,6 +533,8 @@ async function respondAssessment(userText) {
         weak_concept: trim(result.weak_concept),
         hint_count: assessmentHintCount,
         advance: Boolean(result.advance),
+        mode: currentMode,
+        session_state: sessionStateSnapshot(),
       },
     });
   }
@@ -542,7 +591,7 @@ function finishAssessment() {
       sessionId,
       studentId: s.studentId,
       studentName: s.studentName,
-      payload: { total_questions: assessmentQuestions.length, quality_metrics: derivedMetrics() },
+      payload: { total_questions: assessmentQuestions.length, quality_metrics: derivedMetrics(), mode: currentMode, session_state: sessionStateSnapshot() },
     });
   }
 }
@@ -617,7 +666,7 @@ async function startAssessment(startIdx = 0) {
       sessionId,
       studentId: s.studentId,
       studentName: s.studentName,
-      payload: { total_questions: assessmentQuestions.length, start_index: startIdx, version: VERSION },
+      payload: { total_questions: assessmentQuestions.length, start_index: startIdx, version: VERSION, mode: currentMode, session_state: sessionStateSnapshot() },
     });
   }
 
@@ -700,7 +749,7 @@ function newLearningSession() {
       sessionId,
       studentId: s.studentId,
       studentName: s.studentName,
-      payload: { mode: currentMode, version: VERSION },
+      payload: { mode: currentMode, version: VERSION, session_state: sessionStateSnapshot() },
     });
   }
 }
@@ -714,12 +763,6 @@ async function restoreServer(chapterData) {
   if (!Array.isArray(messages) || messages.length === 0) return false;
 
   sessionId = String(latest.session_id);
-  currentMode = ChatMode.LEARNING;
-  assessmentComplete = false;
-  assessmentQuestions = [];
-  assessmentQIdx = 0;
-  assessmentHintCount = 0;
-  assessmentTrace = [];
   logMessages = messages.map((m) => ({
     role: String(m.role || ''),
     content: String(m.content || ''),
@@ -728,8 +771,7 @@ async function restoreServer(chapterData) {
     session_id: String(m.session_id || sessionId),
     chapter_id: String(m.chapter_id || chapterData.id),
   }));
-  memorySummary = emptyMemory();
-  qualityMetrics = emptyMetrics();
+  hydrateServerState(latest.state || {});
   restoreUI();
   badge();
   setSubmit(currentMode === ChatMode.DONE || assessmentComplete);
@@ -786,12 +828,6 @@ export async function initChatbot(chapterData) {
     if (sendBtn) sendBtn.disabled = true;
   });
 
-  try {
-    if (await restoreServer(chapterData)) return;
-  } catch (err) {
-    console.error('server restore failed:', err);
-  }
-
   const local = loadLocalSession(chapterData.id);
   if (local) {
     hydrate(local);
@@ -802,6 +838,12 @@ export async function initChatbot(chapterData) {
     pushLog('system', '세션 복원(local)', currentMode);
     persist();
     return;
+  }
+
+  try {
+    if (await restoreServer(chapterData)) return;
+  } catch (err) {
+    console.error('server restore failed:', err);
   }
 
   const box = el('chat-messages');

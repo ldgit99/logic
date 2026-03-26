@@ -42,7 +42,10 @@ export async function handleEvents(request, env) {
     body.student_id && body.chapter_id && body.session_id &&
     (body.event_type === 'chat_message' ||
       body.event_type === 'session_started' ||
+      body.event_type === 'assessment_started' ||
+      body.event_type === 'assessment_judged' ||
       body.event_type === 'assessment_completed' ||
+      body.event_type === 'chat_summary_updated' ||
       body.event_type === 'session_ended')
   ) {
     await upsertSessionIndexes(env, {
@@ -52,6 +55,7 @@ export async function handleEvents(request, env) {
       timestamp: body.payload?.timestamp || body.timestamp,
       mode: body.payload?.mode || '',
       incrementMessageCount: body.event_type === 'chat_message',
+      state: body.payload?.session_state || null,
     });
   }
 
