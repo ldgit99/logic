@@ -14,7 +14,7 @@ export function renderInteractionAnalysis(submissions, container, researchData =
   const studentRows = Array.isArray(researchData?.studentChapterRows) ? researchData.studentChapterRows : [];
   const attemptRows = Array.isArray(researchData?.attemptRows) ? researchData.attemptRows : [];
   const reflectionRows = Array.isArray(researchData?.reflectionRows) ? researchData.reflectionRows : [];
-  const summary = researchData?.summary || {};
+  const summary = normalizeResearchSummary(researchData?.summary || {});
   const warning = researchData?.warning
     ? `<p class="ia-footnote">${escapeHtml(researchData.warning)}</p>`
     : '';
@@ -520,7 +520,7 @@ function renderScatter(rows, canvas) {
   rows.forEach((row) => {
     const x = padding.left + (row.turnCount / maxTurns) * innerWidth;
     const y = padding.top + innerHeight - (row.score / 100) * innerHeight;
-    ctx.fillStyle = scoreColor(row.score);
+    ctx.fillStyle = scoreFill(row.score);
     ctx.beginPath();
     ctx.arc(x, y, 4, 0, Math.PI * 2);
     ctx.fill();
@@ -547,7 +547,7 @@ function renderHintTable(rows, tbody) {
           <td>${row.turnCount}</td>
           <td>${row.hintCount}</td>
           <td>${formatMetric(row.avgUserLen)}</td>
-          <td><span class="score-pill" style="background:${scoreColor(row.score)}">${row.score}</span></td>
+          <td><span class="score-pill ${escapeHtml(scoreColor(row.score))}">${row.score}</span></td>
         </tr>
       `,
     )
@@ -752,6 +752,17 @@ function normalizeChapter(value) {
   return text ? text.padStart(2, '0') : '';
 }
 
+function normalizeResearchSummary(summary) {
+  return {
+    studentChapterCount: summary.studentChapterCount ?? summary.total_student_chapter_rows ?? 0,
+    attemptCount: summary.attemptCount ?? summary.total_attempt_rows ?? 0,
+    reflectionCount: summary.reflectionCount ?? summary.total_reflection_rows ?? 0,
+    avgProductiveStruggle: summary.avgProductiveStruggle ?? summary.avg_productive_struggle_index ?? 0,
+    avgHintDependency: summary.avgHintDependency ?? summary.avg_hint_dependency_index ?? 0,
+    avgReflectionQuality: summary.avgReflectionQuality ?? summary.avg_reflection_quality_index ?? 0,
+  };
+}
+
 function average(values) {
   if (!values.length) return 0;
   return values.reduce((sum, value) => sum + Number(value || 0), 0) / values.length;
@@ -760,6 +771,13 @@ function average(values) {
 function formatMetric(value) {
   const num = Number(value || 0);
   return Number.isFinite(num) ? num.toFixed(1) : '0.0';
+}
+
+function scoreFill(score) {
+  const cls = scoreColor(score);
+  if (cls === 'score-good') return '#10b981';
+  if (cls === 'score-warn') return '#f59e0b';
+  return '#ef4444';
 }
 
 export function exportResearchCSV(rows, prefix = 'interaction_research') {
