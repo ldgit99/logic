@@ -165,6 +165,13 @@ export async function fetchInterventions(filters = {}) {
 }
 
 /**
+ * Research-ready export datasets for SSCI-style analysis.
+ */
+export async function fetchResearchExport(filters = {}) {
+  return apiGet('/dashboard/research-export', cleanParams(filters));
+}
+
+/**
  * ?섍컯??紐낅떒 議고쉶 (媛???뺣낫 湲곕컲)
  */
 export async function fetchRoster() {

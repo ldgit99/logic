@@ -4,9 +4,9 @@
  * 嶺뚮ㅄ維獄???븐슙??? auth.js???????ルㅎ荑??롪틵?嶺???嶺뚯쉳???
  */
 
-import { listAssessments, listRoster } from '../services/storage.js';
+import { listAssessments, listReflections, listRoster } from '../services/storage.js';
 import { createUserByInstructor, deleteUserByInstructor } from '../services/studentAuth.js';
-import { calcSummary, calcInterventions, calcConcepts } from '../services/analytics.js';
+import { calcSummary, calcInterventions, calcConcepts, buildResearchExport } from '../services/analytics.js';
 
 export async function handleDashboard(request, env, pathname) {
   const url = new URL(request.url);
@@ -23,6 +23,9 @@ export async function handleDashboard(request, env, pathname) {
   }
   if (pathname === '/dashboard/interventions') {
     return handleInterventions(env, params);
+  }
+  if (pathname === '/dashboard/research-export') {
+    return handleResearchExport(env, params);
   }
   if (pathname === '/dashboard/roster') {
     return handleRoster(env);
@@ -178,6 +181,19 @@ async function handleInterventions(env, params) {
   const submissions = await listAssessments(env, params);
   const interventions = calcInterventions(submissions);
   return jsonResponse({ interventions });
+}
+
+async function handleResearchExport(env, params) {
+  const submissions = await listAssessments(env, params);
+  const reflections = await listReflections(env, {
+    chapter: params.chapter || '',
+    studentId: params.studentId || '',
+    from: params.from || '',
+    to: params.to || '',
+    includeDeleted: '1',
+  });
+  const research = buildResearchExport(submissions, reflections);
+  return jsonResponse(research);
 }
 
 const LOCKS_KEY = 'config:chapter_locks';

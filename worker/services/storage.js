@@ -140,6 +140,53 @@ export async function listAssessments(env, filters = {}) {
 }
 
 /**
+ * List reflection records with optional filters.
+ */
+export async function listReflections(env, filters = {}) {
+  const prefix = filters.chapter ? `reflectionidx:${filters.chapter}:` : 'reflectionidx:';
+  const keys = await listAllKeys(env, prefix);
+
+  const values = await Promise.all(
+    keys.map(async (k) => {
+      const parts = String(k.name || '').split(':');
+      const chId = parts[1] || '';
+      const studentId = parts.slice(2).join(':');
+      const raw = await env.SUBMISSIONS.get(`reflection:${studentId}:${chId}`);
+      if (!raw) return null;
+      try {
+        return JSON.parse(raw);
+      } catch {
+        return null;
+      }
+    }),
+  );
+
+  return values
+    .filter(Boolean)
+    .filter((item) => {
+      const chapterId = String(item.chapter_id || '').trim();
+      const studentId = String(item.student_id || '').trim();
+      const studentName = String(item.student_name || '').trim();
+      const savedAt = String(item.saved_at || '').trim();
+      const includeDeleted = String(filters.includeDeleted || '') === '1';
+
+      if (filters.chapter && chapterId !== filters.chapter) return false;
+      if (
+        filters.studentId
+        && !studentId.includes(filters.studentId)
+        && !studentName.includes(filters.studentId)
+      ) {
+        return false;
+      }
+      if (!includeDeleted && item.is_deleted) return false;
+      if (filters.from && savedAt && savedAt < `${filters.from}T00:00:00.000Z`) return false;
+      if (filters.to && savedAt && savedAt > `${filters.to}T23:59:59.999Z`) return false;
+      return true;
+    })
+    .sort((a, b) => String(b.saved_at || '').localeCompare(String(a.saved_at || '')));
+}
+
+/**
  * List all registered students (auth:user:* keys).
  */
 export async function listRoster(env) {

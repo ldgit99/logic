@@ -10,6 +10,7 @@ import {
   fetchStudents,
   fetchConcepts,
   fetchInterventions,
+  fetchResearchExport,
   fetchRoster,
   fetchQuestions,
   fetchReflections,
@@ -26,7 +27,7 @@ import { renderInterventions } from './views/interventions.js?v=20260310';
 import { renderAchievement } from './views/achievement.js?v=20260310';
 import { renderConcepts } from './views/concepts.js?v=20260310';
 import { renderFeedbackQuality } from './views/feedbackQuality.js?v=20260310';
-import { renderInteractionAnalysis } from './views/interactionAnalysis.js?v=20260310';
+import { renderInteractionAnalysis } from './views/interactionAnalysis.js?v=20260326a';
 import { renderStudentReport } from './views/studentReport.js?v=20260310';
 import { renderRoster } from './views/roster.js?v=20260310';
 import { renderQuestions } from './views/questions.js?v=20260310';
@@ -289,8 +290,15 @@ async function loadView(view) {
       }
 
       case 'interaction-analysis': {
-        const data = await fetchStudents(currentFilters);
-        renderInteractionAnalysis(data.submissions || [], document.getElementById('interaction-analysis-wrap'));
+        const [data, research] = await Promise.all([
+          fetchStudents(currentFilters),
+          fetchResearchExport(currentFilters),
+        ]);
+        renderInteractionAnalysis(
+          data.submissions || [],
+          document.getElementById('interaction-analysis-wrap'),
+          research,
+        );
         break;
       }
 
