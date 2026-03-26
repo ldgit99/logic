@@ -7,11 +7,6 @@ import { escapeHtml, scoreColor } from '../utils/format.js';
 
 const HINT_KEYWORDS = ['힌트', '모르겠', '알려줘', '어떻게', '무엇', '이해가'];
 
-/**
- * @param {object[]} submissions
- * @param {HTMLElement} container
- * @param {object} researchData
- */
 export function renderInteractionAnalysis(submissions, container, researchData = {}) {
   if (!container) return;
 
@@ -27,18 +22,21 @@ export function renderInteractionAnalysis(submissions, container, researchData =
   const studentChapterRows = Array.isArray(researchData?.studentChapterRows) ? researchData.studentChapterRows : [];
   const attemptRows = Array.isArray(researchData?.attemptRows) ? researchData.attemptRows : [];
   const reflectionRows = Array.isArray(researchData?.reflectionRows) ? researchData.reflectionRows : [];
+  const trajectoryData = buildTrajectoryData(studentChapterRows);
+  const transitionData = buildTransitionMatrix(attemptRows);
+  const distributionData = buildDistributionData(studentChapterRows);
 
   container.innerHTML = `
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px;">
+    <div class="ia-header-row">
       <h2 class="section-title" style="margin:0;">상호작용 분석</h2>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <button id="ia-export-student" style="background:#0f766e;color:#fff;border:none;border-radius:6px;padding:7px 14px;cursor:pointer;font-size:0.82rem;">Student-Chapter CSV</button>
-        <button id="ia-export-attempt" style="background:#1d4ed8;color:#fff;border:none;border-radius:6px;padding:7px 14px;cursor:pointer;font-size:0.82rem;">Attempt-Level CSV</button>
-        <button id="ia-export-reflection" style="background:#7c3aed;color:#fff;border:none;border-radius:6px;padding:7px 14px;cursor:pointer;font-size:0.82rem;">Reflection-Coded CSV</button>
+      <div class="ia-export-actions">
+        <button id="ia-export-student" class="ia-export-btn ia-export-btn--teal" type="button">Student-Chapter CSV</button>
+        <button id="ia-export-attempt" class="ia-export-btn ia-export-btn--blue" type="button">Attempt-Level CSV</button>
+        <button id="ia-export-reflection" class="ia-export-btn ia-export-btn--violet" type="button">Reflection-Coded CSV</button>
       </div>
     </div>
 
-    <div class="ia-card" style="margin-bottom:16px;">
+    <div class="ia-card">
       <h3 class="chart-title">SSCI 연구 요약 지표</h3>
       ${renderResearchSummary(researchSummary, studentChapterRows, attemptRows, reflectionRows)}
     </div>
@@ -50,7 +48,7 @@ export function renderInteractionAnalysis(submissions, container, researchData =
       </div>
       <div class="ia-card ia-card--scatter">
         <h3 class="chart-title">턴 수와 점수 산점도
-          <span class="chart-sub">고점수 저턴, 저점수 고턴 패턴을 확인합니다.</span>
+          <span class="chart-sub">고점수 저턴, 저점수 고턴 패턴을 비교합니다.</span>
         </h3>
         <canvas id="ia-scatter" width="460" height="280"></canvas>
         <div class="scatter-legend">
@@ -61,16 +59,38 @@ export function renderInteractionAnalysis(submissions, container, researchData =
       </div>
     </div>
 
+    <div class="ia-top-grid ia-top-grid--balanced">
+      <div class="ia-card">
+        <h3 class="chart-title">학습 궤적
+          <span class="chart-sub">챕터 진행에 따른 평균 점수, 힌트 의존, 성찰 품질 변화를 봅니다.</span>
+        </h3>
+        <div id="ia-trajectory"></div>
+      </div>
+      <div class="ia-card">
+        <h3 class="chart-title">상태 전이 Heatmap
+          <span class="chart-sub">incorrect, partial, correct 전이 빈도로 문제 해결 흐름을 확인합니다.</span>
+        </h3>
+        <div id="ia-transition"></div>
+      </div>
+    </div>
+
+    <div class="ia-card">
+      <h3 class="chart-title">분포 기반 비교
+        <span class="chart-sub">챕터별 productive struggle, reflection quality, score 분포를 box plot으로 표시합니다.</span>
+      </h3>
+      <div id="ia-distribution"></div>
+    </div>
+
     <div class="ia-card ia-card--heatmap">
       <h3 class="chart-title">취약개념 히트맵
-        <span class="chart-sub">챕터별로 반복 출현하는 취약개념 상위 15개를 표시합니다.</span>
+        <span class="chart-sub">챕터별로 반복 출현하는 취약개념 상위 15개를 보여줍니다.</span>
       </h3>
       <div id="ia-heatmap"></div>
     </div>
 
     <div class="ia-card">
       <h3 class="chart-title">힌트 의존 상위 학생</h3>
-      <p class="section-desc">학생 발화와 저장된 채팅 지표를 함께 사용해 도움 요청 패턴을 확인합니다.</p>
+      <p class="section-desc">학생 발화와 저장된 채팅 지표를 함께 사용해 도움 요청 패턴을 봅니다.</p>
       <table class="dash-table">
         <thead>
           <tr>
@@ -90,21 +110,21 @@ export function renderInteractionAnalysis(submissions, container, researchData =
 
     <div class="ia-card">
       <h3 class="chart-title">상관관계 행렬 (Pearson r)
-        <span class="chart-sub">논문 Table 형태로 사용할 수 있는 탐색적 상관계수입니다.</span>
+        <span class="chart-sub">논문 Table 형식으로 바로 옮길 수 있는 탐색적 상관입니다.</span>
       </h3>
       <div id="ia-corr"></div>
     </div>
 
-    <div class="ia-top-grid">
+    <div class="ia-top-grid ia-top-grid--balanced">
       <div class="ia-card">
         <h3 class="chart-title">힌트 사용 구간별 평균 점수
-          <span class="chart-sub">힌트 요청 빈도와 성취의 관계를 보여줍니다.</span>
+          <span class="chart-sub">힌트 요청 빈도와 성취의 관계를 요약합니다.</span>
         </h3>
-        <div id="ia-hint-bar" style="display:flex;justify-content:center;padding:8px 0;"></div>
+        <div id="ia-hint-bar" class="ia-chart-center"></div>
       </div>
       <div class="ia-card">
         <h3 class="chart-title">행동 군집 요약
-          <span class="chart-sub">턴 수와 힌트 수를 바탕으로 학습자 유형을 분류합니다.</span>
+          <span class="chart-sub">턴 수와 힌트 수를 기준으로 학습자 유형을 분류합니다.</span>
         </h3>
         <div id="ia-cluster"></div>
       </div>
@@ -113,6 +133,9 @@ export function renderInteractionAnalysis(submissions, container, researchData =
 
   renderHeatmap(heatmapData, container.querySelector('#ia-heatmap'));
   renderScatter(enriched, container.querySelector('#ia-scatter'));
+  renderTrajectory(trajectoryData, container.querySelector('#ia-trajectory'));
+  renderTransitionMatrix(transitionData, container.querySelector('#ia-transition'));
+  renderDistribution(distributionData, container.querySelector('#ia-distribution'));
   renderHintTable(enriched, container.querySelector('#ia-hint-tbody'));
   renderCorrelationMatrix(enriched, container.querySelector('#ia-corr'));
   renderHintEffectBar(enriched, container.querySelector('#ia-hint-bar'));
@@ -127,15 +150,15 @@ export function renderInteractionAnalysis(submissions, container, researchData =
 }
 
 function enrichSubmission(submission) {
-  const messages = Array.isArray(submission?.messages) ? submission.messages.filter((m) => m?.role !== 'system') : [];
-  const userMessages = messages.filter((m) => m?.role === 'user');
+  const messages = Array.isArray(submission?.messages)
+    ? submission.messages.filter((message) => message?.role !== 'system')
+    : [];
+  const userMessages = messages.filter((message) => message?.role === 'user');
   const metrics = submission?.chat_metrics || {};
-
   const inferredHintCount = userMessages.reduce((acc, message) => {
     const content = String(message?.content || '');
     return acc + HINT_KEYWORDS.filter((keyword) => content.includes(keyword)).length;
   }, 0);
-
   const hintCount = Number(metrics.hint_request_count ?? inferredHintCount);
   const totalLen = userMessages.reduce((sum, message) => sum + String(message?.content || '').length, 0);
   const avgUserLen = Number(
@@ -165,7 +188,7 @@ function renderResearchSummary(summary, studentChapterRows, attemptRows, reflect
   ];
 
   return `
-    <div class="pattern-stats">
+    <div class="pattern-stats pattern-stats--research">
       ${cards.map(([label, value]) => `
         <div class="pstat">
           <div class="pstat-value">${escapeHtml(String(value))}</div>
@@ -173,9 +196,249 @@ function renderResearchSummary(summary, studentChapterRows, attemptRows, reflect
         </div>
       `).join('')}
     </div>
-    <p style="margin:12px 0 0;color:var(--color-muted);font-size:0.82rem;">
+    <p class="ia-footnote">
       Student-chapter, attempt-level, reflection-coded 3종 데이터셋을 논문용 CSV로 분리 export할 수 있습니다.
     </p>
+  `;
+}
+
+function renderPatternSummary(enriched) {
+  const avgTurns = average(enriched.map((row) => row.turnCount)).toFixed(1);
+  const avgHints = average(enriched.map((row) => row.hintCount)).toFixed(1);
+  const avgLen = Math.round(average(enriched.map((row) => row.avgUserLen)));
+  const struggling = enriched.filter((row) => Number(row.score || 100) < 60 && row.turnCount > Number(avgTurns)).length;
+
+  return `
+    <div class="pattern-stats">
+      <div class="pstat"><div class="pstat-value">${avgTurns}</div><div class="pstat-label">평균 턴 수</div></div>
+      <div class="pstat"><div class="pstat-value">${avgHints}</div><div class="pstat-label">평균 힌트 수</div></div>
+      <div class="pstat"><div class="pstat-value">${avgLen}자</div><div class="pstat-label">평균 발화 길이</div></div>
+      <div class="pstat"><div class="pstat-value">${enriched.length}</div><div class="pstat-label">분석 표본 수</div></div>
+      <div class="pstat pstat--danger"><div class="pstat-value">${struggling}명</div><div class="pstat-label">개입 권고</div></div>
+    </div>
+  `;
+}
+
+function buildTrajectoryData(rows) {
+  const chapterMap = {};
+  for (const row of rows) {
+    const chapterId = normalizeChapter(row.chapter_id);
+    if (!chapterId) continue;
+    if (!chapterMap[chapterId]) {
+      chapterMap[chapterId] = {
+        chapterId,
+        scores: [],
+        hintDependency: [],
+        reflectionQuality: [],
+      };
+    }
+    chapterMap[chapterId].scores.push(Number(row.score || 0));
+    chapterMap[chapterId].hintDependency.push(Number(row.hint_dependency_index || 0));
+    chapterMap[chapterId].reflectionQuality.push(Number(row.reflection_quality_index || 0));
+  }
+
+  return Object.values(chapterMap)
+    .sort((a, b) => a.chapterId.localeCompare(b.chapterId))
+    .map((item) => ({
+      chapterId: item.chapterId,
+      score: round1(average(item.scores)),
+      hintDependency: round1(average(item.hintDependency)),
+      reflectionQuality: round1(average(item.reflectionQuality)),
+      n: item.scores.length,
+    }));
+}
+
+function renderTrajectory(rows, container) {
+  if (!container) return;
+  if (!rows.length) {
+    container.innerHTML = '<p class="empty-msg">학습 궤적을 그릴 연구 데이터가 없습니다.</p>';
+    return;
+  }
+
+  const width = 640;
+  const height = 260;
+  const pad = { top: 20, right: 20, bottom: 36, left: 44 };
+  const innerW = width - pad.left - pad.right;
+  const innerH = height - pad.top - pad.bottom;
+  const maxIndex = Math.max(rows.length - 1, 1);
+  const y = (value) => pad.top + innerH - (value / 100) * innerH;
+  const x = (index) => pad.left + (index / maxIndex) * innerW;
+  const lineSet = [
+    { key: 'score', color: '#2563eb', label: 'Score' },
+    { key: 'hintDependency', color: '#ef4444', label: 'Hint Dependency' },
+    { key: 'reflectionQuality', color: '#10b981', label: 'Reflection Quality' },
+  ];
+
+  const yLines = [0, 25, 50, 75, 100].map((value) => `
+    <line x1="${pad.left}" y1="${y(value)}" x2="${pad.left + innerW}" y2="${y(value)}" stroke="#e5e7eb" stroke-width="1" />
+    <text x="${pad.left - 6}" y="${y(value) + 4}" text-anchor="end" font-size="10" fill="#9ca3af">${value}</text>
+  `).join('');
+  const xLabels = rows.map((row, index) => `
+    <text x="${x(index)}" y="${height - 10}" text-anchor="middle" font-size="10" fill="#6b7280">Ch.${escapeHtml(row.chapterId)}</text>
+  `).join('');
+  const paths = lineSet.map((line) => {
+    const d = rows.map((row, index) => `${index === 0 ? 'M' : 'L'} ${x(index)} ${y(row[line.key])}`).join(' ');
+    return `<path d="${d}" fill="none" stroke="${line.color}" stroke-width="2.5" />`;
+  }).join('');
+  const points = lineSet.map((line) => rows.map((row, index) => `
+    <circle cx="${x(index)}" cy="${y(row[line.key])}" r="3.5" fill="${line.color}" />
+  `).join('')).join('');
+  const legend = lineSet.map((line) => `
+    <span class="ia-legend-item"><span class="ia-legend-dot" style="background:${line.color};"></span>${escapeHtml(line.label)}</span>
+  `).join('');
+  const chips = rows.map((row) => `<span class="ia-mini-chip">Ch.${escapeHtml(row.chapterId)} n=${row.n}</span>`).join('');
+
+  container.innerHTML = `
+    <svg viewBox="0 0 ${width} ${height}" class="ia-svg-chart" aria-label="trajectory chart">
+      ${yLines}
+      ${paths}
+      ${points}
+      ${xLabels}
+    </svg>
+    <div class="ia-inline-legend">${legend}</div>
+    <div class="ia-chip-row">${chips}</div>
+  `;
+}
+
+function buildTransitionMatrix(rows) {
+  const states = ['incorrect', 'partial', 'correct'];
+  const matrix = Object.fromEntries(states.map((state) => [state, Object.fromEntries(states.map((target) => [target, 0]))]));
+  const bySession = {};
+
+  rows.forEach((row) => {
+    const sessionId = String(row.session_id || '');
+    if (!sessionId) return;
+    if (!bySession[sessionId]) bySession[sessionId] = [];
+    bySession[sessionId].push(row);
+  });
+
+  Object.values(bySession).forEach((sessionRows) => {
+    sessionRows
+      .sort((a, b) => Number(a.question_order || 0) - Number(b.question_order || 0))
+      .forEach((row, index, ordered) => {
+        const from = normalizeJudgment(row.judgment);
+        const to = normalizeJudgment(ordered[index + 1]?.judgment);
+        if (!from || !to) return;
+        matrix[from][to] += 1;
+      });
+  });
+
+  return { states, matrix };
+}
+
+function renderTransitionMatrix(data, container) {
+  if (!container) return;
+  const total = data.states.reduce((sum, from) => sum + data.states.reduce((inner, to) => inner + data.matrix[from][to], 0), 0);
+  if (!total) {
+    container.innerHTML = '<p class="empty-msg">전이 데이터가 부족합니다.</p>';
+    return;
+  }
+
+  const maxValue = Math.max(...data.states.flatMap((from) => data.states.map((to) => data.matrix[from][to])));
+  const headers = data.states.map((state) => `<th>${escapeHtml(state)}</th>`).join('');
+  const rows = data.states.map((from) => {
+    const cells = data.states.map((to) => {
+      const value = data.matrix[from][to];
+      const alpha = maxValue ? (0.12 + (value / maxValue) * 0.78).toFixed(2) : 0.12;
+      const textColor = value / maxValue > 0.55 ? '#fff' : '#111';
+      return `<td class="ia-transition-cell" style="background:rgba(37,99,235,${alpha});color:${textColor}">${value}</td>`;
+    }).join('');
+    return `<tr><th>${escapeHtml(from)}</th>${cells}</tr>`;
+  }).join('');
+
+  container.innerHTML = `
+    <div class="heatmap-scroll">
+      <table class="dash-table ia-transition-table">
+        <thead><tr><th>From \\ To</th>${headers}</tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+    <p class="ia-footnote">전체 전이 수: ${total}</p>
+  `;
+}
+
+function buildDistributionData(rows) {
+  const metrics = [
+    { key: 'productive_struggle_index', label: 'Productive Struggle', color: '#2563eb' },
+    { key: 'reflection_quality_index', label: 'Reflection Quality', color: '#10b981' },
+    { key: 'score', label: 'Score', color: '#f59e0b' },
+  ];
+
+  return metrics.map((metric) => {
+    const byChapter = {};
+    rows.forEach((row) => {
+      const chapterId = normalizeChapter(row.chapter_id);
+      if (!chapterId) return;
+      if (!byChapter[chapterId]) byChapter[chapterId] = [];
+      byChapter[chapterId].push(Number(row[metric.key] || 0));
+    });
+    return {
+      ...metric,
+      chapters: Object.entries(byChapter)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([chapterId, values]) => ({
+          chapterId,
+          stats: computeBoxStats(values),
+          n: values.length,
+        })),
+    };
+  });
+}
+
+function renderDistribution(groups, container) {
+  if (!container) return;
+  const validGroups = groups.filter((group) => group.chapters.length > 0);
+  if (!validGroups.length) {
+    container.innerHTML = '<p class="empty-msg">분포 비교를 위한 연구 데이터가 없습니다.</p>';
+    return;
+  }
+
+  container.innerHTML = validGroups.map((group) => `
+    <div class="ia-dist-block">
+      <div class="ia-dist-head">
+        <h4>${escapeHtml(group.label)}</h4>
+        <span class="ia-mini-chip">Chapter-level box plot</span>
+      </div>
+      ${renderBoxPlot(group)}
+    </div>
+  `).join('');
+}
+
+function renderBoxPlot(group) {
+  const width = 620;
+  const height = 190;
+  const pad = { top: 14, right: 16, bottom: 34, left: 42 };
+  const innerW = width - pad.left - pad.right;
+  const innerH = height - pad.top - pad.bottom;
+  const maxIndex = Math.max(group.chapters.length - 1, 1);
+  const x = (index) => pad.left + (index / maxIndex) * innerW;
+  const y = (value) => pad.top + innerH - (value / 100) * innerH;
+  const boxWidth = Math.max(22, Math.min(44, innerW / Math.max(group.chapters.length, 1) / 1.8));
+
+  const yLines = [0, 25, 50, 75, 100].map((value) => `
+    <line x1="${pad.left}" y1="${y(value)}" x2="${pad.left + innerW}" y2="${y(value)}" stroke="#e5e7eb" stroke-width="1" />
+    <text x="${pad.left - 6}" y="${y(value) + 4}" text-anchor="end" font-size="10" fill="#9ca3af">${value}</text>
+  `).join('');
+  const boxes = group.chapters.map((chapter, index) => {
+    const center = x(index);
+    const stats = chapter.stats;
+    return `
+      <line x1="${center}" y1="${y(stats.min)}" x2="${center}" y2="${y(stats.max)}" stroke="${group.color}" stroke-width="1.5" />
+      <rect x="${center - boxWidth / 2}" y="${y(stats.q3)}" width="${boxWidth}" height="${Math.max(y(stats.q1) - y(stats.q3), 2)}" fill="${group.color}22" stroke="${group.color}" stroke-width="1.5" />
+      <line x1="${center - boxWidth / 2}" y1="${y(stats.median)}" x2="${center + boxWidth / 2}" y2="${y(stats.median)}" stroke="${group.color}" stroke-width="2.5" />
+      <line x1="${center - boxWidth / 3}" y1="${y(stats.min)}" x2="${center + boxWidth / 3}" y2="${y(stats.min)}" stroke="${group.color}" stroke-width="1.5" />
+      <line x1="${center - boxWidth / 3}" y1="${y(stats.max)}" x2="${center + boxWidth / 3}" y2="${y(stats.max)}" stroke="${group.color}" stroke-width="1.5" />
+      <text x="${center}" y="${height - 10}" text-anchor="middle" font-size="10" fill="#6b7280">Ch.${escapeHtml(chapter.chapterId)}</text>
+    `;
+  }).join('');
+  const chips = group.chapters.map((chapter) => `<span class="ia-mini-chip">Ch.${escapeHtml(chapter.chapterId)} n=${chapter.n}</span>`).join('');
+
+  return `
+    <svg viewBox="0 0 ${width} ${height}" class="ia-svg-chart" aria-label="${escapeHtml(group.label)} box plot">
+      ${yLines}
+      ${boxes}
+    </svg>
+    <div class="ia-chip-row">${chips}</div>
   `;
 }
 
@@ -183,15 +446,20 @@ function buildConceptHeatmap(enriched) {
   const conceptMap = {};
   const chapters = new Set();
 
-  for (const row of enriched) {
+  enriched.forEach((row) => {
     const chapterId = String(row.chapter_id || row.chapterId || '?');
     chapters.add(chapterId);
-    const weakConcepts = Array.isArray(row.weak_concepts) ? row.weak_concepts : Array.isArray(row.weakConcepts) ? row.weakConcepts : [];
-    for (const concept of weakConcepts) {
+    const weakConcepts = Array.isArray(row.weak_concepts)
+      ? row.weak_concepts
+      : Array.isArray(row.weakConcepts)
+        ? row.weakConcepts
+        : [];
+
+    weakConcepts.forEach((concept) => {
       if (!conceptMap[concept]) conceptMap[concept] = {};
       conceptMap[concept][chapterId] = (conceptMap[concept][chapterId] || 0) + 1;
-    }
-  }
+    });
+  });
 
   const concepts = Object.entries(conceptMap)
     .map(([name, byChapter]) => ({
@@ -212,14 +480,15 @@ function renderHeatmap(data, container) {
     return;
   }
 
-  const maxVal = Math.max(...data.concepts.flatMap((item) => Object.values(item.byChapter)));
+  const maxValue = Math.max(...data.concepts.flatMap((item) => Object.values(item.byChapter)));
   const headers = data.chapters.map((chapterId) => `<th>Ch.${escapeHtml(chapterId)}</th>`).join('');
   const rows = data.concepts.map((item) => {
     const cells = data.chapters.map((chapterId) => {
       const value = item.byChapter[chapterId] || 0;
       if (!value) return '<td class="hm-cell hm-cell--zero"></td>';
-      const alpha = (0.15 + (value / maxVal) * 0.75).toFixed(2);
-      return `<td class="hm-cell" style="background:rgba(239,68,68,${alpha});color:${value / maxVal > 0.5 ? '#fff' : '#111'}">${value}</td>`;
+      const alpha = (0.15 + (value / maxValue) * 0.75).toFixed(2);
+      const textColor = value / maxValue > 0.5 ? '#fff' : '#111';
+      return `<td class="hm-cell" style="background:rgba(239,68,68,${alpha});color:${textColor}">${value}</td>`;
     }).join('');
     return `<tr><td class="hm-concept-name">${escapeHtml(item.name)}</td>${cells}<td class="hm-total">${item.total}</td></tr>`;
   }).join('');
@@ -254,32 +523,31 @@ function renderScatter(enriched, canvas) {
   ctx.clearRect(0, 0, width, height);
 
   const maxTurns = Math.max(...enriched.map((row) => row.turnCount), 5);
-  const maxScore = 100;
   ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--color-border').trim() || '#e5e7eb';
   ctx.lineWidth = 1;
 
   for (let i = 0; i <= 4; i += 1) {
-    const y = pad.top + (innerH / 4) * i;
+    const yPos = pad.top + (innerH / 4) * i;
     ctx.beginPath();
-    ctx.moveTo(pad.left, y);
-    ctx.lineTo(pad.left + innerW, y);
+    ctx.moveTo(pad.left, yPos);
+    ctx.lineTo(pad.left + innerW, yPos);
     ctx.stroke();
     ctx.fillStyle = '#9ca3af';
     ctx.font = '10px sans-serif';
     ctx.textAlign = 'right';
-    ctx.fillText(String(Math.round(maxScore - (maxScore / 4) * i)), pad.left - 6, y + 4);
+    ctx.fillText(String(100 - 25 * i), pad.left - 6, yPos + 4);
   }
 
   for (let i = 0; i <= 5; i += 1) {
-    const x = pad.left + (innerW / 5) * i;
+    const xPos = pad.left + (innerW / 5) * i;
     ctx.beginPath();
-    ctx.moveTo(x, pad.top);
-    ctx.lineTo(x, pad.top + innerH);
+    ctx.moveTo(xPos, pad.top);
+    ctx.lineTo(xPos, pad.top + innerH);
     ctx.stroke();
     ctx.fillStyle = '#9ca3af';
     ctx.font = '10px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText(String(Math.round((maxTurns / 5) * i)), x, pad.top + innerH + 16);
+    ctx.fillText(String(Math.round((maxTurns / 5) * i)), xPos, pad.top + innerH + 16);
   }
 
   ctx.fillStyle = '#6b7280';
@@ -292,37 +560,19 @@ function renderScatter(enriched, canvas) {
   ctx.fillText('점수', 0, 0);
   ctx.restore();
 
-  for (const row of enriched) {
+  enriched.forEach((row) => {
     const score = Number(row.score || 0);
-    const x = pad.left + (row.turnCount / maxTurns) * innerW;
-    const y = pad.top + innerH - (score / maxScore) * innerH;
+    const xPos = pad.left + (row.turnCount / maxTurns) * innerW;
+    const yPos = pad.top + innerH - (score / 100) * innerH;
     const color = score >= 80 ? '#10b981' : score >= 60 ? '#f59e0b' : '#ef4444';
     ctx.beginPath();
-    ctx.arc(x, y, 5, 0, Math.PI * 2);
+    ctx.arc(xPos, yPos, 5, 0, Math.PI * 2);
     ctx.fillStyle = `${color}bb`;
     ctx.fill();
     ctx.strokeStyle = color;
     ctx.lineWidth = 1.5;
     ctx.stroke();
-  }
-}
-
-function renderPatternSummary(enriched) {
-  const count = enriched.length;
-  const avgTurns = average(enriched.map((row) => row.turnCount)).toFixed(1);
-  const avgHints = average(enriched.map((row) => row.hintCount)).toFixed(1);
-  const avgLen = Math.round(average(enriched.map((row) => row.avgUserLen)));
-  const struggling = enriched.filter((row) => Number(row.score || 100) < 60 && row.turnCount > Number(avgTurns)).length;
-
-  return `
-    <div class="pattern-stats">
-      <div class="pstat"><div class="pstat-value">${avgTurns}</div><div class="pstat-label">평균 턴 수</div></div>
-      <div class="pstat"><div class="pstat-value">${avgHints}</div><div class="pstat-label">평균 힌트 수</div></div>
-      <div class="pstat"><div class="pstat-value">${avgLen}자</div><div class="pstat-label">평균 발화 길이</div></div>
-      <div class="pstat"><div class="pstat-value">${count}</div><div class="pstat-label">분석 표본 수</div></div>
-      <div class="pstat pstat--danger"><div class="pstat-value">${struggling}명</div><div class="pstat-label">개입 권고</div></div>
-    </div>
-  `;
+  });
 }
 
 function renderHintTable(enriched, tbody) {
@@ -384,12 +634,12 @@ function renderCorrelationMatrix(enriched, container) {
   `).join('');
 
   container.innerHTML = `
-    <div style="overflow-x:auto;">
-      <table class="dash-table" style="min-width:420px;">
+    <div class="heatmap-scroll">
+      <table class="dash-table ia-corr-table">
         <thead><tr><th></th>${headers}</tr></thead>
         <tbody>${rows}</tbody>
       </table>
-      <p style="font-size:0.75rem;color:var(--color-muted);margin-top:8px;">* |r| &gt; 0.30은 강조 표시했습니다. n = ${enriched.length}</p>
+      <p class="ia-footnote">* |r| &gt; 0.30을 강조 표시했습니다. n = ${enriched.length}</p>
     </div>
   `;
 }
@@ -412,7 +662,7 @@ function renderHintEffectBar(enriched, container) {
     };
   });
 
-  const width = 300;
+  const width = 320;
   const height = 200;
   const pad = { top: 24, right: 16, bottom: 56, left: 44 };
   const innerW = width - pad.left - pad.right;
@@ -421,41 +671,42 @@ function renderHintEffectBar(enriched, container) {
   const gap = innerW / data.length;
 
   const yLines = [0, 25, 50, 75, 100].map((value) => {
-    const y = pad.top + innerH - (value / 100) * innerH;
+    const yPos = pad.top + innerH - (value / 100) * innerH;
     return `
-      <line x1="${pad.left}" y1="${y}" x2="${pad.left + innerW}" y2="${y}" stroke="#e5e7eb" stroke-width="1"/>
-      <text x="${pad.left - 5}" y="${y + 4}" text-anchor="end" font-size="10" fill="#9ca3af">${value}</text>
+      <line x1="${pad.left}" y1="${yPos}" x2="${pad.left + innerW}" y2="${yPos}" stroke="#e5e7eb" stroke-width="1"/>
+      <text x="${pad.left - 5}" y="${yPos + 4}" text-anchor="end" font-size="10" fill="#9ca3af">${value}</text>
     `;
   }).join('');
 
   const bars = data.map((item, index) => {
-    const x = pad.left + gap * index + gap * 0.22;
+    const xPos = pad.left + gap * index + gap * 0.22;
     if (item.avgScore == null) {
-      return `<text x="${x + barWidth / 2}" y="${pad.top + innerH / 2}" text-anchor="middle" font-size="10" fill="#9ca3af">데이터 없음</text>`;
+      return `<text x="${xPos + barWidth / 2}" y="${pad.top + innerH / 2}" text-anchor="middle" font-size="10" fill="#9ca3af">데이터 없음</text>`;
     }
     const barHeight = Math.max((item.avgScore / 100) * innerH, 2);
-    const y = pad.top + innerH - barHeight;
+    const yPos = pad.top + innerH - barHeight;
     const color = item.avgScore >= 80 ? '#10b981' : item.avgScore >= 60 ? '#f59e0b' : '#ef4444';
     return `
-      <rect x="${x}" y="${y}" width="${barWidth}" height="${barHeight}" fill="${color}" rx="3"/>
-      <text x="${x + barWidth / 2}" y="${y - 5}" text-anchor="middle" font-size="11" font-weight="600" fill="#374151">${item.avgScore.toFixed(1)}</text>
-      <text x="${x + barWidth / 2}" y="${pad.top + innerH + 14}" text-anchor="middle" font-size="11" fill="#374151">${escapeHtml(item.label)}</text>
-      <text x="${x + barWidth / 2}" y="${pad.top + innerH + 26}" text-anchor="middle" font-size="10" fill="#6b7280">${escapeHtml(item.sub)}</text>
-      <text x="${x + barWidth / 2}" y="${pad.top + innerH + 40}" text-anchor="middle" font-size="9" fill="#9ca3af">n=${item.n}</text>
+      <rect x="${xPos}" y="${yPos}" width="${barWidth}" height="${barHeight}" fill="${color}" rx="3" />
+      <text x="${xPos + barWidth / 2}" y="${yPos - 5}" text-anchor="middle" font-size="11" font-weight="600" fill="#374151">${item.avgScore.toFixed(1)}</text>
+      <text x="${xPos + barWidth / 2}" y="${pad.top + innerH + 14}" text-anchor="middle" font-size="11" fill="#374151">${escapeHtml(item.label)}</text>
+      <text x="${xPos + barWidth / 2}" y="${pad.top + innerH + 26}" text-anchor="middle" font-size="10" fill="#6b7280">${escapeHtml(item.sub)}</text>
+      <text x="${xPos + barWidth / 2}" y="${pad.top + innerH + 40}" text-anchor="middle" font-size="9" fill="#9ca3af">n=${item.n}</text>
     `;
   }).join('');
 
   container.innerHTML = `
-    <svg width="${width}" height="${height}" style="max-width:100%;overflow:visible;">
+    <svg viewBox="0 0 ${width} ${height}" class="ia-svg-chart" aria-label="hint effect chart">
       ${yLines}
       ${bars}
-      <text x="${pad.left + innerW / 2}" y="${height - 2}" text-anchor="middle" font-size="10" fill="#9ca3af">힌트 사용 구간</text>
+      <text x="${pad.left + innerW / 2}" y="${height - 4}" text-anchor="middle" font-size="10" fill="#9ca3af">힌트 사용 구간</text>
     </svg>
   `;
 }
 
 function buildClusters(enriched) {
   if (enriched.length < 3) return null;
+
   const points = enriched.map((row) => [row.turnCount, row.hintCount]);
   const labels = kmeans(points, 3);
   const stats = Array.from({ length: 3 }, (_, clusterIndex) => {
@@ -478,13 +729,14 @@ function buildClusters(enriched) {
   const exploratory = rest[0]?.clusterIndex;
   const passive = [0, 1, 2].find((clusterIndex) => clusterIndex !== helpSeeking && clusterIndex !== exploratory);
 
-  const meta = {
-    [helpSeeking]: { name: '도움의존형', color: '#f59e0b', desc: '힌트 요청이 많고 점검이 필요한 집단' },
-    [exploratory]: { name: '탐색참여형', color: '#10b981', desc: '상대적으로 적극적으로 상호작용하는 집단' },
-    [passive]: { name: '저활동형', color: '#ef4444', desc: '상호작용 빈도가 낮은 집단' },
+  return {
+    stats,
+    meta: {
+      [helpSeeking]: { name: '도움의존형', color: '#f59e0b', desc: '힌트 요청이 많고 추가 점검이 필요한 집단' },
+      [exploratory]: { name: '탐색참여형', color: '#10b981', desc: '상대적으로 적극적으로 상호작용하는 집단' },
+      [passive]: { name: '저활동형', color: '#ef4444', desc: '상호작용 빈도가 낮은 집단' },
+    },
   };
-
-  return { stats, meta };
 }
 
 function kmeans(points, k, maxIter = 50) {
@@ -502,12 +754,12 @@ function kmeans(points, k, maxIter = 50) {
   let labels = new Array(normalized.length).fill(0);
 
   for (let iter = 0; iter < maxIter; iter += 1) {
-    const newLabels = normalized.map((point) => {
+    const nextLabels = normalized.map((point) => {
       const distances = centroids.map((centroid) => (point[0] - centroid[0]) ** 2 + (point[1] - centroid[1]) ** 2);
       return distances.indexOf(Math.min(...distances));
     });
-    if (newLabels.every((label, index) => label === labels[index])) break;
-    labels = newLabels;
+    if (nextLabels.every((label, index) => label === labels[index])) break;
+    labels = nextLabels;
     centroids = Array.from({ length: k }, (_, clusterIndex) => {
       const members = normalized.filter((_, index) => labels[index] === clusterIndex);
       if (!members.length) return centroids[clusterIndex];
@@ -534,10 +786,10 @@ function renderClusterSummary(result, container) {
     .map((row) => {
       const meta = result.meta[row.clusterIndex] || { name: `Cluster ${row.clusterIndex}`, color: '#6b7280', desc: '' };
       return `
-        <div style="padding:10px 0;border-bottom:1px solid var(--color-border);">
-          <div style="font-weight:700;color:${meta.color};">${escapeHtml(meta.name)}</div>
-          <div style="font-size:0.78rem;color:var(--color-muted);margin:4px 0 6px;">${escapeHtml(meta.desc)}</div>
-          <div style="font-size:0.82rem;display:flex;gap:12px;flex-wrap:wrap;">
+        <div class="ia-cluster-row">
+          <div class="ia-cluster-name" style="color:${meta.color};">${escapeHtml(meta.name)}</div>
+          <div class="ia-cluster-desc">${escapeHtml(meta.desc)}</div>
+          <div class="ia-cluster-meta">
             <span>표본 ${row.n}명</span>
             <span>평균 턴 ${row.avgTurn.toFixed(1)}</span>
             <span>평균 힌트 ${row.avgHint.toFixed(1)}</span>
@@ -547,7 +799,7 @@ function renderClusterSummary(result, container) {
       `;
     }).join('');
 
-  container.innerHTML = `<div style="padding:0 4px;">${rows}</div>`;
+  container.innerHTML = `<div>${rows}</div>`;
 }
 
 function pearsonR(xs, ys) {
@@ -562,9 +814,51 @@ function pearsonR(xs, ys) {
   return num / (denX * denY);
 }
 
+function computeBoxStats(values) {
+  const sorted = [...values].sort((a, b) => a - b);
+  return {
+    min: sorted[0] ?? 0,
+    q1: quantile(sorted, 0.25),
+    median: quantile(sorted, 0.5),
+    q3: quantile(sorted, 0.75),
+    max: sorted[sorted.length - 1] ?? 0,
+  };
+}
+
+function quantile(sortedValues, q) {
+  if (!sortedValues.length) return 0;
+  const pos = (sortedValues.length - 1) * q;
+  const base = Math.floor(pos);
+  const rest = pos - base;
+  if (sortedValues[base + 1] === undefined) return sortedValues[base];
+  return sortedValues[base] + rest * (sortedValues[base + 1] - sortedValues[base]);
+}
+
+function normalizeJudgment(value) {
+  const text = String(value || '').trim().toLowerCase();
+  if (text === 'correct') return 'correct';
+  if (text === 'partial') return 'partial';
+  if (text === 'incorrect') return 'incorrect';
+  return '';
+}
+
+function normalizeChapter(value) {
+  const text = String(value || '').trim();
+  return text ? text.padStart(2, '0') : '';
+}
+
 function average(values) {
   if (!values.length) return 0;
   return values.reduce((sum, value) => sum + Number(value || 0), 0) / values.length;
+}
+
+function round1(value) {
+  return Math.round(Number(value || 0) * 10) / 10;
+}
+
+function formatMetric(value) {
+  const num = Number(value || 0);
+  return Number.isFinite(num) ? num.toFixed(1) : '0.0';
 }
 
 export function exportResearchCSV(rows, prefix = 'interaction_research') {
@@ -584,9 +878,4 @@ export function exportResearchCSV(rows, prefix = 'interaction_research') {
   anchor.click();
   document.body.removeChild(anchor);
   URL.revokeObjectURL(url);
-}
-
-function formatMetric(value) {
-  const num = Number(value || 0);
-  return Number.isFinite(num) ? num.toFixed(1) : '0.0';
 }
