@@ -27,7 +27,7 @@ import { renderInterventions } from './views/interventions.js?v=20260310';
 import { renderAchievement } from './views/achievement.js?v=20260310';
 import { renderConcepts } from './views/concepts.js?v=20260310';
 import { renderFeedbackQuality } from './views/feedbackQuality.js?v=20260310';
-import { renderInteractionAnalysis } from './views/interactionAnalysis.js?v=20260326a';
+import { renderInteractionAnalysis } from './views/interactionAnalysis.js?v=20260326b';
 import { renderStudentReport } from './views/studentReport.js?v=20260310';
 import { renderRoster } from './views/roster.js?v=20260310';
 import { renderQuestions } from './views/questions.js?v=20260310';
@@ -290,15 +290,24 @@ async function loadView(view) {
       }
 
       case 'interaction-analysis': {
-        const [data, research] = await Promise.all([
-          fetchStudents(currentFilters),
-          fetchResearchExport(currentFilters),
-        ]);
-        renderInteractionAnalysis(
-          data.submissions || [],
-          document.getElementById('interaction-analysis-wrap'),
-          research,
-        );
+        const wrap = document.getElementById('interaction-analysis-wrap');
+        try {
+          const [data, research] = await Promise.all([
+            fetchStudents(currentFilters),
+            fetchResearchExport(currentFilters),
+          ]);
+          renderInteractionAnalysis(
+            data.submissions || [],
+            wrap,
+            research,
+          );
+        } catch (err) {
+          console.error('[interaction-analysis]', err);
+          if (wrap) {
+            wrap.innerHTML = '<p class="empty-msg">상호작용 분석을 불러오지 못했습니다. 새로고침 후 다시 시도해 주세요.</p>';
+          }
+          throw err;
+        }
         break;
       }
 
