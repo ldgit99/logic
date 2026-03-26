@@ -300,15 +300,20 @@ async function loadView(view) {
           const studentPayload = data.status === 'fulfilled'
             ? data.value
             : { submissions: Array.isArray(allSubmissions) ? allSubmissions : [] };
-          if (data.status !== 'fulfilled' && !studentPayload.submissions.length) {
-            throw data.reason;
-          }
           const warnings = [];
           if (data.status !== 'fulfilled' && studentPayload.submissions.length) {
             warnings.push('Student dataset API failed. Showing cached submissions.');
           }
           if (researchResult.status !== 'fulfilled') {
             warnings.push('Research export data is unavailable. Showing base interaction metrics only.');
+          }
+          if (data.status !== 'fulfilled' && !studentPayload.submissions.length) {
+            renderInteractionAnalysisLoadError(wrap, {
+              studentError: data.reason,
+              researchError: researchResult.status === 'rejected' ? researchResult.reason : null,
+              filters: currentFilters,
+            });
+            break;
           }
           const research = researchResult.status === 'fulfilled'
             ? researchResult.value
@@ -491,6 +496,36 @@ function renderInteractionAnalysisFallback(submissions, wrap, err, research = {}
       <table class="dash-table" style="margin-top:16px;">
         <thead><tr><th>Chapter</th><th>Count</th></tr></thead>
         <tbody>${chapterSummary || '<tr><td colspan="2">No data</td></tr>'}</tbody>
+      </table>
+    </div>
+  `;
+}
+
+function renderInteractionAnalysisLoadError(wrap, details = {}) {
+  if (!wrap) return;
+  const filters = details.filters || {};
+  const studentMessage = details.studentError?.message || String(details.studentError || 'Unknown student dataset error');
+  const researchMessage = details.researchError?.message || String(details.researchError || 'Not requested or no error');
+  const activeFilters = Object.entries(filters)
+    .filter(([, value]) => value !== undefined && value !== null && value !== '')
+    .map(([key, value]) => `<tr><td>${escapeHtml(key)}</td><td>${escapeHtml(String(value))}</td></tr>`)
+    .join('');
+
+  wrap.innerHTML = `
+    <div class="ia-card">
+      <h3 class="chart-title">Interaction Analysis Diagnostics</h3>
+      <p class="empty-msg">학생 상호작용 데이터를 불러오지 못했습니다.</p>
+      <table class="dash-table" style="margin-top:16px;">
+        <thead><tr><th>Check</th><th>Result</th></tr></thead>
+        <tbody>
+          <tr><td>Student dataset API</td><td>${escapeHtml(studentMessage)}</td></tr>
+          <tr><td>Research export API</td><td>${escapeHtml(researchMessage)}</td></tr>
+          <tr><td>Cached submissions</td><td>0</td></tr>
+        </tbody>
+      </table>
+      <table class="dash-table" style="margin-top:16px;">
+        <thead><tr><th>Active filter</th><th>Value</th></tr></thead>
+        <tbody>${activeFilters || '<tr><td colspan="2">No active filters</td></tr>'}</tbody>
       </table>
     </div>
   `;
