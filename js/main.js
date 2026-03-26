@@ -5,6 +5,7 @@ let initAuthGate = async () => null;
 let getStudentProfile = () => null;
 let authModuleLoaded = false;
 let chapterCurationMap = {};
+const LAST_CHAPTER_KEY = 'logic_last_chapter_v1';
 
 // ??? 梨뺥꽣 紐⑤뱢 ?덉??ㅽ듃由?(?숈쟻 ?꾪룷?? ???
 const CHAPTER_MODULES = {
@@ -39,6 +40,31 @@ function loadReflection(chapterId) {
     const raw = localStorage.getItem(getReflectionKey(chapterId));
     return raw ? JSON.parse(raw) : null;
   } catch { return null; }
+}
+
+function getLastChapterStorageKey() {
+  const uid = getStudentProfile()?.studentId || 'default';
+  return `${LAST_CHAPTER_KEY}_${uid}`;
+}
+
+function saveLastChapterId(chapterId) {
+  if (!chapterId) return;
+  try {
+    localStorage.setItem(getLastChapterStorageKey(), chapterId);
+  } catch { /* ignore */ }
+}
+
+function loadLastChapterId(chapters = []) {
+  try {
+    const saved = String(localStorage.getItem(getLastChapterStorageKey()) || '').trim();
+    if (!saved) return '';
+    if (Array.isArray(chapters) && chapters.length > 0) {
+      return chapters.some((chapter) => String(chapter.id) === saved) ? saved : '';
+    }
+    return saved;
+  } catch {
+    return '';
+  }
 }
 
 const REFLECTION_WORKER_URLS = Array.from(new Set([
@@ -441,6 +467,7 @@ async function loadChapter(id, { force = false } = {}) {
   try {
     const chapterRaw = await fetchJsonWithTimeout(`./chapters/${id}.json?v=20260309e`);
     const chapterData = mergeChapterCuration(chapterRaw, chapterCurationMap, id);
+    saveLastChapterId(id);
 
     document.getElementById('chapter-indicator').textContent = chapterData.title;
     updateTOCSections(id, chapterData);
@@ -539,9 +566,10 @@ function bindAuthRefreshHandler() {
 
   window.addEventListener('logic:auth-changed', async () => {
     refreshTocReflectionBadges();
-    if (!currentChapterId) return;
+    const targetChapterId = loadLastChapterId() || currentChapterId;
+    if (!targetChapterId) return;
     try {
-      await loadChapter(currentChapterId, { force: true });
+      await loadChapter(targetChapterId, { force: true });
     } catch (e) {
       console.error('chapter reload after auth failed:', e);
     }
@@ -578,7 +606,8 @@ async function init() {
     bindChatResetButton();
     initExport();
 
-    await loadChapter(chapters[0].id);
+    const initialChapterId = loadLastChapterId(chapters) || chapters[0].id;
+    await loadChapter(initialChapterId);
   } catch (err) {
     console.error('앱 초기화 실패:', err);
     const inner = document.getElementById('content-inner');
