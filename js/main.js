@@ -139,6 +139,32 @@ function refreshTocReflectionBadges() {
   });
 }
 
+function bindTapActivation(element, handler) {
+  if (!element || typeof handler !== 'function') return;
+
+  let touchHandled = false;
+  const run = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    handler(event);
+  };
+
+  element.addEventListener('touchend', (event) => {
+    touchHandled = true;
+    run(event);
+    window.setTimeout(() => { touchHandled = false; }, 350);
+  }, { passive: false });
+
+  element.addEventListener('click', (event) => {
+    if (touchHandled) {
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
+    run(event);
+  });
+}
+
 function openReflectionModal(chapterId, chapterTitle) {
   reflectionCurrentChapterId = chapterId;
   const titleEl = document.getElementById('reflection-modal-title');
@@ -161,7 +187,9 @@ function openReflectionModal(chapterId, chapterTitle) {
   }
 
   document.getElementById('reflection-modal')?.classList.remove('hidden');
-  document.getElementById('reflection-a1')?.focus();
+  window.requestAnimationFrame(() => {
+    document.getElementById('reflection-a1')?.focus();
+  });
 }
 
 function bindReflectionModal() {
@@ -379,9 +407,12 @@ function buildTOC(chapters) {
       <button class="toc-reflection-btn${hasEntry ? ' has-entry' : ''}" data-chapter-id="${ch.id}" title="\uc131\ucc30\uc77c\uc9c0 \uc791\uc131" type="button">\ud83d\udcdd</button>
       <span class="toc-arrow">\u203a</span>
     `;
-    label.addEventListener('click', () => loadChapter(ch.id));
-    label.querySelector('.toc-reflection-btn').addEventListener('click', e => {
-      e.stopPropagation();
+    label.addEventListener('click', (event) => {
+      if (event.target?.closest('.toc-reflection-btn')) return;
+      loadChapter(ch.id);
+    });
+    const reflectionBtn = label.querySelector('.toc-reflection-btn');
+    bindTapActivation(reflectionBtn, () => {
       openReflectionModal(ch.id, ch.title);
     });
 
