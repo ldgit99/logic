@@ -116,14 +116,16 @@ export function renderInteractionAnalysis(submissions, container) {
 function enrich(s) {
   const messages = (s.messages || []).filter((m) => m.role !== 'system');
   const userMessages = messages.filter((m) => m.role === 'user');
+  const metrics = s.chat_metrics || {};
 
-  const hintCount = userMessages.reduce((acc, m) => {
+  const inferredHintCount = userMessages.reduce((acc, m) => {
     const content = (m.content || '');
     return acc + HINT_KEYWORDS.filter((kw) => content.includes(kw)).length;
   }, 0);
+  const hintCount = Number(metrics.hint_request_count ?? inferredHintCount);
 
   const totalLen = userMessages.reduce((a, m) => a + (m.content || '').length, 0);
-  const avgUserLen = userMessages.length > 0 ? Math.round(totalLen / userMessages.length) : 0;
+  const avgUserLen = Number(metrics.average_user_message_length ?? (userMessages.length > 0 ? Math.round(totalLen / userMessages.length) : 0));
 
   return { ...s, turnCount: userMessages.length, hintCount, avgUserLen };
 }

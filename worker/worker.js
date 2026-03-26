@@ -9,6 +9,7 @@ import { handleDashboard } from './routes/dashboard.js';
 import { handleStudentAuth } from './routes/studentAuth.js';
 import { handleSessions } from './routes/sessions.js';
 import { handleReflections } from './routes/reflections.js';
+import { handleChat } from './routes/chat.js';
 import { authenticate } from './services/auth.js';
 
 const ALLOWED_ORIGINS = [
@@ -80,6 +81,8 @@ export default {
         response = await handleAssessments(request, env);
       } else if (request.method === 'POST' && pathname === '/feedback-report') {
         response = await handleFeedbackReports(request, env);
+      } else if (request.method === 'POST' && (pathname === '/chat/respond' || pathname === '/chat/feedback')) {
+        response = await handleChat(request, env, pathname);
       } else if (request.method === 'POST' && pathname === '/') {
         response = await handleOpenAIProxy(request, env);
       } else {

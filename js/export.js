@@ -14,7 +14,7 @@ function showToast(message, type = 'info') {
   setTimeout(() => toast.remove(), 4000);
 }
 
-import { getConversationMessages, getChapterRef, getSessionId } from './chatbot.js?v=20260312c';
+import { getConversationMessages, getChapterRef, getSessionId, getChatSessionSnapshot } from './chatbot.js?v=20260326a';
 import { getStudentProfile } from './auth.js?v=20260311c';
 import { sendAssessment, sendFeedbackReport } from './instrumentation.js?v=20260309e';
 
@@ -134,6 +134,7 @@ function normalizeFeedback(feedback, totalCount) {
     feedUp: feedback.feedUp || '',
     feedBack: feedback.feedBack || '',
     feedForward: feedback.feedForward || '',
+    qualityMetrics: feedback.qualityMetrics && typeof feedback.qualityMetrics === 'object' ? feedback.qualityMetrics : {},
   };
 }
 
@@ -277,7 +278,8 @@ async function handleConfirmSubmit() {
   setLoading(true);
 
   try {
-    const rawFeedback = await generateFeedback(chapterData, messages);
+    const chatSnapshot = getChatSessionSnapshot();
+    const rawFeedback = await generateFeedback(chapterData, messages, chatSnapshot);
     const feedback = normalizeFeedback(rawFeedback, chapterData.formativeAssessment?.totalQuestions ?? 0);
     await savePdf(studentName, studentId, chapterData, messages, feedback);
 
@@ -300,6 +302,9 @@ async function handleConfirmSubmit() {
       feed_up: feedback.feedUp,
       feed_back: feedback.feedBack,
       feed_forward: feedback.feedForward,
+      chat_summary: chatSnapshot.memorySummary || {},
+      chat_metrics: chatSnapshot.qualityMetrics || {},
+      feedback_meta: feedback.qualityMetrics || {},
       messages: messages.filter((m) => m.role !== 'system'),
     });
     sendFeedbackReport({
@@ -310,6 +315,7 @@ async function handleConfirmSubmit() {
       feed_up: feedback.feedUp,
       feed_back: feedback.feedBack,
       feed_forward: feedback.feedForward,
+      quality_metrics: feedback.qualityMetrics || {},
     });
 
     showToast('PDF \uC0DD\uC131\uC774 \uC644\uB8CC\uB418\uC5C8\uC2B5\uB2C8\uB2E4.', 'success');
@@ -349,5 +355,3 @@ export function initExport() {
     }
   });
 }
-
-

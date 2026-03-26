@@ -1,246 +1,206 @@
 import { sendEvent } from './instrumentation.js?v=20260309e';
 import { getStudentProfile } from './auth.js?v=20260311c';
 
-const LOCAL_ORIGIN_WITH_SLASH = window.location.origin.endsWith('/') ? window.location.origin : (window.location.origin + '/');
-
+const ORIGIN = window.location.origin.endsWith('/') ? window.location.origin : `${window.location.origin}/`;
 const WORKER_URLS = [
   'https://logic-proxy.dongkuklee99.workers.dev/',
   'https://logic.dongkuklee99.workers.dev/',
-  ...(window.location.origin.includes('localhost') || window.location.origin.includes('127.0.0.1') ? [LOCAL_ORIGIN_WITH_SLASH] : []),
+  ...(window.location.origin.includes('localhost') || window.location.origin.includes('127.0.0.1') ? [ORIGIN] : []),
 ];
-
-const COMPLETION_MARKER = '===\ud615\uc131\ud3c9\uac00\uc644\ub8cc===';
-const NEXT_QUESTION_MARKER = '===\ub2e4\uc74c\ubb38\ud56d===';
-const ASSESSMENT_TRIGGER = '\ud615\uc131\ud3c9\uac00';
-const SESSION_INDEX_KEY = 'logic_session_index_v4';
-const SESSION_PREFIX = 'logic_session_v4';
+const VERSION = '20260326b';
+const ASSESSMENT_TRIGGER = '형성평가';
+const MAX_HINTS = 3;
+const INDEX_KEY = 'logic_session_index_v5';
+const SESSION_KEY = 'logic_session_v5';
 const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 30;
-
-
-const ChatMode = {
-  LEARNING: 'learning',
-  ASSESSMENT: 'assessment',
-  ASSESSMENT_COMPLETE: 'assessment_complete',
-};
+const ChatMode = { LEARNING: 'learning', ASSESSMENT: 'assessment', DONE: 'assessment_complete' };
 
 let chapterRef = null;
-let isStreaming = false;
-let assessmentComplete = false;
+let isBusy = false;
 let eventsBound = false;
-let currentMode = ChatMode.LEARNING;
+let locksFetched = false;
+let chapterLocks = {};
 let sessionId = '';
-let logMessages = [];
-let modelMessages = [];
+let currentMode = ChatMode.LEARNING;
+let assessmentComplete = false;
 let assessmentQuestions = [];
 let assessmentQIdx = 0;
 let assessmentHintCount = 0;
+let assessmentTrace = [];
+let logMessages = [];
+let memorySummary = emptyMemory();
+let qualityMetrics = emptyMetrics();
+let summaryTimer = null;
 
-function getEl(id) {
-  return document.getElementById(id);
-}
-
-function getStudentMeta() {
-  const profile = getStudentProfile() || {};
-  return { studentId: profile.studentId || '', studentName: profile.studentName || '' };
-}
-
-function nowIso() {
-  return new Date().toISOString();
-}
-
-function normalizeInput(text) {
-  return String(text || '').trim();
-}
-
-function getUserScopedKey(base) {
-  const uid = getStudentMeta().studentId || 'anon';
-  return `${base}_${uid}`;
-}
-
-function getSessionStorageKey(id) {
-  return `${getUserScopedKey(SESSION_PREFIX)}_${id}`;
-}
-
-function loadSessionIndex() {
-  try {
-    return JSON.parse(localStorage.getItem(getUserScopedKey(SESSION_INDEX_KEY)) || '{}');
-  } catch {
-    return {};
-  }
-}
-
-function saveSessionIndex(index) {
-  try {
-    localStorage.setItem(getUserScopedKey(SESSION_INDEX_KEY), JSON.stringify(index));
-  } catch {
-    // ignore quota error
-  }
-}
-
-function createSessionId(chapterId) {
-  const rand = Math.random().toString(36).slice(2, 10);
-  return `${chapterId}_${Date.now()}_${rand}`;
-}
-
-function buildLearningPrompt(data) {
-  const { title, objectives } = data;
-  const keyConcepts = data.keyConcepts || [];
-  return [
-    `\uc5ed\ud560: "${title}" \ucc55\ud130 AI \ud559\uc2b5 \uc870\ub825\uc790\uc785\ub2c8\ub2e4.`,
-    '',
-    '[\uc9c0\uce68]',
-    '- \ud559\uc0dd\uc774 \ud559\uc2b5 \ub0b4\uc6a9\uc744 \uc774\ud574\ud558\ub3c4\ub85d \uce5c\uc808\ud558\uace0 \uc0c1\uc138\ud558\uac8c \ub3c4\uc6c0\uc744 \uc90d\ub2c8\ub2e4.',
-    '- \uc608\uc2dc, \ube44\uc720, \ub2e8\uacc4\ubcc4 \uc124\uba85\uc744 \uc801\uadf9 \ud65c\uc6a9\ud569\ub2c8\ub2e4.',
-    '- \ud615\uc131\ud3c9\uac00\ub97c \uc2dc\uc791\ud558\ub824\uba74 \ud559\uc0dd\uc774 "\ud615\uc131\ud3c9\uac00"\ub77c\uace0 \uc785\ub825\ud574\uc57c \ud569\ub2c8\ub2e4.',
-    '',
-    '[\ud559\uc2b5\ubaa9\ud45c]',
-    ...objectives.map((o, i) => `${i + 1}. ${o}`),
-    '',
-    '[\ud575\uc2ec \uac1c\ub150]',
-    keyConcepts.length ? keyConcepts.join(', ') : '\ucc55\ud130 \ub0b4\uc6a9 \ucc38\uace0',
-    '',
-    '[\ub2f5\ubcc0 \uc6d0\uce59]',
-    '- \ud55c\uad6d\uc5b4\ub85c \ub2f5\ud569\ub2c8\ub2e4.',
-    '- \uaca9\ub824\ud558\uace0 \uae0d\uc815\uc801\uc778 \ud53c\ub4dc\ubc31\uc744 \ub4dc\ub9bd\ub2c8\ub2e4.',
-    '- \ubd88\ud544\uc694\ud55c \uc9c8\ubb38 \uc5c6\uc774 \ud575\uc2ec \uc9c8\ubb38\uc5d0 \ub2f5\ud569\ub2c8\ub2e4.',
-  ].join('\n');
-}
-
-function buildAssessmentPrompt(data) {
-  const { title, objectives, formativeAssessment } = data;
-  const keyConcepts = data.keyConcepts || [];
-  const questions = formativeAssessment?.questions || [];
-  const totalQuestions = formativeAssessment?.totalQuestions ?? questions.length ?? 5;
-
-  const questionsText = questions.map((q, i) => {
-    const bloom = q.bloomLevel || q.bloom || '';
-    const concept = q.concept || '';
-    const keyAnswer = q.keyAnswer || q.answer || '';
-    const hints = (q.hints || []).map((h, j) => `  \ud78c\ub4dc${j + 1}: ${h}`).join('\n');
-    return `Q${i + 1} [Bloom: ${bloom}] \uac1c\ub150: ${concept}
-  \uc9c8\ubb38: ${q.question}
-  \ubaa8\ubc94\ub2f5\uc548: ${keyAnswer}${hints ? `
-${hints}` : ''}`;
-  }).join('\n\n');
-
-  return [
-    '\uc5ed\ud560: "\ud615\uc131\ud3c9\uac00 \uc2dc\ub098\ub9ac\uc624" AI \uc870\ub825\uc790\uc785\ub2c8\ub2e4. \uc544\ub798 \ubb38\ud56d\uc5d0 \ub530\ub77c \ud559\uc0dd\uc744 \ud3c9\uac00\ud558\uc138\uc694.',
-    '',
-    '[\ud604\uc7ac \ucc55\ud130]',
-    title,
-    '',
-    '[\ud559\uc2b5\ubaa9\ud45c]',
-    ...objectives.map((o, i) => `${i + 1}. ${o}`),
-    '',
-    '[\ud575\uc2ec \uac1c\ub150]',
-    keyConcepts.length ? keyConcepts.join(', ') : '\ucc55\ud130 \ub0b4\uc6a9 \ucc38\uace0',
-    '',
-    `[\ud3c9\uac00 \ubb38\ud56d (\uc9c1 ${totalQuestions}\ubb38\ud56d)]`,
-    questionsText,
-    '',
-    '[\ud3c9\uac00 \uc9c4\ud589 \uc9c0\uc2dc]',
-    '1. Q1\ubd80\ud130 \uc21c\uc11c\ub300\ub85c \uc9c8\ubb38\ud569\ub2c8\ub2e4.',
-    '2. \uc815\ub2f5/\uc624\ub2f5\uc5d0 \ub530\ub77c \ud78c\ub4dc\ub97c \uc81c\uacf5\ud569\ub2c8\ub2e4.',
-    '3. \ud78c\ub4dc \ucd5c\ub300 3\uac1c \uc774\ud6c4 \uc815\ub2f5\uc744 \uc54c\ub824\uc8fc\uace0 \ub2e4\uc74c \ubb38\uc81c\ub85c \ub118\uc5b4\uac11\ub2c8\ub2e4.',
-    '4. \ubaa8\ub4e0 \ubb38\uc81c \uc885\ub8cc \ud6c4 \uacb0\uacfc\ub97c \uc694\uc57d\ud569\ub2c8\ub2e4.',
-    `5. \ucd5c\uc885 \ub2f5\ubcc0 \ub9c8\uc9c0\ub9c9\uc5d0 \ubc18\ub4dc\uc2dc ${COMPLETION_MARKER} \ubb38\uc790\uc5f4\uc744 \ud3ec\ud568\ud558\uc138\uc694.`,
-    '',
-    '[\ub2f5\ubcc0 \uc9c0\uce68]',
-    '- \ubc18\ub4dc\uc2dc \ud55c\uad6d\uc5b4\ub85c \ub2f5\ud569\ub2c8\ub2e4.',
-    '- \ud55c \ubc88\uc5d0 \ud558\ub098\uc758 \uc9c8\ubb38\ub9cc \uc9c4\ud589\ud569\ub2c8\ub2e4.',
-  ].join('\n');
-}
-
-
-
-function buildAssessmentEvalPrompt(q, idx, total, isLast, hintCount = 0) {
-  const hints = (q.hints || []).map((h, i) => `  \ud78c\ud2b8${i + 1}: ${h}`).join('\n');
-  const advanceMarker = isLast ? COMPLETION_MARKER : NEXT_QUESTION_MARKER;
-  const remaining = Math.max(0, 3 - hintCount);
-  return [
-    `\uc5ed\ud560: \ud615\uc131\ud3c9\uac00 \ucc44\uc810 AI\uc785\ub2c8\ub2e4. \ud604\uc7ac \ubb38\ud56d Q${idx + 1}/${total}.`,
-    `[\ud604\uc7ac \uc0c1\ud0dc] \uc774 \ubb38\ud56d\uc5d0\uc11c \ud78c\ud2b8 ${hintCount}\ubc88 \uc81c\uacf5\ud568. \ub0a8\uc740 \ud78c\ud2b8: ${remaining}\ubc88.`,
-    '',
-    '[\ubb38\ud56d]',
-    q.question || '',
-    '',
-    '[\ubaa8\ubc94 \ub2f5\uc548]',
-    q.keyAnswer || q.answer || '',
-    ...(hints ? ['', '[\ud78c\ud2b8 \ubaa9\ub85d]', hints] : []),
-    '',
-    '[\ucc44\uc810 \uaddc\uce59 - \ubc18\ub4dc\uc2dc \ub530\ub974\uc138\uc694]',
-    '[\uc815\ub2f5 \ud310\ub2e8 \uae30\uc900] \ub2e4\uc74c \uc870\uac74 \uc911 \ud558\ub098\ub77c\ub3c4 \ucda9\uc871\ud558\uba74 \uc815\ub2f5\uc73c\ub85c \ucc98\ub9ac\ud569\ub2c8\ub2e4:',
-    '  a) \ubaa8\ubc94 \ub2f5\uc548\uc758 \ud575\uc2ec \uac1c\ub150(\ud575\uc2ec \uc5b4\ud718 \ud3ec\ud568)\ub97c \ub300\uccb4\ub85c \ud3ec\ud568\ud55c \uacbd\uc6b0',
-    '  b) \ud45c\ud604\uc774 \ub2e4\ub974\ub354\ub77c\ub3c4 \uc758\ubbf8\uc801\uc73c\ub85c \ubaa8\ubc94 \ub2f5\uc548\uacfc \ub3d9\ub4f1\ud55c \uacbd\uc6b0',
-    '  c) \uc77c\ubd80 \ubd80\uc815\ud655\ud558\uc9c0\ub9cc \ud575\uc2ec \ub0b4\uc6a9\uc774 \ub9de\ub294 \uacbd\uc6b0 (\ubd80\ubd84 \uc815\ub2f5)',
-    '[\uc624\ub2f5 \ud310\ub2e8 \uae30\uc900] \ud575\uc2ec \uac1c\ub150\uc774 \ube60\uc9c0\uac70\ub098 \uc798\ubabb \uc774\ud574\ud558\uace0 \uc788\ub294 \uacbd\uc6b0\ub9cc \uc624\ub2f5\uc73c\ub85c \ucc98\ub9ac\ud569\ub2c8\ub2e4.',
-    `1. \uc815\ub2f5/\uc720\uc0ac\uc815\ub2f5\uc774\uba74: \uce5c\ucc2c + \uc751\ub2f5 \ub9c8\uc9c0\ub9c9\uc5d0 \ubc18\ub4dc\uc2dc ${advanceMarker} \ud3ec\ud568.`,
-    remaining > 0
-      ? `2. \uc624\ub2f5\uc774\uba74: \ud78c\ud2b8 ${hintCount + 1}\ubc88\ub9cc \uc81c\uacf5. ${advanceMarker} \uc808\ub300 \ud3ec\ud568 \uae08\uc9c0.`
-      : `2. \uc624\ub2f5\uc774\uba74: \ud78c\ud2b8\uac00 \uc18c\uc9c4\ub418\uc5c8\uc2b5\ub2c8\ub2e4. \ubaa8\ubc94 \ub2f5\uc548\uc744 \uacf5\uac1c\ud558\uace0 \uc751\ub2f5 \ub9c8\uc9c0\ub9c9\uc5d0 \ubc18\ub4dc\uc2dc ${advanceMarker} \ud3ec\ud568.`,
-    '- \ubc18\ub4dc\uc2dc \ud55c\uad6d\uc5b4\ub85c \ub2f5\ud569\ub2c8\ub2e4.',
-  ].join('\n');
-}
-
-function appendBubble(role, text, isStreaming = false) {
-  const container = getEl('chat-messages');
-  if (!container) return null;
-
-  const time = new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
-  const bubble = document.createElement('div');
-  bubble.className = `chat-bubble ${role}`;
-
-  const avatarText = role === 'ai' ? '🤖' : role === 'user' ? '👤' : '';
-
-  if (role === 'system') {
-    bubble.innerHTML = `<div class="bubble-text">${escapeHtml(text)}</div>`;
-  } else {
-    const textEl = document.createElement('div');
-    textEl.className = `bubble-text${isStreaming ? ' typing-cursor' : ''}`;
-    textEl.textContent = text;
-
-    bubble.innerHTML = `<div class="bubble-avatar">${avatarText}</div>`;
-    const content = document.createElement('div');
-    content.className = 'bubble-content';
-    content.appendChild(textEl);
-    content.insertAdjacentHTML('beforeend', `<div class="bubble-time">${time}</div>`);
-    bubble.appendChild(content);
-  }
-
-  container.appendChild(bubble);
-  container.scrollTop = container.scrollHeight;
-  return bubble;
-}
-
-function escapeHtml(str) {
-  return String(str || '')
+function el(id) { return document.getElementById(id); }
+function nowIso() { return new Date().toISOString(); }
+function trim(text) { return String(text || '').trim(); }
+function html(text) {
+  return String(text || '')
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
 }
-
-function updateBadge() {
-  const badge = getEl('assessment-badge');
-  if (!badge) return;
-
-  if (currentMode === ChatMode.ASSESSMENT_COMPLETE) {
-    badge.textContent = '\uc644\ub8cc';
-    badge.className = 'badge badge-complete';
-  } else if (currentMode === ChatMode.ASSESSMENT) {
-    badge.textContent = '\ud3c9\uac00 \uc9c4\ud589';
-    badge.className = 'badge badge-active';
-  } else {
-    badge.textContent = '\ub300\uae30 \uc911';
-    badge.className = 'badge badge-pending';
+function student() {
+  const profile = getStudentProfile() || {};
+  return {
+    studentId: profile.studentId || '',
+    studentName: profile.studentName || '',
+    token: profile.token || '',
+  };
+}
+function emptyMemory() {
+  return {
+    coveredConcepts: [],
+    misconceptions: [],
+    pendingQuestions: [],
+    lastStudentGoal: '',
+    lastAssessmentResult: '',
+  };
+}
+function emptyMetrics() {
+  return {
+    structured_response_count: 0,
+    structured_fallback_count: 0,
+    learning_turn_count: 0,
+    assessment_turn_count: 0,
+    assessment_started_count: 0,
+    assessment_evaluation_count: 0,
+    assessment_advance_count: 0,
+    assessment_partial_count: 0,
+    blocked_learning_question_count: 0,
+    hint_request_count: 0,
+    summary_update_count: 0,
+    last_question_type: '',
+  };
+}
+function unique(items, limit = 8) {
+  const seen = new Set();
+  const out = [];
+  for (const item of items || []) {
+    const value = trim(item);
+    if (!value) continue;
+    const key = value.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(value);
+    if (out.length >= limit) break;
+  }
+  return out;
+}
+function mergeMemory(update = {}) {
+  memorySummary = {
+    coveredConcepts: unique([...(memorySummary.coveredConcepts || []), ...(update.coveredConcepts || [])]),
+    misconceptions: unique([...(memorySummary.misconceptions || []), ...(update.misconceptions || [])]),
+    pendingQuestions: unique([...(memorySummary.pendingQuestions || []), ...(update.pendingQuestions || [])], 6),
+    lastStudentGoal: trim(update.lastStudentGoal) || memorySummary.lastStudentGoal || '',
+    lastAssessmentResult: trim(update.lastAssessmentResult) || memorySummary.lastAssessmentResult || '',
+  };
+}
+function derivedMetrics() {
+  const users = logMessages.filter((m) => m.role === 'user');
+  const avgLen = users.length
+    ? Math.round(users.reduce((sum, item) => sum + trim(item.content).length, 0) / users.length)
+    : 0;
+  return { ...qualityMetrics, total_user_messages: users.length, average_user_message_length: avgLen };
+}
+function scoped(base) { return `${base}_${student().studentId || 'anon'}`; }
+function sessionStorageKey(id) { return `${scoped(SESSION_KEY)}_${id}`; }
+function loadIndex() {
+  try { return JSON.parse(localStorage.getItem(scoped(INDEX_KEY)) || '{}'); } catch { return {}; }
+}
+function saveIndex(index) {
+  try { localStorage.setItem(scoped(INDEX_KEY), JSON.stringify(index)); } catch {}
+}
+function createSessionId(chapterId) {
+  return `${chapterId}_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+}
+function snapshot() {
+  return {
+    version: VERSION,
+    sessionId,
+    chapterId: chapterRef?.id || '',
+    currentMode,
+    assessmentComplete,
+    assessmentQuestions,
+    assessmentQIdx,
+    assessmentHintCount,
+    assessmentTrace,
+    logMessages,
+    memorySummary,
+    qualityMetrics: derivedMetrics(),
+    savedAt: Date.now(),
+  };
+}
+function persist() {
+  if (!chapterRef?.id || !sessionId) return;
+  try {
+    localStorage.setItem(sessionStorageKey(sessionId), JSON.stringify(snapshot()));
+    const index = loadIndex();
+    index[chapterRef.id] = sessionId;
+    saveIndex(index);
+  } catch {}
+}
+function loadLocalSession(chapterId) {
+  try {
+    const id = loadIndex()[chapterId];
+    if (!id) return null;
+    const raw = localStorage.getItem(sessionStorageKey(id));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (parsed.chapterId !== chapterId) return null;
+    if (Date.now() - Number(parsed.savedAt || 0) > SESSION_TTL_MS) return null;
+    return parsed;
+  } catch {
+    return null;
   }
 }
-
-function setSubmitEnabled(enabled) {
-  const btn = getEl('btn-submit-pdf');
-  if (btn) btn.disabled = !enabled;
+function hydrate(parsed) {
+  sessionId = parsed.sessionId || createSessionId(chapterRef?.id || '00');
+  currentMode = parsed.currentMode || ChatMode.LEARNING;
+  assessmentComplete = Boolean(parsed.assessmentComplete);
+  assessmentQuestions = Array.isArray(parsed.assessmentQuestions) ? parsed.assessmentQuestions : [];
+  assessmentQIdx = typeof parsed.assessmentQIdx === 'number' ? parsed.assessmentQIdx : 0;
+  assessmentHintCount = typeof parsed.assessmentHintCount === 'number' ? parsed.assessmentHintCount : 0;
+  assessmentTrace = Array.isArray(parsed.assessmentTrace) ? parsed.assessmentTrace : [];
+  logMessages = Array.isArray(parsed.logMessages) ? parsed.logMessages : [];
+  memorySummary = parsed.memorySummary ? { ...emptyMemory(), ...parsed.memorySummary } : emptyMemory();
+  qualityMetrics = parsed.qualityMetrics ? { ...emptyMetrics(), ...parsed.qualityMetrics } : emptyMetrics();
 }
+function restoreUI() {
+  const box = el('chat-messages');
+  if (!box) return;
+  box.innerHTML = '';
+  logMessages
+    .filter((m) => m.role !== 'system')
+    .forEach((m) => bubble(m.role === 'assistant' ? 'ai' : m.role, m.content));
+}
+function bubble(role, text, typing = false) {
+  const box = el('chat-messages');
+  if (!box) return null;
+  const time = new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+  const node = document.createElement('div');
+  node.className = `chat-bubble ${role}`;
 
-function pushLogMessage(role, content, mode = currentMode) {
+  if (role === 'system') {
+    node.innerHTML = `<div class="bubble-text">${html(text)}</div>`;
+  } else {
+    const content = document.createElement('div');
+    content.className = 'bubble-content';
+    const textEl = document.createElement('div');
+    textEl.className = `bubble-text${typing ? ' typing-cursor' : ''}`;
+    textEl.textContent = text;
+    content.appendChild(textEl);
+    content.insertAdjacentHTML('beforeend', `<div class="bubble-time">${time}</div>`);
+    node.innerHTML = `<div class="bubble-avatar">${role === 'ai' ? 'AI' : '나'}</div>`;
+    node.appendChild(content);
+  }
+
+  box.appendChild(node);
+  box.scrollTop = box.scrollHeight;
+  return node;
+}
+function pushLog(role, content, mode = currentMode) {
   const msg = {
     role,
     content,
@@ -250,86 +210,119 @@ function pushLogMessage(role, content, mode = currentMode) {
     chapter_id: chapterRef?.id || '',
   };
   logMessages.push(msg);
-
-  if (role === 'user' || role === 'assistant' || role === 'system') {
-    const student = getStudentMeta();
-    if (!student.studentId) return;
+  const s = student();
+  if ((role === 'user' || role === 'assistant' || role === 'system') && s.studentId) {
     sendEvent('chat_message', {
       chapterId: msg.chapter_id,
       sessionId: msg.session_id,
-      studentId: student.studentId,
-      studentName: student.studentName,
-      payload: {
-        role,
-        content,
-        mode,
-        timestamp: msg.timestamp,
-        chapter_id: msg.chapter_id,
-        session_id: msg.session_id,
-      },
+      studentId: s.studentId,
+      studentName: s.studentName,
+      payload: { ...msg },
     });
   }
 }
-
-function persistSession() {
-  if (!chapterRef?.id || !sessionId) return;
-
-  const payload = {
-    sessionId,
-    chapterId: chapterRef.id,
-    currentMode,
-    assessmentComplete,
-    assessmentQuestions,
-    assessmentQIdx,
-    logMessages,
-    modelMessages,
-    savedAt: Date.now(),
-  };
-
-  try {
-    localStorage.setItem(getSessionStorageKey(sessionId), JSON.stringify(payload));
-    const index = loadSessionIndex();
-    index[chapterRef.id] = sessionId;
-    saveSessionIndex(index);
-  } catch {
-    // ignore quota error
+function badge() {
+  const node = el('assessment-badge');
+  if (!node) return;
+  if (currentMode === ChatMode.DONE) {
+    node.textContent = '완료';
+    node.className = 'badge badge-complete';
+    return;
   }
-}
-
-function loadSessionForChapter(chapterId) {
-  try {
-    const index = loadSessionIndex();
-    const id = index[chapterId];
-    if (!id) return null;
-
-    const raw = localStorage.getItem(getSessionStorageKey(id));
-    if (!raw) return null;
-
-    const parsed = JSON.parse(raw);
-    if (parsed.chapterId !== chapterId) return null;
-    if (Date.now() - Number(parsed.savedAt || 0) > SESSION_TTL_MS) return null;
-
-    return parsed;
-  } catch {
-    return null;
+  if (currentMode === ChatMode.ASSESSMENT) {
+    node.textContent = `평가 ${assessmentQIdx + 1}/${assessmentQuestions.length || 1}`;
+    node.className = 'badge badge-active';
+    return;
   }
+  node.textContent = '대기 중';
+  node.className = 'badge badge-pending';
 }
-
-
-async function apiGetWithAuth(path, token) {
+function setSubmit(enabled) {
+  const btn = el('btn-submit-pdf');
+  if (btn) btn.disabled = !enabled;
+}
+function setBusy(busy) {
+  isBusy = busy;
+  const input = el('chat-input');
+  const sendBtn = el('chat-send');
+  if (input) input.disabled = busy;
+  if (sendBtn) sendBtn.disabled = busy;
+  if (!busy && input) input.focus();
+}
+function summaryText() {
+  return [
+    `이해한 개념: ${(memorySummary.coveredConcepts || []).join(', ') || '없음'}`,
+    `오개념: ${(memorySummary.misconceptions || []).join(', ') || '없음'}`,
+    `미해결 질문: ${(memorySummary.pendingQuestions || []).join(' | ') || '없음'}`,
+    `최근 학습 목표: ${memorySummary.lastStudentGoal || '없음'}`,
+    `최근 평가 결과: ${memorySummary.lastAssessmentResult || '없음'}`,
+  ].join('\n');
+}
+function flushSummary(source) {
+  qualityMetrics.summary_update_count += 1;
+  if (summaryTimer) clearTimeout(summaryTimer);
+  summaryTimer = setTimeout(() => {
+    const s = student();
+    if (!s.studentId) return;
+    sendEvent('chat_summary_updated', {
+      chapterId: chapterRef?.id || '',
+      sessionId,
+      studentId: s.studentId,
+      studentName: s.studentName,
+      payload: { source, summary: memorySummary, quality_metrics: derivedMetrics() },
+    });
+  }, 1200);
+}
+function parseJson(text) {
+  const raw = trim(text);
+  if (!raw) return null;
+  try { return JSON.parse(raw); } catch {}
+  const start = raw.indexOf('{');
+  const end = raw.lastIndexOf('}');
+  if (start !== -1 && end !== -1 && end > start) {
+    try { return JSON.parse(raw.slice(start, end + 1)); } catch {}
+  }
+  return null;
+}
+function parseCompletionJson(data) {
+  return parseJson(data?.choices?.[0]?.message?.content || '');
+}
+function recentConversation(limit = 8) {
+  return logMessages
+    .filter((m) => m.role === 'user' || m.role === 'assistant')
+    .slice(-limit)
+    .map((m) => ({ role: m.role, content: trim(m.content) }))
+    .filter((m) => m.content);
+}
+async function workerRouteJson(path, body) {
+  let lastError = null;
+  for (const url of WORKER_URLS) {
+    try {
+      const base = url.endsWith('/') ? url.slice(0, -1) : url;
+      const res = await fetch(`${base}${path}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      return await res.json();
+    } catch (err) {
+      lastError = err;
+    }
+  }
+  throw lastError || new Error(`All worker endpoints failed for ${path}`);
+}
+async function apiGet(path, token) {
   let lastError = null;
   for (const base of WORKER_URLS) {
     try {
       const res = await fetch(`${base.replace(/\/$/, '')}${path}`, {
         method: 'GET',
-        headers: {
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       if (!res.ok) {
         if (res.status === 401 || res.status === 403 || res.status === 404) return null;
-        const text = await res.text();
-        throw new Error(`restore api error ${res.status}: ${text}`);
+        throw new Error(`restore api error ${res.status}`);
       }
       return await res.json();
     } catch (err) {
@@ -339,483 +332,17 @@ async function apiGetWithAuth(path, token) {
   if (lastError) throw lastError;
   return null;
 }
-
-function getServerToken() {
-  const profile = getStudentProfile() || {};
-  const token = String(profile.token || '').trim();
-  if (!token || token.startsWith('local:')) return '';
-  return token;
-}
-
-function rebuildModelMessagesFromLogs(chapterData, messages, mode) {
-  const prompt = mode === ChatMode.ASSESSMENT || mode === ChatMode.ASSESSMENT_COMPLETE
-    ? buildAssessmentPrompt(chapterData)
-    : buildLearningPrompt(chapterData);
-
-  const restored = [{ role: 'system', content: prompt }];
-  (messages || []).forEach((m) => {
-    if (m.role === 'user' || m.role === 'assistant') {
-      restored.push({ role: m.role, content: String(m.content || '') });
-    }
-  });
-  return restored;
-}
-
-async function tryRestoreSessionFromServer(chapterData) {
-  const token = getServerToken();
-  if (!token) return false;
-
-  const latestRes = await apiGetWithAuth(`/sessions/latest?chapter_id=${encodeURIComponent(chapterData.id)}`, token);
-  const latest = latestRes?.session;
-  if (!latest?.session_id) return false;
-
-  const messageRes = await apiGetWithAuth(`/sessions/${encodeURIComponent(latest.session_id)}/messages`, token);
-  const serverMessages = Array.isArray(messageRes?.messages) ? messageRes.messages : [];
-  if (serverMessages.length === 0) return false;
-
-  sessionId = String(latest.session_id);
-  logMessages = serverMessages.map((m) => ({
-    role: m.role === 'ai' ? 'assistant' : m.role,
-    content: String(m.content || ''),
-    mode: String(m.mode || ChatMode.LEARNING),
-    timestamp: String(m.timestamp || nowIso()),
-    session_id: String(m.session_id || sessionId),
-    chapter_id: String(m.chapter_id || chapterData.id),
-  }));
-
-  const lastMode = String(logMessages[logMessages.length - 1]?.mode || ChatMode.LEARNING);
-  currentMode = Object.values(ChatMode).includes(lastMode) ? lastMode : ChatMode.LEARNING;
-  assessmentComplete = currentMode === ChatMode.ASSESSMENT_COMPLETE;
-  modelMessages = rebuildModelMessagesFromLogs(chapterData, logMessages, currentMode);
-
-  if (currentMode === ChatMode.ASSESSMENT) {
-    const localSession = loadSessionForChapter(chapterData.id);
-    if (localSession && Array.isArray(localSession.assessmentQuestions) && localSession.assessmentQuestions.length > 0) {
-      assessmentQuestions = localSession.assessmentQuestions;
-      assessmentQIdx = typeof localSession.assessmentQIdx === 'number' ? localSession.assessmentQIdx : 0;
-      const q = assessmentQuestions[assessmentQIdx];
-      if (q) {
-        const isLast = assessmentQIdx === assessmentQuestions.length - 1;
-        modelMessages[0] = { role: 'system', content: buildAssessmentEvalPrompt(q, assessmentQIdx, assessmentQuestions.length, isLast, 0) };
-      }
-    }
-  }
-
-  restoreUIFromLogs();
-  updateBadge();
-  setSubmitEnabled(true);
-
-  appendBubble('system', '\uc774\uc804 \uc138\uc158\uc774 \uc11c\ubc84\uc5d0\uc11c \ubcf5\uc6d0\ub418\uc5c8\uc2b5\ub2c8\ub2e4. \uc774\uc5b4\uc11c \uc9c4\ud589\ud558\uc138\uc694.');
-  pushLogMessage('system', '\uc138\uc158 \ubcf5\uc6d0(server)', currentMode);
-  persistSession();
-  return true;
-}
-function restoreUIFromLogs() {
-  const container = getEl('chat-messages');
-  if (!container) return;
-  container.innerHTML = '';
-
-  logMessages
-    .filter((m) => m.role !== 'system')
-    .forEach((m) => appendBubble(m.role === 'assistant' ? 'ai' : m.role, m.content));
-}
-
-function isLikelyLearningQuestion(input) {
-  const text = normalizeInput(input);
-  if (!text) return false;
-  const patterns = ['\uc124\uba85', '\uc774\ud574', '\ubb34\uc5c7', '\ub450\uc57c', '\uc6d0\ub9ac', '\uac1c\ub150', '\ud559\uc2b5'];
-  const hasQuestionMark = text.includes('?');
-  return hasQuestionMark || patterns.some((p) => text.includes(p));
-}
-
-
-async function streamFromWorker(messages) {
-  let lastError = null;
-
-  for (const url of WORKER_URLS) {
-    try {
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'gpt-4o-mini',
-          messages,
-          stream: true,
-          temperature: 0.7,
-          max_tokens: 1000,
-        }),
-      });
-
-      if (!res.ok) {
-        const errText = await res.text();
-        throw new Error(`Worker error ${res.status}: ${errText}`);
-      }
-
-      return res.body;
-    } catch (err) {
-      lastError = err;
-    }
-  }
-
-  throw lastError || new Error('All worker endpoints failed');
-}
-
-function handleAssessmentComplete() {
-  assessmentComplete = true;
-  currentMode = ChatMode.ASSESSMENT_COMPLETE;
-  updateBadge();
-  setSubmitEnabled(true);
-
-  appendBubble('system', '\ud615\uc131\ud3c9\uac00\uac00 \uc644\ub8cc\ub418\uc5c8\uc2b5\ub2c8\ub2e4. \ud615\uc131\ud3c9\uac00 \uc81c\ucd9c (PDF) \ubc84\ud2bc\uc73c\ub85c \uc81c\ucd9c\ud558\uc138\uc694.');
-  pushLogMessage('system', '\ud615\uc131\ud3c9\uac00 \uc644\ub8cc', ChatMode.ASSESSMENT_COMPLETE);
-
-  sendEvent('assessment_completed', {
-    chapterId: chapterRef?.id || '',
-    sessionId,
-      studentId: getStudentMeta().studentId,
-      studentName: getStudentMeta().studentName,
-    payload: {
-      total_messages: logMessages.filter((m) => m.role === 'user' || m.role === 'assistant').length,
-      timestamp: nowIso(),
-    },
-  });
-
-  persistSession();
-}
-
-async function sendToAI(userText, opts = {}) {
-  if (isStreaming) return;
-
-  const force = Boolean(opts.force);
-  const normalized = normalizeInput(userText);
-
-  if (!force && currentMode === ChatMode.ASSESSMENT && !assessmentComplete && isLikelyLearningQuestion(normalized)) {
-    const blockedMsg = '\ud615\uc131\ud3c9\uac00 \uc9c4\ud589 \uc911\uc785\ub2c8\ub2e4. \ud3c9\uac00\ub97c \uc774\uc5b4\uac00\uc8fc\uc138\uc694.';
-    appendBubble('system', blockedMsg);
-    pushLogMessage('system', blockedMsg, currentMode);
-    persistSession();
-    return;
-  }
-
-  isStreaming = true;
-
-  modelMessages.push({ role: 'user', content: normalized });
-  pushLogMessage('user', normalized, currentMode);
-  appendBubble('user', normalized);
-  persistSession();
-
-  const input = getEl('chat-input');
-  const sendBtn = getEl('chat-send');
-  if (input) input.disabled = true;
-  if (sendBtn) sendBtn.disabled = true;
-
-  const aiBubble = appendBubble('ai', '', true);
-  const textEl = aiBubble?.querySelector('.bubble-text');
-  let fullText = '';
-  let streamError = false;
-
-  try {
-    const body = await streamFromWorker(modelMessages);
-    const reader = body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = '';
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split('\n');
-      buffer = lines.pop() || '';
-
-      for (const line of lines) {
-        if (!line.startsWith('data: ')) continue;
-        const data = line.slice(6).trim();
-        if (data === '[DONE]') continue;
-        try {
-          const parsed = JSON.parse(data);
-          const chunk = parsed?.choices?.[0]?.delta?.content;
-          if (chunk) {
-            fullText += chunk;
-            if (textEl) textEl.textContent = fullText.replace(COMPLETION_MARKER, '').replace(NEXT_QUESTION_MARKER, '').trimEnd();
-            const messagesEl = getEl('chat-messages');
-            if (messagesEl) messagesEl.scrollTop = messagesEl.scrollHeight;
-          }
-        } catch {
-          // ignore malformed chunks
-        }
-      }
-    }
-  } catch (err) {
-    streamError = true;
-    // 오류 발생 시 빈 AI 버블을 시스템 오류 메시지로 교체
-    if (aiBubble) {
-      aiBubble.classList.remove('ai');
-      aiBubble.classList.add('system');
-    }
-    if (textEl) {
-      textEl.textContent = '\uc751\ub2f5 \uc911 \uc624\ub958\uac00 \ubc1c\uc0dd\ud588\uc2b5\ub2c8\ub2e4. \uc7a0\uc2dc \ud6c4 \ub2e4\uc2dc \uc2dc\ub3c4\ud574\uc8fc\uc138\uc694.';
-    }
-    console.error('Streaming error:', err);
-  } finally {
-    if (textEl) textEl.classList.remove('typing-cursor');
-    isStreaming = false;
-    if (input) {
-      input.disabled = false;
-      input.focus();
-    }
-    if (sendBtn) sendBtn.disabled = false;
-
-    // 오류 시 빈 메시지를 대화 기록에 추가하지 않음
-    if (!streamError && fullText) {
-      if (fullText.includes(COMPLETION_MARKER) && currentMode === ChatMode.ASSESSMENT) {
-        fullText = fullText.replace(COMPLETION_MARKER, '').trimEnd();
-        if (textEl) textEl.textContent = fullText;
-        handleAssessmentComplete();
-      }
-
-      if (currentMode === ChatMode.ASSESSMENT && !assessmentComplete) {
-        if (fullText.includes(NEXT_QUESTION_MARKER)) {
-          fullText = fullText.replace(NEXT_QUESTION_MARKER, '').trimEnd();
-          if (textEl) textEl.textContent = fullText;
-          assessmentHintCount = 0;
-          assessmentQIdx++;
-          if (assessmentQIdx < assessmentQuestions.length) {
-            const nextQ = assessmentQuestions[assessmentQIdx];
-            const isLast = assessmentQIdx === assessmentQuestions.length - 1;
-            const qText = `Q${assessmentQIdx + 1}. ${nextQ.question}`;
-            appendBubble('ai', qText);
-            pushLogMessage('assistant', qText, ChatMode.ASSESSMENT);
-            modelMessages[0] = { role: 'system', content: buildAssessmentEvalPrompt(nextQ, assessmentQIdx, assessmentQuestions.length, isLast, 0) };
-          }
-        } else {
-          assessmentHintCount++;
-          const q = assessmentQuestions[assessmentQIdx];
-          const isLast = assessmentQIdx === assessmentQuestions.length - 1;
-          modelMessages[0] = { role: 'system', content: buildAssessmentEvalPrompt(q, assessmentQIdx, assessmentQuestions.length, isLast, assessmentHintCount) };
-        }
-      }
-
-      modelMessages.push({ role: 'assistant', content: fullText });
-      pushLogMessage('assistant', fullText, currentMode);
-      persistSession();
-    }
-  }
-}
-
-
-async function fetchQuestionsFromWorker(chapterId) {
+async function fetchQuestions(chapterId) {
   for (const workerUrl of WORKER_URLS) {
     try {
       const base = workerUrl.endsWith('/') ? workerUrl.slice(0, -1) : workerUrl;
       const res = await fetch(`${base}/questions/${chapterId}`);
       if (res.ok) return await res.json();
-    } catch { /* try next */ }
+    } catch {}
   }
   return null;
 }
-
-// "형성평가", "2번 형성평가", "형성평가 3번" 등에서 시작 인덱스(0-based) 파싱
-// 트리거가 아니면 null 반환
-function parseAssessmentTrigger(text) {
-  const t = text.trim();
-  if (t === '형성평가' || t === '평가') return 0;
-  if (t.includes('형성평가')) {
-    const m = t.match(/(\d+)\s*번/);
-    if (m) return Math.max(0, parseInt(m[1], 10) - 1);
-  }
-  return null;
-}
-
-async function startAssessment(startIdx = 0) {
-  setSubmitEnabled(false);
-
-  const input = getEl('chat-input');
-  const sendBtn = getEl('chat-send');
-  if (input) input.disabled = true;
-  if (sendBtn) sendBtn.disabled = true;
-
-  // startIdx > 0 이고 이미 문항이 로드된 경우 재사용, 아니면 서버에서 가져옴
-  let questions = null;
-  if (startIdx > 0 && assessmentQuestions.length > 0) {
-    questions = assessmentQuestions;
-  } else {
-    const loadingBubble = appendBubble('system', '\ud615\uc131\ud3c9\uac00 \ubb38\ud56d\uc744 \ubd88\ub7ec\uc624\ub294 \uc911\uc785\ub2c8\ub2e4...');
-    try {
-      const result = await Promise.race([
-        fetchQuestionsFromWorker(chapterRef.id),
-        new Promise((_, r) => setTimeout(() => r(new Error('timeout')), 5000)),
-      ]);
-      if (result?.questions?.questions?.length > 0) {
-        questions = result.questions.questions;
-      }
-    } catch { /* no questions */ }
-    loadingBubble?.remove();
-  }
-
-  if (input) input.disabled = false;
-  if (sendBtn) sendBtn.disabled = false;
-
-  if (!questions) {
-    const msg = '\uc544\uc9c1 \ud615\uc131\ud3c9\uac00 \ubb38\ud56d\uc774 \ub4f1\ub85d\ub418\uc9c0 \uc54a\uc558\uc2b5\ub2c8\ub2e4. \uad50\uc218\ub2d8\uc774 \ubb38\ud56d\uc744 \ub4f1\ub85d\ud558\uc2e0 \ud6c4 \ub2e4\uc2dc \uc2dc\ub3c4\ud574 \uc8fc\uc138\uc694.';
-    appendBubble('system', msg);
-    pushLogMessage('system', msg, currentMode);
-    return;
-  }
-
-  if (startIdx >= questions.length) {
-    const msg = `${startIdx + 1}\ubc88 \ubb38\ud56d\uc740 \uc5c6\uc2b5\ub2c8\ub2e4. (\ucd1d ${questions.length}\ubb38\ud56d)`;
-    appendBubble('system', msg);
-    pushLogMessage('system', msg, currentMode);
-    return;
-  }
-
-  currentMode = ChatMode.ASSESSMENT;
-  assessmentComplete = false;
-  assessmentQuestions = questions;
-  assessmentQIdx = startIdx;
-  assessmentHintCount = 0;
-  updateBadge();
-
-  const totalQ = assessmentQuestions.length;
-  const notice = startIdx === 0
-    ? `\ud615\uc131\ud3c9\uac00\ub97c \uc2dc\uc791\ud569\ub2c8\ub2e4. \ucd1d ${totalQ}\ubb38\ud56d\uc73c\ub85c \uc9c4\ud589\ud569\ub2c8\ub2e4.`
-    : `${startIdx + 1}\ubc88 \ubb38\ud56d\ubd80\ud130 \ud615\uc131\ud3c9\uac00\ub97c \ub2e4\uc2dc \uc2dc\uc791\ud569\ub2c8\ub2e4. (\ucd1d ${totalQ}\ubb38\ud56d)`;
-  appendBubble('system', notice);
-  pushLogMessage('system', notice, currentMode);
-
-  const isLast = startIdx === totalQ - 1;
-  const q = assessmentQuestions[startIdx];
-  const qText = `Q${startIdx + 1}. ${q.question}`;
-  appendBubble('ai', qText);
-  pushLogMessage('assistant', qText, currentMode);
-
-  modelMessages = [{ role: 'system', content: buildAssessmentEvalPrompt(q, startIdx, totalQ, isLast) }];
-  persistSession();
-  setSubmitEnabled(true);
-}
-
-
-function handleSend() {
-  const input = getEl('chat-input');
-  if (!input) return;
-
-  const text = normalizeInput(input.value);
-  if (!text || isStreaming) return;
-
-  input.value = '';
-  input.style.height = 'auto';
-
-  // 형성평가 트리거 — 모든 모드에서 허용
-  const triggerIdx = parseAssessmentTrigger(text);
-  if (triggerIdx !== null) {
-    startAssessment(triggerIdx);
-    return;
-  }
-
-  if (currentMode === ChatMode.ASSESSMENT_COMPLETE) {
-    const msg = '\ud615\uc131\ud3c9\uac00\uac00 \uc644\ub8cc\ub418\uc5c8\uc2b5\ub2c8\ub2e4. \ub2e4\uc2dc \ud558\ub824\uba74 \'\ud615\uc131\ud3c9\uac00\'\ub97c \uc785\ub825\ud558\uc138\uc694.';
-    appendBubble('system', msg);
-    pushLogMessage('system', msg, currentMode);
-    persistSession();
-    return;
-  }
-
-  sendToAI(text);
-}
-
-function bindEventsOnce() {
-  if (eventsBound) return;
-  eventsBound = true;
-
-  const sendBtn = getEl('chat-send');
-  const input = getEl('chat-input');
-
-  if (sendBtn) sendBtn.addEventListener('click', handleSend);
-
-  if (input) {
-    input.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        handleSend();
-      }
-    });
-
-    input.addEventListener('input', function onInput() {
-      this.style.height = 'auto';
-      this.style.height = `${Math.min(this.scrollHeight, 120)}px`;
-    });
-  }
-}
-
-function createNewLearningSession() {
-  sessionId = createSessionId(chapterRef?.id || '00');
-  currentMode = ChatMode.LEARNING;
-  assessmentComplete = false;
-  logMessages = [];
-  modelMessages = [{ role: 'system', content: buildLearningPrompt(chapterRef) }];
-
-  const welcome = `\uc548\ub155\ud558\uc138\uc694. \ubb34\uc5c7\uc744 \ub3c4\uc640\ub4dc\ub9b4\uae4c\uc694? \uad81\uae08\ud55c \uc810\uc774\ub098 \ud544\uc694\ud55c \uc815\ubcf4\uac00 \uc788\ub2e4\uba74 \ub9d0\uc500\ud574 \uc8fc\uc138\uc694. '\ud3c9\uac00'\ub97c \uc785\ub825\ud558\uba74 \ud615\uc131\ud3c9\uac00\ub97c \ud480 \uc218 \uc788\uc2b5\ub2c8\ub2e4. \ubaa8\ub4e0 \ub300\ud654 \ub0b4\uc6a9\uc740 \ub85c\uadf8\ub370\uc774\ud130\ub85c \uae30\ub85d\ub418\uba70, \ud3c9\uac00\uc758 \uadfc\uac70\ub85c \ud65c\uc6a9\ub429\ub2c8\ub2e4. \uc81c\ucd9c\uc740 \uac01 \uc7a5\uc758 \ub9c8\uc9c0\ub9c9 \ud65c\ub3d9 \ub2e8\uacc4\uc5d0\uc11c \uc774\ub8e8\uc5b4\uc9d1\ub2c8\ub2e4.`
-  appendBubble('ai', welcome);
-  pushLogMessage('assistant', welcome, currentMode);
-  persistSession();
-  setSubmitEnabled(true);
-
-  sendEvent('session_started', {
-    chapterId: chapterRef?.id || '',
-    sessionId,
-      studentId: getStudentMeta().studentId,
-      studentName: getStudentMeta().studentName,
-    payload: {
-      mode: currentMode,
-      timestamp: nowIso(),
-    },
-  });
-}
-
-export function getConversationMessages() {
-  return logMessages;
-}
-
-export function getChapterRef() {
-  return chapterRef;
-}
-
-export function getSessionId() {
-  return sessionId;
-}
-
-export function resetChatSession() {
-  if (!chapterRef) return;
-
-  // 로컬 세션 데이터 삭제
-  if (sessionId) {
-    try { localStorage.removeItem(getSessionStorageKey(sessionId)); } catch { /* ignore */ }
-  }
-  const index = loadSessionIndex();
-  delete index[chapterRef.id];
-  saveSessionIndex(index);
-
-  // 상태 초기화
-  sessionId = '';
-  logMessages = [];
-  modelMessages = [];
-  assessmentComplete = false;
-  currentMode = ChatMode.LEARNING;
-
-  // UI 초기화
-  const container = getEl('chat-messages');
-  if (container) container.innerHTML = '';
-  updateBadge();
-
-  // 새 세션 시작
-  createNewLearningSession();
-}
-
-let chapterLocks = {};
-let locksFetched = false;
-
-async function fetchAndCacheLocks() {
+async function fetchLocks() {
   if (locksFetched) return;
   for (const base of WORKER_URLS) {
     try {
@@ -826,69 +353,458 @@ async function fetchAndCacheLocks() {
         locksFetched = true;
         return;
       }
-    } catch { /* ignore */ }
+    } catch {}
   }
 }
-
-export async function initChatbot(chapterData) {
-  chapterRef = chapterData;
-  bindEventsOnce();
-
-  // lock state check
-  fetchAndCacheLocks().then(() => {
-    if (chapterLocks[chapterData.id]) {
-      const container = getEl('chat-messages');
-      if (container) container.innerHTML = '';
-      appendBubble('system', '\uc774 \ucc55\ud130\ub294 \ud604\uc7ac \uc81c\ud55c \uc911\uc785\ub2c8\ub2e4. \ub2e4\uc74c\uc5d0 \uc774\uc6a9\ud558\uc138\uc694.');
-      const input = getEl('chat-input');
-      const sendBtn = getEl('chat-send');
-      if (input) input.disabled = true;
-      if (sendBtn) sendBtn.disabled = true;
-    }
+function questionText(question, index, total) {
+  return `Q${index + 1}/${total}. ${question.question}`;
+}
+function learningLike(text) {
+  const q = trim(text);
+  if (!q) return false;
+  return q.includes('?') || ['설명', '이해', '정리', '개념', '차이', '무엇'].some((word) => q.includes(word));
+}
+function parseAssessmentTrigger(text) {
+  const value = trim(text);
+  if (value === ASSESSMENT_TRIGGER || value === '평가') return 0;
+  if (value.includes(ASSESSMENT_TRIGGER)) {
+    const match = value.match(/(\d+)\s*번/);
+    if (match) return Math.max(0, Number.parseInt(match[1], 10) - 1);
+    return 0;
+  }
+  return null;
+}
+function trackHint() {
+  qualityMetrics.hint_request_count += 1;
+  const s = student();
+  if (!s.studentId) return;
+  sendEvent('hint_used', {
+    chapterId: chapterRef?.id || '',
+    sessionId,
+    studentId: s.studentId,
+    studentName: s.studentName,
+    payload: { question_index: assessmentQIdx, hint_index: assessmentHintCount, timestamp: nowIso() },
   });
-
+}
+async function respondLearning(userText) {
+  let result = null;
   try {
-    const restoredFromServer = await tryRestoreSessionFromServer(chapterData);
-    if (restoredFromServer) return;
-  } catch (e) {
-    console.error('server restore failed:', e);
+    const data = await workerRouteJson('/chat/respond', {
+      mode: 'learning',
+      chapter: chapterRef,
+      user_input: userText,
+      memorySummary,
+      transcript: recentConversation(8),
+    });
+    result = parseCompletionJson(data);
+    if (!result) throw new Error('Invalid learning JSON');
+    qualityMetrics.structured_response_count += 1;
+  } catch (err) {
+    console.error('learning route failed:', err);
+    qualityMetrics.structured_fallback_count += 1;
+    result = {
+      answer: '응답을 생성하지 못했습니다. 질문을 조금 더 구체적으로 바꿔서 다시 시도해 주세요.',
+      question_type: 'other',
+      memory_update: { pendingQuestions: [userText], lastStudentGoal: userText },
+    };
   }
 
-  const restored = loadSessionForChapter(chapterData.id);
+  qualityMetrics.learning_turn_count += 1;
+  qualityMetrics.last_question_type = trim(result.question_type) || 'other';
+  mergeMemory(result.memory_update || {});
+  flushSummary('learning');
 
-  if (restored) {
-    sessionId = restored.sessionId;
-    currentMode = restored.currentMode || ChatMode.LEARNING;
-    assessmentComplete = Boolean(restored.assessmentComplete);
-    assessmentQuestions = Array.isArray(restored.assessmentQuestions) ? restored.assessmentQuestions : [];
-    assessmentQIdx = typeof restored.assessmentQIdx === 'number' ? restored.assessmentQIdx : 0;
-    logMessages = Array.isArray(restored.logMessages) ? restored.logMessages : [];
-    modelMessages = Array.isArray(restored.modelMessages)
-      ? restored.modelMessages
-      : rebuildModelMessagesFromLogs(chapterData, logMessages, currentMode);
+  const answer = trim(result.answer) || '응답을 생성하지 못했습니다.';
+  bubble('ai', answer);
+  pushLog('assistant', answer, ChatMode.LEARNING);
+  persist();
+}
+async function respondAssessment(userText) {
+  const question = assessmentQuestions[assessmentQIdx];
+  if (!question) return;
+  const isLast = assessmentQIdx === assessmentQuestions.length - 1;
+  let result = null;
 
-    if (currentMode === ChatMode.ASSESSMENT && assessmentQuestions.length > 0) {
-      const q = assessmentQuestions[assessmentQIdx];
-      if (q) {
-        const isLast = assessmentQIdx === assessmentQuestions.length - 1;
-        modelMessages[0] = { role: 'system', content: buildAssessmentEvalPrompt(q, assessmentQIdx, assessmentQuestions.length, isLast, 0) };
-      }
+  try {
+    const data = await workerRouteJson('/chat/respond', {
+      mode: 'assessment',
+      chapter: chapterRef,
+      question,
+      user_input: userText,
+      memorySummary,
+      remaining_hints: Math.max(0, MAX_HINTS - assessmentHintCount),
+      is_last_question: isLast,
+    });
+    result = parseCompletionJson(data);
+    if (!result) throw new Error('Invalid assessment JSON');
+    qualityMetrics.structured_response_count += 1;
+  } catch (err) {
+    console.error('assessment route failed:', err);
+    qualityMetrics.structured_fallback_count += 1;
+    result = {
+      judgment: 'incorrect',
+      confidence: 'low',
+      feedback: '답안을 판정하는 중 오류가 발생했습니다. 핵심 개념을 다시 정리한 뒤 재시도해 주세요.',
+      hint: question?.hints?.[assessmentHintCount] || '',
+      model_answer: question?.keyAnswer || question?.answer || '',
+      weak_concept: question?.concept || '',
+      advance: false,
+      next_action: 'retry_same_question',
+      memory_update: { pendingQuestions: [question.question || '현재 문항'] },
+    };
+  }
+
+  qualityMetrics.assessment_turn_count += 1;
+  qualityMetrics.assessment_evaluation_count += 1;
+  if (result.judgment === 'partial') qualityMetrics.assessment_partial_count += 1;
+  mergeMemory(result.memory_update || {});
+  flushSummary('assessment');
+
+  assessmentTrace.push({
+    question_id: question.id || `Q${assessmentQIdx + 1}`,
+    question_index: assessmentQIdx,
+    concept: trim(question.concept || ''),
+    judgment: trim(result.judgment) || 'incorrect',
+    confidence: trim(result.confidence) || 'medium',
+    hint_count: assessmentHintCount,
+    advance: Boolean(result.advance),
+    weak_concept: trim(result.weak_concept),
+    timestamp: nowIso(),
+  });
+
+  const s = student();
+  if (s.studentId) {
+    sendEvent('assessment_judged', {
+      chapterId: chapterRef?.id || '',
+      sessionId,
+      studentId: s.studentId,
+      studentName: s.studentName,
+      payload: {
+        question_index: assessmentQIdx,
+        judgment: result.judgment || 'incorrect',
+        confidence: trim(result.confidence) || 'medium',
+        weak_concept: trim(result.weak_concept),
+        hint_count: assessmentHintCount,
+        advance: Boolean(result.advance),
+      },
+    });
+  }
+
+  let text = trim(result.feedback) || '답안을 평가했습니다.';
+
+  if (result.judgment === 'incorrect' && !result.advance) {
+    const hint = trim(result.hint) || question?.hints?.[assessmentHintCount] || '';
+    assessmentHintCount += 1;
+    if (hint) {
+      trackHint();
+      text = `${text}\n\n힌트 ${assessmentHintCount}: ${hint}`;
     }
-
-    restoreUIFromLogs();
-    updateBadge();
-    setSubmitEnabled(true);
-
-    appendBubble('system', '\uc774\uc804 \uc138\uc158\uc774 \ubcf5\uc6d0\ub418\uc5c8\uc2b5\ub2c8\ub2e4. \uc774\uc5b4\uc11c \uc9c4\ud589\ud558\uc138\uc694.');
-    pushLogMessage('system', '\uc138\uc158 \ubcf5\uc6d0(local)', currentMode);
-    persistSession();
+    bubble('ai', text);
+    pushLog('assistant', text, ChatMode.ASSESSMENT);
+    persist();
     return;
   }
 
-  updateBadge();
+  if (result.judgment === 'incorrect' && result.advance && trim(result.model_answer)) {
+    text = `${text}\n\n모범답안: ${trim(result.model_answer)}`;
+  }
 
-  const container = getEl('chat-messages');
-  if (container) container.innerHTML = '';
+  bubble('ai', text);
+  pushLog('assistant', text, ChatMode.ASSESSMENT);
+  qualityMetrics.assessment_advance_count += 1;
 
-  createNewLearningSession();
+  if (result.next_action === 'finish_assessment' || isLast) {
+    finishAssessment();
+    persist();
+    return;
+  }
+
+  assessmentQIdx += 1;
+  assessmentHintCount = 0;
+  badge();
+  const next = questionText(assessmentQuestions[assessmentQIdx], assessmentQIdx, assessmentQuestions.length);
+  bubble('ai', next);
+  pushLog('assistant', next, ChatMode.ASSESSMENT);
+  persist();
+}
+function finishAssessment() {
+  currentMode = ChatMode.DONE;
+  assessmentComplete = true;
+  memorySummary.lastAssessmentResult = `총 ${assessmentQuestions.length}문항 평가 완료`;
+  badge();
+  setSubmit(true);
+  bubble('system', '형성평가가 완료되었습니다. 이제 PDF 제출 버튼으로 결과를 저장할 수 있습니다.');
+  pushLog('system', '형성평가 완료', ChatMode.DONE);
+  const s = student();
+  if (s.studentId) {
+    sendEvent('assessment_completed', {
+      chapterId: chapterRef?.id || '',
+      sessionId,
+      studentId: s.studentId,
+      studentName: s.studentName,
+      payload: { total_questions: assessmentQuestions.length, quality_metrics: derivedMetrics() },
+    });
+  }
+}
+async function sendToAI(text, opts = {}) {
+  const input = trim(text);
+  if (!input || isBusy) return;
+
+  if (!opts.force && currentMode === ChatMode.ASSESSMENT && !assessmentComplete && learningLike(input)) {
+    qualityMetrics.blocked_learning_question_count += 1;
+    const msg = '형성평가 진행 중입니다. 현재 문항에 대한 답을 먼저 제출해 주세요.';
+    bubble('system', msg);
+    pushLog('system', msg, currentMode);
+    persist();
+    return;
+  }
+
+  setBusy(true);
+  bubble('user', input);
+  pushLog('user', input, currentMode);
+  persist();
+
+  try {
+    if (currentMode === ChatMode.ASSESSMENT && !assessmentComplete) await respondAssessment(input);
+    else await respondLearning(input);
+  } catch (err) {
+    console.error('sendToAI failed:', err);
+    bubble('system', '응답 생성 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.');
+  } finally {
+    setBusy(false);
+  }
+}
+async function startAssessment(startIdx = 0) {
+  setBusy(true);
+  setSubmit(false);
+  const loading = bubble('system', '형성평가 문항을 불러오는 중입니다...');
+  let questions = null;
+
+  try {
+    const result = await Promise.race([
+      fetchQuestions(chapterRef.id),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000)),
+    ]);
+    if (result?.questions?.questions?.length > 0) questions = result.questions.questions;
+  } catch {}
+
+  loading?.remove();
+  setBusy(false);
+
+  if (!questions && Array.isArray(chapterRef?.formativeAssessment?.questions)) {
+    questions = chapterRef.formativeAssessment.questions;
+  }
+  if (!questions || startIdx >= questions.length) {
+    const msg = '형성평가 문항을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.';
+    bubble('system', msg);
+    pushLog('system', msg, currentMode);
+    return;
+  }
+
+  currentMode = ChatMode.ASSESSMENT;
+  assessmentComplete = false;
+  assessmentQuestions = questions;
+  assessmentQIdx = startIdx;
+  assessmentHintCount = 0;
+  assessmentTrace = [];
+  qualityMetrics.assessment_started_count += 1;
+  badge();
+
+  const s = student();
+  if (s.studentId) {
+    sendEvent('assessment_started', {
+      chapterId: chapterRef?.id || '',
+      sessionId,
+      studentId: s.studentId,
+      studentName: s.studentName,
+      payload: { total_questions: assessmentQuestions.length, start_index: startIdx, version: VERSION },
+    });
+  }
+
+  const notice = startIdx === 0
+    ? `형성평가를 시작합니다. 총 ${assessmentQuestions.length}문항입니다.`
+    : `${startIdx + 1}번 문항부터 형성평가를 시작합니다.`;
+  bubble('system', notice);
+  pushLog('system', notice, currentMode);
+
+  const first = questionText(assessmentQuestions[startIdx], startIdx, assessmentQuestions.length);
+  bubble('ai', first);
+  pushLog('assistant', first, currentMode);
+  persist();
+}
+function handleSend() {
+  const input = el('chat-input');
+  if (!input || isBusy) return;
+  const text = trim(input.value);
+  if (!text) return;
+  input.value = '';
+  input.style.height = 'auto';
+
+  const trigger = parseAssessmentTrigger(text);
+  if (trigger !== null) {
+    startAssessment(trigger);
+    return;
+  }
+
+  if (currentMode === ChatMode.DONE) {
+    const msg = '형성평가는 이미 완료되었습니다. 다시 시작하려면 "형성평가"를 입력해 주세요.';
+    bubble('system', msg);
+    pushLog('system', msg, currentMode);
+    persist();
+    return;
+  }
+
+  sendToAI(text);
+}
+function bindEvents() {
+  if (eventsBound) return;
+  eventsBound = true;
+
+  el('chat-send')?.addEventListener('click', handleSend);
+  const input = el('chat-input');
+  if (!input) return;
+  input.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault();
+      handleSend();
+    }
+  });
+  input.addEventListener('input', function onInput() {
+    this.style.height = 'auto';
+    this.style.height = `${Math.min(this.scrollHeight, 120)}px`;
+  });
+}
+function newLearningSession() {
+  sessionId = createSessionId(chapterRef?.id || '00');
+  currentMode = ChatMode.LEARNING;
+  assessmentComplete = false;
+  assessmentQuestions = [];
+  assessmentQIdx = 0;
+  assessmentHintCount = 0;
+  assessmentTrace = [];
+  logMessages = [];
+  memorySummary = emptyMemory();
+  qualityMetrics = emptyMetrics();
+  badge();
+  setSubmit(false);
+
+  const msg = `안녕하세요. ${chapterRef?.title || '현재 챕터'} 학습을 도와드리겠습니다. 개념 설명, 비교, 예시, 계산 과정 등을 질문하시면 챕터 문맥에 맞춰 답변하겠습니다. 형성평가를 시작하려면 "형성평가"를 입력해 주세요.`;
+  bubble('ai', msg);
+  pushLog('assistant', msg, currentMode);
+  persist();
+
+  const s = student();
+  if (s.studentId) {
+    sendEvent('session_started', {
+      chapterId: chapterRef?.id || '',
+      sessionId,
+      studentId: s.studentId,
+      studentName: s.studentName,
+      payload: { mode: currentMode, version: VERSION },
+    });
+  }
+}
+async function restoreServer(chapterData) {
+  const token = trim(student().token);
+  if (!token || token.startsWith('local:')) return false;
+
+  const latest = (await apiGet(`/sessions/latest?chapter_id=${encodeURIComponent(chapterData.id)}`, token))?.session;
+  if (!latest?.session_id) return false;
+  const messages = (await apiGet(`/sessions/${encodeURIComponent(latest.session_id)}/messages`, token))?.messages;
+  if (!Array.isArray(messages) || messages.length === 0) return false;
+
+  sessionId = String(latest.session_id);
+  currentMode = ChatMode.LEARNING;
+  assessmentComplete = false;
+  assessmentQuestions = [];
+  assessmentQIdx = 0;
+  assessmentHintCount = 0;
+  assessmentTrace = [];
+  logMessages = messages.map((m) => ({
+    role: String(m.role || ''),
+    content: String(m.content || ''),
+    mode: String(m.mode || ChatMode.LEARNING),
+    timestamp: String(m.timestamp || nowIso()),
+    session_id: String(m.session_id || sessionId),
+    chapter_id: String(m.chapter_id || chapterData.id),
+  }));
+  memorySummary = emptyMemory();
+  qualityMetrics = emptyMetrics();
+  restoreUI();
+  badge();
+  setSubmit(currentMode === ChatMode.DONE || assessmentComplete);
+  bubble('system', '이전 세션을 서버에서 복원했습니다. 이어서 진행해 주세요.');
+  pushLog('system', '세션 복원(server)', currentMode);
+  persist();
+  return true;
+}
+
+export function getConversationMessages() { return logMessages; }
+export function getChapterRef() { return chapterRef; }
+export function getSessionId() { return sessionId; }
+export function getChatSessionSnapshot() {
+  return {
+    sessionId,
+    chapterId: chapterRef?.id || '',
+    currentMode,
+    assessmentComplete,
+    assessmentQIdx,
+    assessmentQuestions: assessmentQuestions.map((q, i) => ({
+      id: q.id || `Q${i + 1}`,
+      concept: q.concept || '',
+      question: q.question || '',
+    })),
+    assessmentTrace: Array.isArray(assessmentTrace) ? [...assessmentTrace] : [],
+    memorySummary: { ...memorySummary },
+    qualityMetrics: derivedMetrics(),
+  };
+}
+export function resetChatSession() {
+  if (!chapterRef) return;
+  try {
+    if (sessionId) localStorage.removeItem(sessionStorageKey(sessionId));
+  } catch {}
+  const index = loadIndex();
+  delete index[chapterRef.id];
+  saveIndex(index);
+  const box = el('chat-messages');
+  if (box) box.innerHTML = '';
+  newLearningSession();
+}
+export async function initChatbot(chapterData) {
+  chapterRef = chapterData;
+  bindEvents();
+
+  fetchLocks().then(() => {
+    if (!chapterLocks[chapterData.id]) return;
+    const box = el('chat-messages');
+    if (box) box.innerHTML = '';
+    bubble('system', '이 챕터는 현재 잠겨 있습니다. 다음에 다시 이용해 주세요.');
+    const input = el('chat-input');
+    const sendBtn = el('chat-send');
+    if (input) input.disabled = true;
+    if (sendBtn) sendBtn.disabled = true;
+  });
+
+  try {
+    if (await restoreServer(chapterData)) return;
+  } catch (err) {
+    console.error('server restore failed:', err);
+  }
+
+  const local = loadLocalSession(chapterData.id);
+  if (local) {
+    hydrate(local);
+    restoreUI();
+    badge();
+    setSubmit(currentMode === ChatMode.DONE || assessmentComplete);
+    bubble('system', '이전 세션을 복원했습니다. 이어서 진행해 주세요.');
+    pushLog('system', '세션 복원(local)', currentMode);
+    persist();
+    return;
+  }
+
+  const box = el('chat-messages');
+  if (box) box.innerHTML = '';
+  newLearningSession();
 }

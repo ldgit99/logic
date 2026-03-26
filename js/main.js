@@ -4,6 +4,7 @@ let resetChatSession = () => {};
 let initAuthGate = async () => null;
 let getStudentProfile = () => null;
 let authModuleLoaded = false;
+let chapterCurationMap = {};
 
 // ??? 梨뺥꽣 紐⑤뱢 ?덉??ㅽ듃由?(?숈쟻 ?꾪룷?? ???
 const CHAPTER_MODULES = {
@@ -199,6 +200,19 @@ async function fetchJsonWithTimeout(url, timeoutMs = FETCH_TIMEOUT_MS) {
   }
 }
 
+function mergeChapterCuration(chapterData, curationMap, chapterId) {
+  const extra = curationMap?.[chapterId];
+  if (!extra || typeof extra !== 'object') return chapterData;
+  return {
+    ...chapterData,
+    curatedKnowledge: Array.isArray(extra.curatedKnowledge) ? extra.curatedKnowledge : [],
+    teachingNotes: Array.isArray(extra.teachingNotes) ? extra.teachingNotes : [],
+    commonMisconceptions: Array.isArray(extra.commonMisconceptions) ? extra.commonMisconceptions : [],
+    canonicalExamples: Array.isArray(extra.canonicalExamples) ? extra.canonicalExamples : [],
+    gradingRubric: Array.isArray(extra.gradingRubric) ? extra.gradingRubric : [],
+  };
+}
+
 async function loadRuntimeModules() {
   try {
     const authMod = await import('./auth.js?v=20260311c');
@@ -214,7 +228,7 @@ async function loadRuntimeModules() {
   }
 
   try {
-    const exportMod = await import('./export.js?v=20260312c');
+    const exportMod = await import('./export.js?v=20260326b');
     if (typeof exportMod.initExport === 'function') {
       initExport = exportMod.initExport;
     }
@@ -223,7 +237,7 @@ async function loadRuntimeModules() {
   }
 
   try {
-    const chatbotMod = await import('./chatbot.js?v=20260312c');
+    const chatbotMod = await import('./chatbot.js?v=20260326b');
     if (typeof chatbotMod.initChatbot === 'function') {
       initChatbot = chatbotMod.initChatbot;
     }
@@ -425,7 +439,8 @@ async function loadChapter(id, { force = false } = {}) {
   document.getElementById('content-area').scrollTop = 0;
 
   try {
-    const chapterData = await fetchJsonWithTimeout(`./chapters/${id}.json?v=20260309e`);
+    const chapterRaw = await fetchJsonWithTimeout(`./chapters/${id}.json?v=20260309e`);
+    const chapterData = mergeChapterCuration(chapterRaw, chapterCurationMap, id);
 
     document.getElementById('chapter-indicator').textContent = chapterData.title;
     updateTOCSections(id, chapterData);
@@ -550,6 +565,12 @@ async function init() {
     }
 
     const chapters = await fetchJsonWithTimeout('./chapters/index.json?v=20260309e');
+    try {
+      chapterCurationMap = await fetchJsonWithTimeout('./chapters/curation.json?v=20260326b');
+    } catch (e) {
+      console.warn('chapter curation load failed:', e);
+      chapterCurationMap = {};
+    }
 
     buildTOC(chapters);
     bindReflectionModal();

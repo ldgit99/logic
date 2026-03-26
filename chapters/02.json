@@ -95,6 +95,11 @@
           "type": "simulation",
           "simId": "baseConverter",
           "title": "진법 변환기 — 10 / 2 / 8 / 16진수 실시간 변환"
+        },
+        {
+          "type": "simulation",
+          "simId": "fractionConverter",
+          "title": "소수 진법 변환기 — 10진 소수 → 2진수 곱셈법 단계별 시각화"
         }
       ]
     },
@@ -157,6 +162,11 @@
           "type": "simulation",
           "simId": "binaryArithmetic",
           "title": "2진수 덧셈 시뮬레이터 — 캐리(Carry) 전파 시각화"
+        },
+        {
+          "type": "simulation",
+          "simId": "binarySubtraction",
+          "title": "2진수 뺄셈 시뮬레이터 — A − B = A + (B의 2의 보수) 원리 시각화"
         },
         {
           "type": "simulation",

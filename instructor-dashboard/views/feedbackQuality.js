@@ -60,7 +60,8 @@ function calcFeedbackStats(submissions) {
     if (s.feedBack && s.feedBack.length > 30) feedBack++;
     if (s.feedForward && s.feedForward.length > 30) feedForward++;
     // 실행가능 피드포워드: 번호 목록 또는 "1)" 패턴 포함 여부로 판단
-    if (s.feedForward && /\d+[.)]/u.test(s.feedForward)) actionable++;
+    if (s.feedback_meta?.actionableFeedForward === true) actionable++;
+    else if (s.feedForward && /\d+[.)]/u.test(s.feedForward)) actionable++;
   }
 
   return {
