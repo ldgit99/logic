@@ -30,167 +30,247 @@
 
   <!-- 메인 대시보드 -->
   <div id="dashboard-screen" class="dashboard-screen hidden">
-
-    <header class="dash-header">
-      <div class="dash-header-left">
-        <h1>교수용 대시보드</h1>
-        <span class="dash-subtitle">디지털 논리회로</span>
-      </div>
-      <div class="dash-header-right">
-        <span id="dash-role-badge" class="role-badge"></span>
-        <button id="btn-theme" class="btn-theme" title="다크/라이트 모드 전환">🌙</button>
-        <button id="btn-logout" class="btn-logout">로그아웃</button>
-      </div>
-    </header>
-
-    <!-- 네비게이션 탭 -->
-    <nav class="dash-nav">
-      <button class="nav-tab active" data-view="summary">요약</button>
-      <button class="nav-tab" data-view="interventions">개입 우선순위</button>
-      <button class="nav-tab" data-view="achievement">성취 분석</button>
-      <button class="nav-tab" data-view="concepts">오개념</button>
-      <button class="nav-tab" data-view="feedback-quality">피드백 품질</button>
-      <button class="nav-tab" data-view="interaction-analysis">상호작용 분석</button>
-      <button class="nav-tab" data-view="student-report">학생 개별 보고서</button>
-      <button class="nav-tab" data-view="roster">수강생 명단</button>
-      <button class="nav-tab" data-view="questions">형성평가 문항</button>
-      <button class="nav-tab" data-view="reflection-analysis">성찰일지</button>
-    </nav>
-
-    <!-- 필터 바 -->
-    <div class="dash-filters">
-      <label>
-        챕터
-        <select id="filter-chapter">
-          <option value="">전체</option>
-          <option value="01">Ch.01 들어가기</option>
-          <option value="02">Ch.02 수 체계</option>
-          <option value="03">Ch.03 코드 체계</option>
-          <option value="04">Ch.04 불 대수</option>
-          <option value="05">Ch.05 불 함수</option>
-          <option value="06">Ch.06 논리회로 간소화</option>
-          <option value="07">Ch.07 조합논리회로</option>
-          <option value="08">Ch.08 플립플롭</option>
-          <option value="09">Ch.09 순서논리회로 설계</option>
-          <option value="10">Ch.10 레지스터와 카운터</option>
-          <option value="11">Ch.11 기억장치</option>
-        </select>
-      </label>
-      <div class="filter-date-group">
-        <label>
-          시작일
-          <input type="date" id="filter-from" />
-        </label>
-        <label>
-          종료일
-          <input type="date" id="filter-to" />
-        </label>
-        <div class="date-presets">
-          <button class="btn-preset" data-preset="today">오늘</button>
-          <button class="btn-preset" data-preset="week">이번 주</button>
-          <button class="btn-preset" data-preset="all">전체</button>
+    <aside class="dash-sidebar">
+      <div class="dash-sidebar-top">
+        <div class="dash-brand">
+          <div class="dash-brand-mark">LC</div>
+          <div class="dash-brand-copy">
+            <strong>LOGIC CIRCUIT</strong>
+            <span>Instructor dashboard</span>
+          </div>
+        </div>
+        <div class="dash-sidebar-course">
+          <span class="dash-sidebar-eyebrow">Course</span>
+          <strong>디지털 논리회로</strong>
+          <span>형성평가, 상호작용, 성찰 데이터를 한 화면에서 관리합니다.</span>
         </div>
       </div>
-      <label>
-        학번
-        <input type="text" id="filter-student-id" placeholder="학번 검색" maxlength="20" />
-      </label>
-      <button id="btn-filter-apply" class="btn-primary">조회</button>
-      <button id="btn-export-csv" class="btn-secondary">CSV 내보내기</button>
-      <span id="filter-result-count" class="filter-result-count"></span>
-    </div>
 
-    <!-- 뷰 컨테이너 -->
-    <main class="dash-main">
+      <!-- 네비게이션 탭 -->
+      <nav class="dash-nav">
+        <button class="nav-tab active" data-view="summary">
+          <span class="nav-tab-icon">OV</span>
+          <span class="nav-tab-label">요약</span>
+        </button>
+        <button class="nav-tab" data-view="interventions">
+          <span class="nav-tab-icon">IN</span>
+          <span class="nav-tab-label">개입 우선순위</span>
+        </button>
+        <button class="nav-tab" data-view="achievement">
+          <span class="nav-tab-icon">AC</span>
+          <span class="nav-tab-label">성취 분석</span>
+        </button>
+        <button class="nav-tab" data-view="concepts">
+          <span class="nav-tab-icon">MC</span>
+          <span class="nav-tab-label">오개념</span>
+        </button>
+        <button class="nav-tab" data-view="feedback-quality">
+          <span class="nav-tab-icon">FB</span>
+          <span class="nav-tab-label">피드백 품질</span>
+        </button>
+        <button class="nav-tab" data-view="interaction-analysis">
+          <span class="nav-tab-icon">IA</span>
+          <span class="nav-tab-label">상호작용 분석</span>
+        </button>
+        <button class="nav-tab" data-view="student-report">
+          <span class="nav-tab-icon">SR</span>
+          <span class="nav-tab-label">학생 개별 보고서</span>
+        </button>
+        <button class="nav-tab" data-view="roster">
+          <span class="nav-tab-icon">RS</span>
+          <span class="nav-tab-label">수강생 명단</span>
+        </button>
+        <button class="nav-tab" data-view="questions">
+          <span class="nav-tab-icon">QA</span>
+          <span class="nav-tab-label">형성평가 문항</span>
+        </button>
+        <button class="nav-tab" data-view="reflection-analysis">
+          <span class="nav-tab-icon">RF</span>
+          <span class="nav-tab-label">성찰일지</span>
+        </button>
+      </nav>
 
-      <!-- E1: Summary 뷰 -->
-      <section id="view-summary" class="dash-view active">
-        <div class="summary-cards" id="summary-cards">
-          <!-- JS로 렌더링 -->
+      <div class="dash-sidebar-footer">
+        <span id="dash-role-badge" class="role-badge">Professor</span>
+        <p>위험 학생, 취약 개념, 최근 제출 흐름을 빠르게 확인할 수 있도록 구성했습니다.</p>
+      </div>
+    </aside>
+
+    <div class="dash-workspace">
+      <header class="dash-header">
+        <label class="dash-search" for="dash-quick-search">
+          <span class="dash-search-icon" aria-hidden="true"></span>
+          <input id="dash-quick-search" type="search" placeholder="학번 검색" />
+        </label>
+        <div class="dash-header-right">
+          <span class="dash-status-bubble">LIVE</span>
+          <button class="dash-icon-btn dash-icon-btn--alert" type="button" aria-label="업데이트 상태"></button>
+          <button id="btn-theme" class="btn-theme" title="다크/라이트 모드 전환">🌙</button>
+          <div class="dash-profile">
+            <div class="dash-avatar">PR</div>
+            <div class="dash-profile-copy">
+              <strong>Professor View</strong>
+              <span>Instructor analytics</span>
+            </div>
+          </div>
+          <button id="btn-logout" class="btn-logout">로그아웃</button>
         </div>
-        <div class="summary-table-wrap">
-          <table class="dash-table" id="summary-table">
-            <thead>
-              <tr>
-                <th>학번</th>
-                <th>이름</th>
-                <th>챕터</th>
-                <th>점수</th>
-                <th>취약개념</th>
-                <th>제출시간</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody id="summary-table-body">
+      </header>
+
+      <div class="dash-main-scroll">
+        <section class="dash-hero">
+          <div class="dash-hero-copy">
+            <p class="dash-hero-eyebrow">Hi Professor,</p>
+            <h1>최신 학습 흐름을 한 화면에서 확인하세요.</h1>
+            <p>제출 현황, 위험 학생, 챕터별 추세를 빠르게 읽을 수 있도록 레이아웃을 정리했습니다.</p>
+          </div>
+        </section>
+
+        <!-- 필터 바 -->
+        <div class="dash-filters">
+          <label>
+            챕터
+            <select id="filter-chapter">
+              <option value="">전체</option>
+              <option value="01">Ch.01 들어가기</option>
+              <option value="02">Ch.02 수 체계</option>
+              <option value="03">Ch.03 코드 체계</option>
+              <option value="04">Ch.04 불 대수</option>
+              <option value="05">Ch.05 불 함수</option>
+              <option value="06">Ch.06 논리회로 간소화</option>
+              <option value="07">Ch.07 조합논리회로</option>
+              <option value="08">Ch.08 플립플롭</option>
+              <option value="09">Ch.09 순서논리회로 설계</option>
+              <option value="10">Ch.10 레지스터와 카운터</option>
+              <option value="11">Ch.11 기억장치</option>
+            </select>
+          </label>
+          <div class="filter-date-group">
+            <label>
+              시작일
+              <input type="date" id="filter-from" />
+            </label>
+            <label>
+              종료일
+              <input type="date" id="filter-to" />
+            </label>
+            <div class="date-presets">
+              <button class="btn-preset" data-preset="today">오늘</button>
+              <button class="btn-preset" data-preset="week">이번 주</button>
+              <button class="btn-preset" data-preset="all">전체</button>
+            </div>
+          </div>
+          <label>
+            학번
+            <input type="text" id="filter-student-id" placeholder="학번 검색" maxlength="20" />
+          </label>
+          <button id="btn-filter-apply" class="btn-primary">조회</button>
+          <button id="btn-export-csv" class="btn-secondary">CSV 내보내기</button>
+          <span id="filter-result-count" class="filter-result-count"></span>
+        </div>
+
+        <!-- 뷰 컨테이너 -->
+        <main class="dash-main">
+
+          <!-- E1: Summary 뷰 -->
+          <section id="view-summary" class="dash-view active">
+            <div class="summary-cards" id="summary-cards">
               <!-- JS로 렌더링 -->
-            </tbody>
-          </table>
-          <p id="summary-empty" class="empty-msg hidden">제출 데이터가 없습니다.</p>
-        </div>
-      </section>
+            </div>
+            <section class="summary-table-panel">
+              <div class="summary-table-header">
+                <div>
+                  <p class="summary-table-kicker">Current Submissions</p>
+                  <h2>최근 제출 현황</h2>
+                </div>
+                <p>학생별 점수, 취약 개념, 제출 시간을 확인하고 상세보기로 바로 이어집니다.</p>
+              </div>
+              <div class="summary-table-wrap">
+                <table class="dash-table" id="summary-table">
+                  <thead>
+                    <tr>
+                      <th>학번</th>
+                      <th>이름</th>
+                      <th>챕터</th>
+                      <th>점수</th>
+                      <th>취약개념</th>
+                      <th>제출시간</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody id="summary-table-body">
+                    <!-- JS로 렌더링 -->
+                  </tbody>
+                </table>
+                <p id="summary-empty" class="empty-msg hidden">제출 데이터가 없습니다.</p>
+              </div>
+            </section>
+          </section>
 
-      <!-- E2: 개입 우선순위 큐 뷰 -->
-      <section id="view-interventions" class="dash-view hidden">
-        <div id="interventions-list">
-          <!-- JS로 렌더링 -->
-        </div>
-      </section>
+          <!-- E2: 개입 우선순위 큐 뷰 -->
+          <section id="view-interventions" class="dash-view hidden">
+            <div id="interventions-list">
+              <!-- JS로 렌더링 -->
+            </div>
+          </section>
 
-      <!-- E3: 성취 분석 뷰 -->
-      <section id="view-achievement" class="dash-view hidden">
-        <div id="achievement-chart-wrap">
-          <!-- JS로 렌더링 -->
-        </div>
-      </section>
+          <!-- E3: 성취 분석 뷰 -->
+          <section id="view-achievement" class="dash-view hidden">
+            <div id="achievement-chart-wrap">
+              <!-- JS로 렌더링 -->
+            </div>
+          </section>
 
-      <!-- E4: 오개념 뷰 -->
-      <section id="view-concepts" class="dash-view hidden">
-        <div id="concepts-list">
-          <!-- JS로 렌더링 -->
-        </div>
-      </section>
+          <!-- E4: 오개념 뷰 -->
+          <section id="view-concepts" class="dash-view hidden">
+            <div id="concepts-list">
+              <!-- JS로 렌더링 -->
+            </div>
+          </section>
 
-      <!-- E5: 피드백 품질 뷰 -->
-      <section id="view-feedback-quality" class="dash-view hidden">
-        <div id="feedback-quality-wrap">
-          <!-- JS로 렌더링 -->
-        </div>
-      </section>
+          <!-- E5: 피드백 품질 뷰 -->
+          <section id="view-feedback-quality" class="dash-view hidden">
+            <div id="feedback-quality-wrap">
+              <!-- JS로 렌더링 -->
+            </div>
+          </section>
 
-      <!-- E6: 상호작용 분석 뷰 -->
-      <section id="view-interaction-analysis" class="dash-view hidden">
-        <div id="interaction-analysis-wrap">
-          <!-- JS로 렌더링 -->
-        </div>
-      </section>
+          <!-- E6: 상호작용 분석 뷰 -->
+          <section id="view-interaction-analysis" class="dash-view hidden">
+            <div id="interaction-analysis-wrap">
+              <!-- JS로 렌더링 -->
+            </div>
+          </section>
 
-      <!-- E7: 학생 개별 보고서 뷰 -->
-      <section id="view-student-report" class="dash-view hidden">
-        <div id="student-report-wrap">
-          <!-- JS로 렌더링 -->
-        </div>
-      </section>
+          <!-- E7: 학생 개별 보고서 뷰 -->
+          <section id="view-student-report" class="dash-view hidden">
+            <div id="student-report-wrap">
+              <!-- JS로 렌더링 -->
+            </div>
+          </section>
 
-      <!-- E8: 수강생 명단 뷰 -->
-      <section id="view-roster" class="dash-view hidden">
-        <div id="roster-wrap">
-          <!-- JS로 렌더링 -->
-        </div>
-      </section>
+          <!-- E8: 수강생 명단 뷰 -->
+          <section id="view-roster" class="dash-view hidden">
+            <div id="roster-wrap">
+              <!-- JS로 렌더링 -->
+            </div>
+          </section>
 
-      <!-- E9: 형성평가 문항 관리 뷰 -->
-      <section id="view-questions" class="dash-view hidden">
-        <!-- JS로 렌더링 -->
-      </section>
+          <!-- E9: 형성평가 문항 관리 뷰 -->
+          <section id="view-questions" class="dash-view hidden">
+            <!-- JS로 렌더링 -->
+          </section>
 
-      <!-- E10: 성찰일지 분석 뷰 -->
-      <section id="view-reflection-analysis" class="dash-view hidden">
-        <div id="reflection-analysis-wrap">
-          <!-- JS로 렌더링 -->
-        </div>
-      </section>
+          <!-- E10: 성찰일지 분석 뷰 -->
+          <section id="view-reflection-analysis" class="dash-view hidden">
+            <div id="reflection-analysis-wrap">
+              <!-- JS로 렌더링 -->
+            </div>
+          </section>
 
-    </main>
+        </main>
+      </div>
+    </div>
   </div>
 
   <!-- 학생 상세 모달 -->

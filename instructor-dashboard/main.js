@@ -58,6 +58,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   bindAuthForm();
   bindNavTabs();
+  bindQuickSearch();
   bindFilters();
   bindDatePresets();
   bindLogout();
@@ -171,6 +172,31 @@ function bindFilters() {
   });
 }
 
+function bindQuickSearch() {
+  const quickSearchEl = document.getElementById('dash-quick-search');
+  const studentFilterEl = document.getElementById('filter-student-id');
+  if (!quickSearchEl || !studentFilterEl) return;
+
+  quickSearchEl.value = studentFilterEl.value;
+
+  quickSearchEl.addEventListener('input', () => {
+    studentFilterEl.value = quickSearchEl.value;
+  });
+
+  studentFilterEl.addEventListener('input', () => {
+    if (quickSearchEl.value !== studentFilterEl.value) {
+      quickSearchEl.value = studentFilterEl.value;
+    }
+  });
+
+  quickSearchEl.addEventListener('keydown', (event) => {
+    if (event.key !== 'Enter') return;
+    event.preventDefault();
+    currentFilters = readFilters();
+    loadView(currentView);
+  });
+}
+
 function bindDatePresets() {
   document.querySelectorAll('.btn-preset').forEach((btn) => {
     btn.addEventListener('click', () => {
@@ -228,9 +254,9 @@ async function loadView(view) {
           fetchStudents(currentFilters),
         ]);
         allSubmissions = students.submissions || [];
-        lastKnownCount = summary?.total_submissions ?? allSubmissions.length;
+        lastKnownCount = summary?.totalSubmissions ?? allSubmissions.length;
         clearNewBadge();
-        renderSummaryCards(summary, document.getElementById('summary-cards'));
+        renderSummaryCards(summary, document.getElementById('summary-cards'), allSubmissions);
         renderSummaryTable(allSubmissions, document.getElementById('summary-table-body'), {
           onRowClick: (submission) => openStudentModal(submission),
           onDelete: async (submission) => {
