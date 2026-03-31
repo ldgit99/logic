@@ -337,13 +337,39 @@ async function workerRouteJson(path, body) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
-      if (!res.ok) throw new Error(await res.text());
+      if (!res.ok) {
+        const detail = await res.text();
+        const error = new Error(detail || `HTTP ${res.status}`);
+        error.status = res.status;
+        error.url = `${base}${path}`;
+        throw error;
+      }
       return await res.json();
     } catch (err) {
       lastError = err;
     }
   }
   throw lastError || new Error(`All worker endpoints failed for ${path}`);
+}
+async function requestAssessmentDecision(payload) {
+  let lastError = null;
+
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      const data = await workerRouteJson('/chat/respond', payload);
+      const result = parseCompletionJson(data);
+      if (!result) throw new Error('Invalid assessment JSON');
+      return result;
+    } catch (err) {
+      lastError = err;
+      console.error(`assessment route failed (attempt ${attempt + 1}/2):`, err);
+      if (attempt === 0) {
+        await new Promise((resolve) => setTimeout(resolve, 350));
+      }
+    }
+  }
+
+  throw lastError || new Error('Assessment request failed');
 }
 async function apiGet(path, token) {
   let lastError = null;
@@ -473,7 +499,7 @@ async function respondAssessment(userText) {
   let result = null;
 
   try {
-    const data = await workerRouteJson('/chat/respond', {
+    result = await requestAssessmentDecision({
       mode: 'assessment',
       chapter: chapterRef,
       question,
@@ -482,23 +508,14 @@ async function respondAssessment(userText) {
       remaining_hints: Math.max(0, MAX_HINTS - assessmentHintCount),
       is_last_question: isLast,
     });
-    result = parseCompletionJson(data);
-    if (!result) throw new Error('Invalid assessment JSON');
     qualityMetrics.structured_response_count += 1;
   } catch (err) {
-    console.error('assessment route failed:', err);
     qualityMetrics.structured_fallback_count += 1;
-    result = {
-      judgment: 'incorrect',
-      confidence: 'low',
-      feedback: '답안을 판정하는 중 오류가 발생했습니다. 핵심 개념을 다시 정리한 뒤 재시도해 주세요.',
-      hint: question?.hints?.[assessmentHintCount] || '',
-      model_answer: question?.keyAnswer || question?.answer || '',
-      weak_concept: question?.concept || '',
-      advance: false,
-      next_action: 'retry_same_question',
-      memory_update: { pendingQuestions: [question.question || '현재 문항'] },
-    };
+    const msg = '답안을 판정하는 중 일시적인 오류가 발생했습니다. 이번 답변은 오답으로 처리하지 않았습니다. 같은 답변을 다시 보내 주세요.';
+    bubble('system', msg);
+    pushLog('system', msg, currentMode);
+    persist();
+    return;
   }
 
   qualityMetrics.assessment_turn_count += 1;
