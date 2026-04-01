@@ -286,7 +286,14 @@ export async function upsertSessionIndexes(env, args) {
   await env.SUBMISSIONS.put(metaK, JSON.stringify(next), { expirationTtl: EVENTS_TTL_SECONDS });
   await env.SUBMISSIONS.put(
     sessionLatestKey(studentId, chapterId),
-    JSON.stringify({ session_id: sessionId, chapter_id: chapterId, updated_at: lastUpdated }),
+    JSON.stringify({
+      session_id: sessionId,
+      chapter_id: chapterId,
+      updated_at: lastUpdated,
+      mode: next.mode,
+      message_count: next.message_count,
+      state: next.state,
+    }),
     { expirationTtl: EVENTS_TTL_SECONDS },
   );
   await env.SUBMISSIONS.put(

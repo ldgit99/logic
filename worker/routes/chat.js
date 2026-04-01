@@ -7,6 +7,39 @@ function json(body, status = 200) {
   });
 }
 
+function parseJsonObject(text) {
+  const raw = String(text || '').trim();
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw);
+  } catch {}
+
+  const start = raw.indexOf('{');
+  const end = raw.lastIndexOf('}');
+  if (start !== -1 && end !== -1 && end > start) {
+    try {
+      return JSON.parse(raw.slice(start, end + 1));
+    } catch {}
+  }
+  return null;
+}
+
+function extractCompletionResult(data) {
+  const content = data?.choices?.[0]?.message?.content;
+  if (typeof content === 'string') return parseJsonObject(content);
+  if (Array.isArray(content)) {
+    const text = content
+      .map((item) => {
+        if (typeof item === 'string') return item;
+        if (item?.type === 'text') return item.text || '';
+        return '';
+      })
+      .join('');
+    return parseJsonObject(text);
+  }
+  return null;
+}
+
 async function callOpenAI(env, messages, maxTokens = 900) {
   const openaiRes = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
@@ -29,7 +62,15 @@ async function callOpenAI(env, messages, maxTokens = 900) {
   }
 
   const data = await openaiRes.json();
-  return json(data, 200);
+  const result = extractCompletionResult(data);
+  if (!result) {
+    return json({
+      error: 'invalid_model_json',
+      detail: 'Model response was not valid JSON.',
+      raw: data?.choices?.[0]?.message?.content || null,
+    }, 502);
+  }
+  return json({ result, raw: data }, 200);
 }
 
 export async function handleChat(request, env, pathname) {

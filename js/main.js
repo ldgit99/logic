@@ -1,6 +1,9 @@
 ﻿let initChatbot = () => {};
 let initExport = () => {};
 let resetChatSession = () => {};
+let initAssessmentFeature = () => {};
+let openAssessmentModal = () => {};
+let refreshAssessmentBadges = () => {};
 let initAuthGate = async () => null;
 let getStudentProfile = () => null;
 let authModuleLoaded = false;
@@ -23,6 +26,7 @@ const CHAPTER_MODULES = {
 };
 
 let currentChapterId = null;
+let currentChapterData = null;
 let scrollObserver = null;
 
 // ??? ?쒖텧 ?꾨즺 ?곹깭 ???
@@ -136,6 +140,17 @@ function refreshTocReflectionBadges() {
   document.querySelectorAll('.toc-reflection-btn').forEach(btn => {
     const id = btn.dataset.chapterId;
     if (id) btn.classList.toggle('has-entry', hasReflection(id));
+  });
+}
+
+function openAssessmentForChapter(chapterId) {
+  if (!chapterId) return;
+  if (currentChapterId === chapterId && currentChapterData) {
+    openAssessmentModal(currentChapterData);
+    return;
+  }
+  loadChapter(chapterId).then(() => {
+    if (currentChapterData?.id === chapterId) openAssessmentModal(currentChapterData);
   });
 }
 
@@ -301,6 +316,21 @@ async function loadRuntimeModules() {
   } catch (e) {
     console.error('chatbot module load failed:', e);
   }
+
+  try {
+    const assessmentMod = await import('./assessment.js?v=20260402b');
+    if (typeof assessmentMod.initAssessmentFeature === 'function') {
+      initAssessmentFeature = assessmentMod.initAssessmentFeature;
+    }
+    if (typeof assessmentMod.openAssessmentModal === 'function') {
+      openAssessmentModal = assessmentMod.openAssessmentModal;
+    }
+    if (typeof assessmentMod.refreshAssessmentBadges === 'function') {
+      refreshAssessmentBadges = assessmentMod.refreshAssessmentBadges;
+    }
+  } catch (e) {
+    console.error('assessment module load failed:', e);
+  }
 }
 
 function initBasicLoginGateFallback() {
@@ -404,12 +434,19 @@ function buildTOC(chapters) {
     label.innerHTML = `
       <span class="chapter-num">${ch.id}</span>
       <span class="chapter-title">${ch.title}</span>
-      <button class="toc-reflection-btn${hasEntry ? ' has-entry' : ''}" data-chapter-id="${ch.id}" title="\uc131\ucc30\uc77c\uc9c0 \uc791\uc131" type="button">\ud83d\udcdd</button>
+      <span class="toc-action-group">
+        <button class="toc-assessment-btn" data-chapter-id="${ch.id}" title="\ud615\uc131\ud3c9\uac00 \uc2dc\uc791" type="button">\u270e</button>
+        <button class="toc-reflection-btn${hasEntry ? ' has-entry' : ''}" data-chapter-id="${ch.id}" title="\uc131\ucc30\uc77c\uc9c0 \uc791\uc131" type="button">\ud83d\udcdd</button>
+      </span>
       <span class="toc-arrow">\u203a</span>
     `;
     label.addEventListener('click', (event) => {
-      if (event.target?.closest('.toc-reflection-btn')) return;
+      if (event.target?.closest('.toc-reflection-btn') || event.target?.closest('.toc-assessment-btn')) return;
       loadChapter(ch.id);
+    });
+    const assessmentBtn = label.querySelector('.toc-assessment-btn');
+    bindTapActivation(assessmentBtn, () => {
+      openAssessmentForChapter(ch.id);
     });
     const reflectionBtn = label.querySelector('.toc-reflection-btn');
     bindTapActivation(reflectionBtn, () => {
@@ -498,6 +535,7 @@ async function loadChapter(id, { force = false } = {}) {
   try {
     const chapterRaw = await fetchJsonWithTimeout(`./chapters/${id}.json?v=20260309e`);
     const chapterData = mergeChapterCuration(chapterRaw, chapterCurationMap, id);
+    currentChapterData = chapterData;
     saveLastChapterId(id);
 
     document.getElementById('chapter-indicator').textContent = chapterData.title;
@@ -515,6 +553,7 @@ async function loadChapter(id, { force = false } = {}) {
   } catch (err) {
     console.error(`챕터 ${id} 로\ub529 실패:`, err);
     currentChapterId = null;
+    currentChapterData = null;
     document.getElementById('content-inner').innerHTML =
       `<div style="padding:32px;text-align:center;">
          <p style="color:var(--accent-red);">\ucc55\ud130 ${id} \ub85c\ub529\uc5d0 \uc2e4\ud328\ud588\uc2b5\ub2c8\ub2e4.</p>
@@ -597,6 +636,7 @@ function bindAuthRefreshHandler() {
 
   window.addEventListener('logic:auth-changed', async () => {
     refreshTocReflectionBadges();
+    refreshAssessmentBadges();
     const targetChapterId = loadLastChapterId() || currentChapterId;
     if (!targetChapterId) return;
     try {
@@ -615,7 +655,10 @@ async function init() {
 
     if (authModuleLoaded) {
       initAuthGate()
-        .then(() => refreshTocReflectionBadges())
+        .then(() => {
+          refreshTocReflectionBadges();
+          refreshAssessmentBadges();
+        })
         .catch((e) => {
           console.error('auth gate init failed:', e);
         });
@@ -633,6 +676,12 @@ async function init() {
 
     buildTOC(chapters);
     bindReflectionModal();
+    initAssessmentFeature({
+      showToast,
+      getStudentProfile,
+      openReflection: openReflectionModal,
+    });
+    refreshAssessmentBadges();
     setupToggleHandlers();
     bindChatResetButton();
     initExport();

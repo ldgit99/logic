@@ -318,7 +318,24 @@ function parseJson(text) {
   return null;
 }
 function parseCompletionJson(data) {
-  return parseJson(data?.choices?.[0]?.message?.content || '');
+  if (!data || typeof data !== 'object') return null;
+  if (data.result && typeof data.result === 'object') return data.result;
+
+  const content = data?.choices?.[0]?.message?.content;
+  if (typeof content === 'string') return parseJson(content);
+
+  if (Array.isArray(content)) {
+    const text = content
+      .map((item) => {
+        if (typeof item === 'string') return item;
+        if (item?.type === 'text') return item.text || '';
+        return '';
+      })
+      .join('');
+    return parseJson(text);
+  }
+
+  return null;
 }
 function recentConversation(limit = 8) {
   return logMessages

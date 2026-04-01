@@ -210,3 +210,43 @@
   opacity: 0.9;
   color: var(--accent-green);
 }
+
+.toc-action-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.toc-assessment-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px;
+  min-width: 32px;
+  min-height: 32px;
+  border-radius: 4px;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  opacity: 0.45;
+  transition: opacity 0.15s, background 0.15s, color 0.15s;
+  flex-shrink: 0;
+  line-height: 1;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.toc-assessment-btn:hover {
+  opacity: 1;
+  background: var(--bg-tertiary);
+}
+
+.toc-assessment-btn.has-progress {
+  opacity: 0.92;
+  color: var(--accent-amber, #f59e0b);
+}
+
+.toc-assessment-btn.has-entry {
+  opacity: 0.92;
+  color: var(--accent-blue);
+}

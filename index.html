@@ -246,12 +246,38 @@
     </div>
   </div>
 
+  <div id="assessment-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="assessment-modal-title">
+    <div class="modal-box assessment-modal-box">
+      <div class="reflection-modal-header">
+        <h2 id="assessment-modal-title">형성평가</h2>
+        <button id="assessment-modal-close" aria-label="닫기">✕</button>
+      </div>
+      <div class="assessment-modal-body">
+        <div id="assessment-progress" class="assessment-progress"></div>
+        <div id="assessment-question" class="assessment-question"></div>
+        <div id="assessment-feedback" class="assessment-feedback"></div>
+        <textarea id="assessment-answer" class="assessment-textarea" rows="5" placeholder="답안을 입력하세요..."></textarea>
+        <div id="assessment-hint" class="assessment-hint hidden"></div>
+        <div id="assessment-summary" class="assessment-summary hidden"></div>
+        <div id="assessment-results" class="assessment-results hidden"></div>
+      </div>
+      <div class="reflection-modal-footer">
+        <div class="modal-actions">
+          <button id="assessment-modal-cancel" class="btn-secondary" type="button">닫기</button>
+          <button id="assessment-restart" class="btn-secondary" type="button">다시 시작</button>
+          <button id="assessment-open-reflection" class="btn-secondary hidden" type="button">성찰일지</button>
+          <button id="assessment-submit" class="btn-primary" type="button">답안 제출</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- ─── 외부 라이브러리 ─── -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
   <!-- ─── 앱 진입점 (ES Module) ─── -->
-  <script type="module" src="js/main.js?v=20260312a"></script>
+  <script type="module" src="js/main.js?v=20260402b"></script>
 
   <!-- ─── 테마 토글 로직 ─── -->
   <script>
