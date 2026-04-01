@@ -145,23 +145,23 @@ function serializableAssessmentQuestions() {
 }
 function sessionStateSnapshot() {
   return {
-    mode: currentMode,
-    assessmentComplete,
-    assessmentQIdx,
-    assessmentHintCount,
-    assessmentQuestions: serializableAssessmentQuestions(),
-    assessmentTrace: Array.isArray(assessmentTrace) ? [...assessmentTrace] : [],
+    mode: ChatMode.LEARNING,
+    assessmentComplete: false,
+    assessmentQIdx: 0,
+    assessmentHintCount: 0,
+    assessmentQuestions: [],
+    assessmentTrace: [],
     memorySummary: { ...memorySummary },
     qualityMetrics: derivedMetrics(),
   };
 }
 function hydrateServerState(state = {}) {
-  currentMode = state.mode || ChatMode.LEARNING;
-  assessmentComplete = Boolean(state.assessmentComplete);
-  assessmentQuestions = Array.isArray(state.assessmentQuestions) ? state.assessmentQuestions : [];
-  assessmentQIdx = typeof state.assessmentQIdx === 'number' ? state.assessmentQIdx : 0;
-  assessmentHintCount = typeof state.assessmentHintCount === 'number' ? state.assessmentHintCount : 0;
-  assessmentTrace = Array.isArray(state.assessmentTrace) ? state.assessmentTrace : [];
+  currentMode = ChatMode.LEARNING;
+  assessmentComplete = false;
+  assessmentQuestions = [];
+  assessmentQIdx = 0;
+  assessmentHintCount = 0;
+  assessmentTrace = [];
   memorySummary = state.memorySummary ? { ...emptyMemory(), ...state.memorySummary } : emptyMemory();
   qualityMetrics = state.qualityMetrics ? { ...emptyMetrics(), ...state.qualityMetrics } : emptyMetrics();
 }
@@ -190,12 +190,12 @@ function loadLocalSession(chapterId) {
 }
 function hydrate(parsed) {
   sessionId = parsed.sessionId || createSessionId(chapterRef?.id || '00');
-  currentMode = parsed.currentMode || ChatMode.LEARNING;
-  assessmentComplete = Boolean(parsed.assessmentComplete);
-  assessmentQuestions = Array.isArray(parsed.assessmentQuestions) ? parsed.assessmentQuestions : [];
-  assessmentQIdx = typeof parsed.assessmentQIdx === 'number' ? parsed.assessmentQIdx : 0;
-  assessmentHintCount = typeof parsed.assessmentHintCount === 'number' ? parsed.assessmentHintCount : 0;
-  assessmentTrace = Array.isArray(parsed.assessmentTrace) ? parsed.assessmentTrace : [];
+  currentMode = ChatMode.LEARNING;
+  assessmentComplete = false;
+  assessmentQuestions = [];
+  assessmentQIdx = 0;
+  assessmentHintCount = 0;
+  assessmentTrace = [];
   logMessages = Array.isArray(parsed.logMessages) ? parsed.logMessages : [];
   memorySummary = parsed.memorySummary ? { ...emptyMemory(), ...parsed.memorySummary } : emptyMemory();
   qualityMetrics = parsed.qualityMetrics ? { ...emptyMetrics(), ...parsed.qualityMetrics } : emptyMetrics();
@@ -257,17 +257,7 @@ function pushLog(role, content, mode = currentMode) {
 function badge() {
   const node = el('assessment-badge');
   if (!node) return;
-  if (currentMode === ChatMode.DONE) {
-    node.textContent = '완료';
-    node.className = 'badge badge-complete';
-    return;
-  }
-  if (currentMode === ChatMode.ASSESSMENT) {
-    node.textContent = `평가 ${assessmentQIdx + 1}/${assessmentQuestions.length || 1}`;
-    node.className = 'badge badge-active';
-    return;
-  }
-  node.textContent = '대기 중';
+  node.textContent = '학습 중';
   node.className = 'badge badge-pending';
 }
 function setSubmit(enabled) {
@@ -629,9 +619,10 @@ function finishAssessment() {
     });
   }
 }
-async function sendToAI(text, opts = {}) {
+async function sendToAI(text) {
   const input = trim(text);
   if (!input || isBusy) return;
+  const opts = { force: true };
 
   if (!opts.force && currentMode === ChatMode.ASSESSMENT && !assessmentComplete && learningLike(input)) {
     qualityMetrics.blocked_learning_question_count += 1;
@@ -644,12 +635,11 @@ async function sendToAI(text, opts = {}) {
 
   setBusy(true);
   bubble('user', input);
-  pushLog('user', input, currentMode);
+  pushLog('user', input, ChatMode.LEARNING);
   persist();
 
   try {
-    if (currentMode === ChatMode.ASSESSMENT && !assessmentComplete) await respondAssessment(input);
-    else await respondLearning(input);
+    await respondLearning(input);
   } catch (err) {
     console.error('sendToAI failed:', err);
     bubble('system', '응답 생성 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.');
@@ -722,6 +712,8 @@ function handleSend() {
   if (!text) return;
   input.value = '';
   input.style.height = 'auto';
+  sendToAI(text);
+  return;
 
   const trigger = parseAssessmentTrigger(text);
   if (trigger !== null) {
@@ -774,6 +766,9 @@ function newLearningSession() {
   const msg = `안녕하세요. ${chapterRef?.title || '현재 챕터'} 학습을 도와드리겠습니다. 개념 설명, 비교, 예시, 계산 과정 등을 질문하시면 챕터 문맥에 맞춰 답변하겠습니다. 형성평가를 시작하려면 "형성평가"를 입력해 주세요.`;
   bubble('ai', msg);
   pushLog('assistant', msg, currentMode);
+  const note = '챗봇은 이제 학습 전용입니다. 이 장의 개념 설명, 비교, 예시, 계산 과정을 편하게 물어보세요. 형성평가는 왼쪽 목차의 별도 버튼에서 진행합니다.';
+  bubble('system', note);
+  pushLog('system', note, currentMode);
   persist();
 
   const s = student();
@@ -822,15 +817,11 @@ export function getChatSessionSnapshot() {
   return {
     sessionId,
     chapterId: chapterRef?.id || '',
-    currentMode,
-    assessmentComplete,
-    assessmentQIdx,
-    assessmentQuestions: assessmentQuestions.map((q, i) => ({
-      id: q.id || `Q${i + 1}`,
-      concept: q.concept || '',
-      question: q.question || '',
-    })),
-    assessmentTrace: Array.isArray(assessmentTrace) ? [...assessmentTrace] : [],
+    currentMode: ChatMode.LEARNING,
+    assessmentComplete: false,
+    assessmentQIdx: 0,
+    assessmentQuestions: [],
+    assessmentTrace: [],
     memorySummary: { ...memorySummary },
     qualityMetrics: derivedMetrics(),
   };
