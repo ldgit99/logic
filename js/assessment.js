@@ -19,6 +19,44 @@ let busy = false;
 function el(id) { return document.getElementById(id); }
 function trim(text) { return String(text || '').trim(); }
 
+function parseJson(text) {
+  const raw = trim(text);
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw);
+  } catch {}
+
+  const start = raw.indexOf('{');
+  const end = raw.lastIndexOf('}');
+  if (start !== -1 && end !== -1 && end > start) {
+    try {
+      return JSON.parse(raw.slice(start, end + 1));
+    } catch {}
+  }
+  return null;
+}
+
+function parseCompletionJson(data) {
+  if (!data || typeof data !== 'object') return null;
+  if (data.result && typeof data.result === 'object') return data.result;
+
+  const content = data?.choices?.[0]?.message?.content;
+  if (typeof content === 'string') return parseJson(content);
+
+  if (Array.isArray(content)) {
+    const text = content
+      .map((item) => {
+        if (typeof item === 'string') return item;
+        if (item?.type === 'text') return item.text || '';
+        return '';
+      })
+      .join('');
+    return parseJson(text);
+  }
+
+  return null;
+}
+
 function uid() {
   return getStudentProfile?.()?.studentId || 'default';
 }
@@ -263,7 +301,8 @@ async function requestAssessmentDecision(payload) {
   for (let attempt = 0; attempt < 2; attempt += 1) {
     try {
       const data = await workerRouteJson('/chat/respond', payload);
-      if (data?.result && typeof data.result === 'object') return data.result;
+      const result = parseCompletionJson(data);
+      if (result) return result;
       throw new Error('Invalid assessment response');
     } catch (err) {
       lastError = err;
