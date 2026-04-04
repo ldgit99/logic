@@ -1,7 +1,8 @@
 const WORKER_URLS = Array.from(new Set([
   'https://logic-proxy.dongkuklee99.workers.dev/',
-  'https://logic.dongkuklee99.workers.dev/',
-  ...(window.location.origin.includes('localhost') || window.location.origin.includes('127.0.0.1')
+  ...((window.location.origin.includes('localhost')
+    || window.location.origin.includes('127.0.0.1')
+    || /(^|\.)workers\.dev$/i.test(window.location.hostname || ''))
     ? [window.location.origin.endsWith('/') ? window.location.origin : `${window.location.origin}/`]
     : []),
 ].filter(Boolean)));
