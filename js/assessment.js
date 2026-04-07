@@ -316,9 +316,15 @@ function render() {
   if (questionEl) questionEl.textContent = question?.question || '문항을 불러오지 못했습니다.';
   if (feedbackEl) feedbackEl.textContent = state.feedback || '';
   if (answerEl) {
-    answerEl.value = state.answerDraft || result?.answer || '';
-    answerEl.classList.remove('hidden');
-    answerEl.disabled = busy || Boolean(state.awaitingNext);
+    if (state.awaitingNext) {
+      answerEl.value = '';
+      answerEl.classList.add('hidden');
+      answerEl.disabled = true;
+    } else {
+      answerEl.value = state.answerDraft || result?.answer || '';
+      answerEl.classList.remove('hidden');
+      answerEl.disabled = busy;
+    }
   }
   if (hintEl) {
     const hint = result?.hint || '';
@@ -457,6 +463,9 @@ async function submitCurrentAnswer() {
     saveState();
     syncBadge();
     render();
+    if (state.awaitingNext) {
+      el('assessment-next-question')?.focus();
+    }
   } catch (err) {
     state.feedback = '판정 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.';
     render();
