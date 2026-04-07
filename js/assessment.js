@@ -434,10 +434,17 @@ async function submitCurrentAnswer() {
     current.weakConcept = trim(result.weak_concept) || '';
     current.advanced    = Boolean(result.advance);
 
-    const shouldRetrySameQuestion = Boolean(current.hint) && state.hintCount < MAX_HINTS;
+    const shouldRetrySameQuestion =
+      current.judgment === 'incorrect' && Boolean(current.hint) && state.hintCount < MAX_HINTS;
     if (shouldRetrySameQuestion) {
       current.judgment = 'incorrect';
       current.advanced = false;
+    }
+
+    if (current.judgment === 'correct') {
+      current.hint = '';
+      current.weakConcept = '';
+      current.advanced = true;
     }
 
     state.answerDraft = '';
