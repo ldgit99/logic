@@ -434,6 +434,12 @@ async function submitCurrentAnswer() {
     current.weakConcept = trim(result.weak_concept) || '';
     current.advanced    = Boolean(result.advance);
 
+    const shouldRetrySameQuestion = Boolean(current.hint) && state.hintCount < MAX_HINTS;
+    if (shouldRetrySameQuestion) {
+      current.judgment = 'incorrect';
+      current.advanced = false;
+    }
+
     state.answerDraft = '';
     state.feedback = current.feedback || '판정이 완료되었습니다.';
     state.awaitingNext = false;
