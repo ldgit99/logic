@@ -441,6 +441,8 @@ async function submitCurrentAnswer() {
     if (!current.advanced && current.hint) {
       state.hintCount += 1;
       current._hintCount = state.hintCount;
+      current.answer = '';
+      state.answerDraft = '';
     }
 
     if (current.advanced) {
@@ -465,6 +467,8 @@ async function submitCurrentAnswer() {
     render();
     if (state.awaitingNext) {
       el('assessment-next-question')?.focus();
+    } else {
+      el('assessment-answer')?.focus();
     }
   } catch (err) {
     state.feedback = '판정 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.';
