@@ -11,7 +11,7 @@ const CH_LABELS = {
   '07': '조합논리회로', '08': '플립플롭',       '09': '순서논리회로',
   '10': '레지스터/카운터', '11': '기억장치',
 };
-const ALL_CHAPTERS = Object.keys(CH_LABELS);
+const ALL_CHAPTERS = ['01','02','03','04','05','06','07','08','09','10','11'];
 
 function fmt(isoStr) {
   if (!isoStr) return '';
