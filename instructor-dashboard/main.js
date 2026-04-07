@@ -22,7 +22,7 @@ import {
   ApiError,
 } from './apiClient.js?v=20260326a';
 
-import { renderSummaryCards, renderSummaryTable } from './views/summary.js?v=20260326a';
+import { renderSummaryCards, renderSummaryTable } from './views/summary.js?v=20260407b';
 import { renderInterventions } from './views/interventions.js?v=20260326a';
 import { renderAchievement } from './views/achievement.js?v=20260326a';
 import { renderConcepts } from './views/concepts.js?v=20260326a';
