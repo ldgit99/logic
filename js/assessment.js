@@ -308,7 +308,11 @@ function render() {
   const result = state.results[state.questionIdx];
   const displayedHint = result?.hint || '';
 
-  if (progressEl) progressEl.textContent = `문항 ${state.questionIdx + 1} / ${state.questions.length}`;
+  const attempts = state.results[state.questionIdx]?.attempts ?? 0;
+  const attemptsText = attempts > 0 ? ` · 시도 ${attempts}회` : '';
+  const hintsLeft = MAX_HINTS - state.hintCount;
+  const hintsText = state.hintCount > 0 ? ` · 힌트 ${state.hintCount}/${MAX_HINTS}회 사용` : '';
+  if (progressEl) progressEl.textContent = `문항 ${state.questionIdx + 1} / ${state.questions.length}${attemptsText}${hintsText}`;
   if (questionEl) questionEl.textContent = question?.question || '문항을 불러오지 못했습니다.';
   if (feedbackEl) feedbackEl.textContent = state.feedback || '';
   if (answerEl) {
@@ -442,6 +446,16 @@ async function submitCurrentAnswer() {
       } else {
         state.awaitingNext = true;
         state.feedback = `${current.feedback || '다음 문항으로 이동합니다.'}`;
+      }
+    } else if (state.hintCount >= MAX_HINTS) {
+      // 힌트 3회 모두 소진 → 강제 다음 문항으로
+      if (state.questionIdx >= state.questions.length - 1) {
+        state.status = 'completed';
+        state.completedAt = new Date().toISOString();
+        state.feedback = '힌트를 모두 사용했습니다. 형성평가가 완료되었습니다.';
+      } else {
+        state.awaitingNext = true;
+        state.feedback = `힌트를 ${MAX_HINTS}회 모두 사용했습니다. 다음 문항으로 넘어가 주세요.`;
       }
     }
 
