@@ -549,7 +549,7 @@ function finishAssessment() {
   memorySummary.lastAssessmentResult = `총 ${assessmentQuestions.length}문항 평가 완료`;
   badge();
   setSubmit(true);
-  bubble('system', '형성평가가 완료되었습니다. 이제 PDF 제출 버튼으로 결과를 저장할 수 있습니다.');
+  bubble('system', '형성평가가 완료되었습니다. 이제 대화 제출 버튼으로 결과를 전송할 수 있습니다.');
   pushLog('system', '형성평가 완료', ChatMode.DONE);
   const s = student();
   if (s.studentId) {

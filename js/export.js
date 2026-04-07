@@ -14,7 +14,9 @@ function showToast(message, type = 'info') {
 
 import { getConversationMessages, getChapterRef, getSessionId, getChatSessionSnapshot } from './chatbot.js?v=20260326b';
 import { getStudentProfile } from './auth.js?v=20260311c';
-import { sendAssessment, sendFeedbackReport } from './instrumentation.js?v=20260309e';
+import { sendAssessment } from './instrumentation.js?v=20260407b';
+
+const WORKER_BASE = 'https://logic-proxy.dongkuklee99.workers.dev';
 
 let exportEventsBound = false;
 
@@ -99,7 +101,7 @@ function resolveConversationMessages({ studentId, chapterId, sessionId }) {
   return getDomMessages();
 }
 
-function setLoading(visible, message = 'PDF를 생성하는 중입니다...') {
+function setLoading(visible, message = '제출을 처리하는 중입니다...') {
   const overlay = getEl('loading-overlay');
   const msg = getEl('loading-message');
 
@@ -136,7 +138,28 @@ function normalizeFeedback(feedback, totalCount) {
   };
 }
 
-function buildReportHTML(studentName, studentId, chapterData, messages) {
+async function generateFeedback(chapterData, messages, chatSnapshot) {
+  try {
+    const res = await fetch(`${WORKER_BASE}/chat/feedback`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chapter: chapterData,
+        messages: messages.filter((m) => m.role !== 'system'),
+        memorySummary: chatSnapshot.memorySummary || {},
+        chatMetrics: chatSnapshot.qualityMetrics || {},
+        assessmentTrace: chatSnapshot.assessmentTrace || [],
+      }),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.result || null;
+  } catch {
+    return null;
+  }
+}
+
+function buildReportHTML(studentName, studentId, chapterData, messages, feedback) {
   const now = new Date();
   const createdAt = now.toLocaleString('ko-KR', { hour12: false });
 
@@ -168,67 +191,38 @@ function buildReportHTML(studentName, studentId, chapterData, messages) {
         <tr><td style="padding:3px 0;font-weight:700;">제출 시간</td><td>${escapeHtml(createdAt)}</td></tr>
       </table>
 
-      <h2 style="margin:0 0 8px;font-size:10.7pt;font-weight:700;">전체 대화 로그</h2>
+      ${feedback ? `
+      <h2 style="margin:16px 0 8px;font-size:11pt;font-weight:700;border-top:2px solid #2563eb;padding-top:12px;">AI 튜터 피드백</h2>
+
+      ${feedback.feedUp ? `
+      <div style="margin-bottom:12px;padding:10px 14px;background:#f0fdf4;border-left:4px solid #10b981;border-radius:4px;">
+        <div style="font-weight:700;font-size:10.5pt;color:#065f46;margin-bottom:4px;">Feed Up — 잘한 점</div>
+        <div style="font-size:10.5pt;line-height:1.6;color:#064e3b;white-space:pre-wrap;">${escapeHtml(feedback.feedUp)}</div>
+      </div>` : ''}
+
+      ${feedback.feedBack ? `
+      <div style="margin-bottom:12px;padding:10px 14px;background:#eff6ff;border-left:4px solid #2563eb;border-radius:4px;">
+        <div style="font-weight:700;font-size:10.5pt;color:#1e40af;margin-bottom:4px;">Feed Back — 현재 이해도</div>
+        <div style="font-size:10.5pt;line-height:1.6;color:#1e3a8a;white-space:pre-wrap;">${escapeHtml(feedback.feedBack)}</div>
+      </div>` : ''}
+
+      ${feedback.feedForward ? `
+      <div style="margin-bottom:12px;padding:10px 14px;background:#fff7ed;border-left:4px solid #f59e0b;border-radius:4px;">
+        <div style="font-weight:700;font-size:10.5pt;color:#92400e;margin-bottom:4px;">Feed Forward — 다음 학습 방향</div>
+        <div style="font-size:10.5pt;line-height:1.6;color:#78350f;white-space:pre-wrap;">${escapeHtml(feedback.feedForward)}</div>
+      </div>` : ''}
+
+      ${feedback.weakConcepts?.length ? `
+      <div style="margin-bottom:12px;">
+        <div style="font-weight:700;font-size:10.5pt;margin-bottom:4px;">취약 개념</div>
+        <div style="font-size:10.5pt;">${feedback.weakConcepts.map((w) => `<span style="display:inline-block;background:#fee2e2;color:#991b1b;border-radius:4px;padding:2px 8px;margin:2px 4px 2px 0;">${escapeHtml(w)}</span>`).join('')}</div>
+      </div>` : ''}
+      ` : ''}
+
+      <h2 style="margin:16px 0 8px;font-size:10.7pt;font-weight:700;${feedback ? 'border-top:1px solid #e5e7eb;padding-top:12px;' : ''}">전체 대화 로그</h2>
       ${chatRows}
     </div>
   `;
-}
-
-async function savePdf(studentName, studentId, chapterData, messages) {
-  const jspdfNs = window.jspdf;
-  if (!jspdfNs || !jspdfNs.jsPDF) {
-    throw new Error('jsPDF library not found');
-  }
-  if (typeof window.html2canvas !== 'function') {
-    throw new Error('html2canvas library not found');
-  }
-
-  const html = buildReportHTML(studentName, studentId, chapterData, messages);
-  const host = document.createElement('div');
-  host.style.position = 'fixed';
-  host.style.left = '-100000px';
-  host.style.top = '0';
-  host.style.zIndex = '-1';
-  host.innerHTML = html;
-  document.body.appendChild(host);
-
-  try {
-    const canvas = await window.html2canvas(host.firstElementChild, {
-      scale: 2,
-      useCORS: true,
-      backgroundColor: '#ffffff',
-    });
-
-    const imgData = canvas.toDataURL('image/png');
-    const doc = new jspdfNs.jsPDF({ unit: 'pt', format: 'a4' });
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const pageHeight = doc.internal.pageSize.getHeight();
-
-    const marginTopBottomPt = (15 / 25.4) * 72; // 15mm top/bottom
-    const marginLeftRightPt = (15 / 25.4) * 72;
-    const usableWidth = pageWidth - marginLeftRightPt * 2;
-    const usableHeight = pageHeight - marginTopBottomPt * 2;
-
-    const imgWidth = usableWidth;
-    const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-    let offsetY = 0;
-    doc.addImage(imgData, 'PNG', marginLeftRightPt, marginTopBottomPt - offsetY, imgWidth, imgHeight);
-    offsetY += usableHeight;
-
-    while (offsetY < imgHeight) {
-      doc.addPage();
-      doc.addImage(imgData, 'PNG', marginLeftRightPt, marginTopBottomPt - offsetY, imgWidth, imgHeight);
-      offsetY += usableHeight;
-    }
-
-    const safeName = studentName.replace(/[^a-zA-Z0-9\uAC00-\uD7A3]/g, '');
-    const safeId = studentId.replace(/[^a-zA-Z0-9]/g, '');
-    const fileName = `${safeId}${safeName}` || 'feedback';
-    doc.save(`${fileName}.pdf`);
-  } finally {
-    host.remove();
-  }
 }
 
 async function handleConfirmSubmit() {
@@ -254,15 +248,18 @@ async function handleConfirmSubmit() {
   }
 
   closeModal();
-  setLoading(true, '대화 내용을 전송하는 중입니다...');
-
   const chatSnapshot = getChatSessionSnapshot();
   const submittedAt = new Date().toISOString();
   const reportSessionId = sessionId || ((typeof crypto !== 'undefined' && crypto.randomUUID)
     ? crypto.randomUUID()
     : `${chapterData.id}_${studentId}_${Date.now()}`);
 
-  // 1단계: 교수 대시보드 전송 (PDF 생성 성공 여부와 무관하게 항상 실행)
+  // 1단계: AI 피드백 생성
+  setLoading(true, 'AI 피드백을 생성하는 중입니다...');
+  const feedback = await generateFeedback(chapterData, messages, chatSnapshot);
+
+  // 2단계: 교수 대시보드 전송
+  setLoading(true, '대화 내용을 전송하는 중입니다...');
   let sendOk = false;
   try {
     await sendAssessment({
@@ -272,8 +269,15 @@ async function handleConfirmSubmit() {
       chapter_id: chapterData.id,
       chapter_title: chapterData.title || '',
       submitted_at: submittedAt,
-      score: null,
-      weak_concepts: [],
+      score: feedback?.score ?? 0,
+      correct_count: feedback?.correctCount ?? 0,
+      total_count: feedback?.totalCount ?? 0,
+      weak_concepts: feedback?.weakConcepts ?? [],
+      has_conversation: true,
+      messages_count: messages.filter((m) => m.role !== 'system').length,
+      feed_up: feedback?.feedUp ?? '',
+      feed_back: feedback?.feedBack ?? '',
+      feed_forward: feedback?.feedForward ?? '',
       chat_summary: chatSnapshot.memorySummary || {},
       chat_metrics: chatSnapshot.qualityMetrics || {},
       assessment_trace: chatSnapshot.assessmentTrace || [],
@@ -285,19 +289,10 @@ async function handleConfirmSubmit() {
     showToast('교수 대시보드 전송에 실패했습니다. 네트워크를 확인해주세요.', 'error');
   }
 
-  // 2단계: PDF 다운로드
-  setLoading(true, 'PDF를 생성하는 중입니다...');
-  try {
-    await savePdf(studentName, studentId, chapterData, messages);
-    showToast(sendOk ? 'PDF 저장 완료, 교수 대시보드에 전송되었습니다.' : 'PDF 저장 완료 (대시보드 전송 실패)', sendOk ? 'success' : 'warn');
-  } catch (pdfErr) {
-    console.error('[savePdf] PDF 생성 실패:', pdfErr);
-    showToast(sendOk
-      ? 'PDF 생성에 실패했지만 대화 내용은 대시보드에 저장되었습니다.'
-      : 'PDF 생성과 대시보드 전송 모두 실패했습니다.', 'error');
-  } finally {
-    setLoading(false);
+  if (sendOk) {
+    showToast('대화 내용이 교수 대시보드에 제출되었습니다.', 'success');
   }
+  setLoading(false);
 }
 
 export function initExport() {
