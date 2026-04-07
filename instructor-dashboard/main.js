@@ -38,7 +38,7 @@ import { escapeHtml } from './utils/format.js?v=20260326a';
 
 // ── 상태 ─────────────────────────────────────────────────────────
 
-let currentView = 'summary';
+let currentView = 'overall';
 let currentFilters = {};
 let allSubmissions = [];
 let pollingTimer = null;
@@ -48,6 +48,7 @@ let lastKnownCount = null;
 
 document.addEventListener('DOMContentLoaded', () => {
   applyTheme(localStorage.getItem('dash_theme') || 'auto');
+  configureDashboardNav();
 
   const savedToken = sessionStorage.getItem('dash_token');
   if (savedToken) {
@@ -127,9 +128,9 @@ function startPolling() {
 }
 
 function showNewSubmissionBadge(count) {
-  const summaryTab = document.querySelector('.nav-tab[data-view="summary"]');
-  if (!summaryTab) return;
-  let badge = summaryTab.querySelector('.new-badge');
+  const overallTab = document.querySelector('.nav-tab[data-view="overall"]');
+  if (!overallTab) return;
+  let badge = overallTab.querySelector('.new-badge');
   if (!badge) {
     badge = document.createElement('span');
     badge.className = 'new-badge';
@@ -141,7 +142,7 @@ function showNewSubmissionBadge(count) {
 }
 
 function clearNewBadge() {
-  document.querySelector('.nav-tab[data-view="summary"] .new-badge')?.remove();
+  document.querySelector('.nav-tab[data-view="overall"] .new-badge')?.remove();
 }
 
 // ── 네비게이션 탭 ─────────────────────────────────────────────────
@@ -152,10 +153,49 @@ function bindNavTabs() {
       document.querySelectorAll('.nav-tab').forEach((t) => t.classList.remove('active'));
       tab.classList.add('active');
       currentView = tab.dataset.view;
-      if (currentView === 'summary') clearNewBadge();
+      if (currentView === 'overall') clearNewBadge();
       loadView(currentView);
     });
   });
+}
+
+function configureDashboardNav() {
+  const labels = {
+    overall: { icon: 'OV', label: '전체', order: '1' },
+    assessment: { icon: 'AS', label: '형성평가', order: '2' },
+    reflections: { icon: 'RF', label: '성찰일지', order: '3' },
+    conversations: { icon: 'CH', label: '대화 내용', order: '4' },
+  };
+
+  document.querySelectorAll('.nav-tab').forEach((tab) => {
+    const view = tab.dataset.view;
+    const config = labels[view];
+    if (!config) {
+      tab.style.display = 'none';
+      return;
+    }
+    tab.style.display = '';
+    tab.style.order = config.order;
+    const icon = tab.querySelector('.nav-tab-icon');
+    const label = tab.querySelector('.nav-tab-label');
+    if (icon) icon.textContent = config.icon;
+    if (label) label.textContent = config.label;
+  });
+}
+
+function resolveViewId(view) {
+  switch (view) {
+    case 'overall':
+      return 'summary';
+    case 'assessment':
+      return 'student-report';
+    case 'reflections':
+      return 'reflection-analysis';
+    case 'conversations':
+      return 'interaction-analysis';
+    default:
+      return view;
+  }
 }
 
 // ── 필터 ─────────────────────────────────────────────────────────
@@ -243,11 +283,12 @@ function readFilters() {
 async function loadView(view) {
   // 모든 뷰 숨김
   document.querySelectorAll('.dash-view').forEach((el) => el.classList.add('hidden'));
-  const viewEl = document.getElementById(`view-${view}`);
+  const resolvedView = resolveViewId(view);
+  const viewEl = document.getElementById(`view-${resolvedView}`);
   if (viewEl) viewEl.classList.remove('hidden');
 
   try {
-    switch (view) {
+    switch (resolvedView) {
       case 'summary': {
         const [summary, students] = await Promise.all([
           fetchSummary(currentFilters),
