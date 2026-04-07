@@ -66,8 +66,9 @@ export function sendEvent(eventType, meta = {}) {
  * ?類ㅺ쉐??? 野껉퀗?든몴??袁⑸꽊??뺣뼄.
  * @param {object} assessmentData
  */
-export function sendAssessment(assessmentData) {
-  postWithFallback('/assessment', assessmentData);
+export async function sendAssessment(assessmentData) {
+  const ok = await postWithFallback('/assessment', assessmentData);
+  if (!ok) throw new Error('assessment 전송 실패 (모든 Worker URL 응답 없음)');
 }
 
 /**

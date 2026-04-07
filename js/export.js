@@ -254,18 +254,18 @@ async function handleConfirmSubmit() {
   }
 
   closeModal();
-  setLoading(true, 'PDF를 생성하는 중입니다...');
+  setLoading(true, '대화 내용을 전송하는 중입니다...');
 
+  const chatSnapshot = getChatSessionSnapshot();
+  const submittedAt = new Date().toISOString();
+  const reportSessionId = sessionId || ((typeof crypto !== 'undefined' && crypto.randomUUID)
+    ? crypto.randomUUID()
+    : `${chapterData.id}_${studentId}_${Date.now()}`);
+
+  // 1단계: 교수 대시보드 전송 (PDF 생성 성공 여부와 무관하게 항상 실행)
+  let sendOk = false;
   try {
-    const chatSnapshot = getChatSessionSnapshot();
-    await savePdf(studentName, studentId, chapterData, messages);
-
-    // 대화 데이터를 교수용 대시보드에 저장 (PDF 다운로드와 별개로 진행)
-    const submittedAt = new Date().toISOString();
-    const reportSessionId = sessionId || ((typeof crypto !== 'undefined' && crypto.randomUUID)
-      ? crypto.randomUUID()
-      : `${chapterData.id}_${studentId}_${Date.now()}`);
-    sendAssessment({
+    await sendAssessment({
       session_id: reportSessionId,
       student_id: studentId,
       student_name: studentName,
@@ -279,11 +279,22 @@ async function handleConfirmSubmit() {
       assessment_trace: chatSnapshot.assessmentTrace || [],
       messages: messages.filter((m) => m.role !== 'system'),
     });
+    sendOk = true;
+  } catch (sendErr) {
+    console.error('[sendAssessment] 전송 실패:', sendErr);
+    showToast('교수 대시보드 전송에 실패했습니다. 네트워크를 확인해주세요.', 'error');
+  }
 
-    showToast('PDF 생성이 완료되었습니다.', 'success');
-  } catch (err) {
-    console.error('PDF export error:', err);
-    showToast('PDF 생성에 실패했습니다. 잠시 후 다시 시도해주세요.', 'error');
+  // 2단계: PDF 다운로드
+  setLoading(true, 'PDF를 생성하는 중입니다...');
+  try {
+    await savePdf(studentName, studentId, chapterData, messages);
+    showToast(sendOk ? 'PDF 저장 완료, 교수 대시보드에 전송되었습니다.' : 'PDF 저장 완료 (대시보드 전송 실패)', sendOk ? 'success' : 'warn');
+  } catch (pdfErr) {
+    console.error('[savePdf] PDF 생성 실패:', pdfErr);
+    showToast(sendOk
+      ? 'PDF 생성에 실패했지만 대화 내용은 대시보드에 저장되었습니다.'
+      : 'PDF 생성과 대시보드 전송 모두 실패했습니다.', 'error');
   } finally {
     setLoading(false);
   }
