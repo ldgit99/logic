@@ -10,6 +10,7 @@ import { handleStudentAuth } from './routes/studentAuth.js';
 import { handleSessions } from './routes/sessions.js';
 import { handleReflections } from './routes/reflections.js';
 import { handleChat } from './routes/chat.js';
+import { handleMySubmissions } from './routes/mySubmissions.js';
 import { authenticate } from './services/auth.js';
 
 const ALLOWED_ORIGINS = [
@@ -73,6 +74,8 @@ export default {
         response = new Response(JSON.stringify({ questions }), {
           headers: { 'Content-Type': 'application/json' },
         });
+      } else if (request.method === 'GET' && pathname === '/my/submissions') {
+        response = await handleMySubmissions(request, env);
       } else if (request.method === 'POST' && pathname === '/reflections') {
         response = await handleReflections(request, env);
       } else if (request.method === 'POST' && pathname === '/events') {

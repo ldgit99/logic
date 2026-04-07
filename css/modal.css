@@ -590,3 +590,111 @@
   background: rgba(148, 163, 184, 0.14);
   color: var(--text-muted);
 }
+
+/* ── 내 제출 현황 패널 ────────────────────────────────────────── */
+.my-sub-panel {
+  position: fixed; inset: 0; z-index: 1200;
+  background: rgba(0,0,0,.45);
+  display: flex; align-items: flex-start; justify-content: flex-end;
+}
+.my-sub-panel.hidden { display: none !important; }
+.my-sub-inner {
+  width: 420px; max-width: 100vw; height: 100vh;
+  background: var(--bg-primary, #fff);
+  display: flex; flex-direction: column;
+  box-shadow: -4px 0 24px rgba(0,0,0,.18);
+  overflow: hidden;
+}
+.my-sub-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--border, #e5e7eb);
+  background: var(--bg-secondary, #f9fafb);
+}
+.my-sub-title { font-size: 15px; font-weight: 700; }
+.my-sub-close {
+  background: none; border: none; cursor: pointer;
+  font-size: 16px; color: var(--text-secondary, #6b7280);
+  line-height: 1; padding: 4px 6px; border-radius: 4px;
+}
+.my-sub-close:hover { background: var(--bg-tertiary, #f3f4f6); color: var(--text-primary, #111); }
+.my-sub-legend {
+  display: flex; gap: 14px; padding: 8px 18px;
+  font-size: 12px; border-bottom: 1px solid var(--border, #e5e7eb);
+  background: var(--bg-secondary, #f9fafb);
+}
+.my-sub-body {
+  flex: 1; overflow-y: auto; padding: 12px 14px;
+}
+.my-sub-loading, .my-sub-error {
+  padding: 24px; text-align: center;
+  font-size: 13px; color: var(--text-secondary, #6b7280);
+}
+
+/* KPI 요약 */
+.ms-summary {
+  display: flex; gap: 0;
+  border: 1px solid var(--border, #e5e7eb); border-radius: 8px;
+  margin-bottom: 12px; overflow: hidden;
+}
+.ms-kpi {
+  flex: 1; text-align: center; padding: 10px 6px;
+  border-right: 1px solid var(--border, #e5e7eb);
+}
+.ms-kpi:last-child { border-right: none; }
+.ms-kpi-val { display: block; font-size: 20px; font-weight: 700; color: var(--accent-blue, #2563eb); }
+.ms-kpi-label { font-size: 11px; color: var(--text-secondary, #6b7280); }
+
+/* 챕터 행 */
+.ms-list { display: flex; flex-direction: column; gap: 8px; }
+.ms-row {
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 8px; padding: 10px 12px;
+  background: var(--bg-primary, #fff);
+}
+.ms-row--full    { border-color: #6ee7b7; background: #f0fdf4; }
+.ms-row--partial { border-color: #fcd34d; background: #fffbeb; }
+.ms-row--empty   { opacity: .75; }
+
+.ms-ch-head {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
+}
+.ms-ch-num  { font-weight: 700; font-size: 13px; color: var(--accent-blue, #2563eb); }
+.ms-ch-name { font-size: 12px; color: var(--text-secondary, #6b7280); flex: 1; }
+.ms-done-badge {
+  font-size: 10px; padding: 2px 7px; border-radius: 10px;
+  background: #d1fae5; color: #065f46; font-weight: 700;
+}
+
+/* 체크 항목 */
+.ms-checks { display: flex; flex-direction: column; gap: 4px; }
+.ms-check {
+  display: flex; align-items: center; gap: 6px; font-size: 12px;
+  padding: 4px 8px; border-radius: 5px;
+}
+.ms-ok   { background: #f0fdf4; color: #065f46; }
+.ms-miss { background: #fef2f2; color: #991b1b; }
+.ms-check-icon  { font-size: 13px; font-weight: 700; flex-shrink: 0; }
+.ms-check-label { font-weight: 600; flex-shrink: 0; }
+.ms-check-date  { font-size: 10px; color: var(--text-secondary, #6b7280); margin-left: 4px; }
+.ms-score {
+  margin-left: auto; font-weight: 700; font-size: 12px;
+}
+
+/* 헤더 버튼 */
+.btn-my-submissions {
+  font-size: 12px; padding: 5px 12px; border-radius: 6px; cursor: pointer;
+  border: 1px solid var(--border, #e5e7eb);
+  background: var(--bg-secondary, #f9fafb);
+  color: var(--text-primary, #111);
+  font-weight: 600; white-space: nowrap;
+  transition: background .12s;
+}
+.btn-my-submissions:hover {
+  background: var(--accent-blue, #2563eb); color: #fff; border-color: var(--accent-blue, #2563eb);
+}
+
+/* 다크 모드 */
+[data-theme="light"] .ms-row { background: #fff; }
+[data-theme="light"] .ms-row--full { background: #f0fdf4; }
+[data-theme="light"] .ms-row--partial { background: #fffbeb; }

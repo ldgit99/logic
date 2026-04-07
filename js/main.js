@@ -297,6 +297,15 @@ async function loadRuntimeModules() {
   }
 
   try {
+    const mySubMod = await import('./mySubmissions.js?v=20260407a');
+    if (typeof mySubMod.initMySubmissions === 'function') {
+      mySubMod.initMySubmissions(getStudentProfile);
+    }
+  } catch (e) {
+    console.warn('mySubmissions module load failed:', e);
+  }
+
+  try {
     const exportMod = await import('./export.js?v=20260326b');
     if (typeof exportMod.initExport === 'function') {
       initExport = exportMod.initExport;
