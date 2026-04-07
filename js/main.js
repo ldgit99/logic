@@ -435,7 +435,7 @@ function buildTOC(chapters) {
       <span class="chapter-num">${ch.id}</span>
       <span class="chapter-title">${ch.title}</span>
       <span class="toc-action-group">
-        <button class="toc-assessment-btn" data-chapter-id="${ch.id}" title="\ud615\uc131\ud3c9\uac00 \uc2dc\uc791" type="button">\u270e</button>
+        <button class="toc-assessment-btn" data-chapter-id="${ch.id}" title="\ud615\uc131\ud3c9\uac00 \uc2dc\uc791" type="button">\ud83c\udfaf</button>
         <button class="toc-reflection-btn${hasEntry ? ' has-entry' : ''}" data-chapter-id="${ch.id}" title="\uc131\ucc30\uc77c\uc9c0 \uc791\uc131" type="button">\ud83d\udcdd</button>
       </span>
       <span class="toc-arrow">\u203a</span>
