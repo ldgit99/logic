@@ -1,130 +1,173 @@
 /**
  * views/learningAnalysis.js
- * 학습 분석 — SSCI 논문 게재를 위한 연구용 분석 대시보드
+ * 학습 분석 — SSCI 논문 수준 대화 기반 학습 분석
  *
- * 포함 패널:
- *   A. 참여-성취 산점도 (4사분면 학습자 유형 분류)
- *   B. Bloom 인지 수준 레이더 차트
- *   C. 학습자 유형 분포 요약
- *   D. 오개념 패턴 분석
- *   E. 피드백 품질-성과 비교
- *   F. 연구용 종합 데이터 테이블 (논문 직접 활용)
+ * 이론적 기반:
+ *   - Transactional Distance Theory (Moore, 1973): 대화 주도성 측정
+ *   - Community of Inquiry (Garrison et al., 2000): 인지적 실재감
+ *   - Productive Failure (Kapur, 2016): 혼란→돌파 패턴
+ *   - Self-Regulated Learning (Zimmerman, 2002): 메타인지 발화
+ *   - Bloom's Revised Taxonomy (Anderson & Krathwohl, 2001)
+ *
+ * 핵심 분석 단위: 학생 발화(utterance) — 단순 턴 수가 아닌 내용 기반 분류
  */
 
 import { escapeHtml, scoreColor } from '../utils/format.js';
 
-const BLOOM_LEVELS = ['기억', '이해', '적용', '분석', '평가', '창조'];
-const BLOOM_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
+// ── 인지 수준 체계 (Bloom 기반 6단계) ──────────────────────────────
 
-// ── 진입점 ────────────────────────────────────────────────────────
+const COG_LEVELS = [
+  { id: 0, label: '수동 반응',   short: 'L0', color: '#9ca3af', desc: '단순 확인·인지 (네/알겠어요)' },
+  { id: 1, label: '사실 질문',   short: 'L1', color: '#60a5fa', desc: '정의·개념 묻기 — 기억(Remember)' },
+  { id: 2, label: '개념 이해',   short: 'L2', color: '#34d399', desc: '이유·원리 탐색 — 이해(Understand)' },
+  { id: 3, label: '적용 시도',   short: 'L3', color: '#fbbf24', desc: '상황 적용·예시 — 적용(Apply)' },
+  { id: 4, label: '비판적 사고', short: 'L4', color: '#f87171', desc: '비교·도전·반박 — 분석/평가(Analyze/Evaluate)' },
+  { id: 5, label: '메타인지',    short: 'L5', color: '#a78bfa', desc: '자기 이해 점검 — 자기조절(Metacognition)' },
+];
 
-/**
- * @param {object[]} submissions  /dashboard/students 응답의 submissions 배열
- * @param {HTMLElement} container
- * @param {object[]} reflections  /dashboard/reflections 응답의 reflections 배열
- */
+// ── 학습 사건 유형 ─────────────────────────────────────────────────
+
+const EVENT_TYPES = {
+  confusion:    { label: '혼란',     color: '#f87171', icon: '?' },
+  breakthrough: { label: '돌파',     color: '#34d399', icon: '!' },
+  critical:     { label: '비판적',   color: '#fbbf24', icon: '↯' },
+  persistence:  { label: '지속 탐구', color: '#60a5fa', icon: '→' },
+};
+
+// ── 진입점 ──────────────────────────────────────────────────────────
+
 export function renderLearningAnalysis(submissions, container, reflections = []) {
   if (!container) return;
 
   const rows = Array.isArray(submissions) ? submissions : [];
   if (!rows.length) {
-    container.innerHTML = '<p class="empty-msg">분석할 제출 데이터가 없습니다.</p>';
+    container.innerHTML = '<p class="empty-msg">분석할 데이터가 없습니다.</p>';
     return;
   }
 
-  const profiles = buildStudentProfiles(rows, reflections);
+  const profiles = buildProfiles(rows, reflections);
+  const hasConvData = profiles.some((p) => p.totalAnalyzedMessages > 0);
 
   container.innerHTML = `
     <div class="la-page">
 
       <header class="la-header">
         <div>
-          <p class="la-header-eyebrow">Learning Analytics</p>
-          <h2 class="la-header-title">학습 분석</h2>
+          <p class="la-header-eyebrow">Dialogue-Based Learning Analytics</p>
+          <h2 class="la-header-title">대화 기반 학습 분석</h2>
           <p class="la-header-desc">
-            학생-AI 대화 로그, 형성평가, 성찰일지를 통합 분석합니다.
-            각 패널은 SSCI 논문 Figure로 직접 활용 가능하도록 설계되었습니다.
+            학생 발화(utterance) 내용을 Bloom 인지 수준으로 자동 분류하고,
+            대화 궤적·학습 사건·주도성 지수를 통해 학생-AI 상호작용의 질을 측정합니다.
+            <br><span class="la-ref">참조: Moore(1973), Garrison et al.(2000), Kapur(2016), Zimmerman(2002)</span>
           </p>
         </div>
-        <div class="la-header-stat-row">
-          <div class="la-header-stat"><span>분석 대상</span><strong>${profiles.length}명</strong></div>
-          <div class="la-header-stat"><span>총 제출</span><strong>${rows.length}건</strong></div>
-          <div class="la-header-stat"><span>총 대화 턴</span><strong>${profiles.reduce((s, p) => s + p.totalTurns, 0)}회</strong></div>
-          <div class="la-header-stat"><span>평균 점수</span><strong>${avg(profiles.map((p) => p.avgScore)).toFixed(1)}점</strong></div>
+        <div class="la-kpi-row">
+          ${buildKPI('분석 학생', `${profiles.length}명`)}
+          ${buildKPI('총 학생 발화', `${profiles.reduce((s, p) => s + p.totalAnalyzedMessages, 0)}개`)}
+          ${buildKPI('평균 인지 수준', hasConvData ? `${avg(profiles.filter(p=>p.totalAnalyzedMessages>0).map((p) => p.avgCogLevel)).toFixed(2)}` : '-')}
+          ${buildKPI('고차 사고 비율', hasConvData ? `${avg(profiles.filter(p=>p.totalAnalyzedMessages>0).map((p) => p.highOrderRate)).toFixed(1)}%` : '-')}
         </div>
       </header>
 
-      <!-- 패널 A + B (2열) -->
-      <div class="la-grid-2">
-        <div class="la-card" id="la-panel-scatter">
-          <h3 class="la-card-title">A. 참여-성취 산점도</h3>
-          <p class="la-card-desc">X축: 총 대화 턴 수 / Y축: 평균 점수 — 4사분면 학습자 유형 분류</p>
-          <canvas id="la-scatter-canvas" width="480" height="340"></canvas>
-          <div class="la-scatter-legend" id="la-scatter-legend"></div>
+      ${!hasConvData ? `
+        <div class="la-warn-banner">
+          대화 원문(messages) 데이터가 없어 발화 분석을 건너뜁니다.
+          점수·Bloom·피드백 기반 분석만 표시합니다.
         </div>
+      ` : ''}
 
-        <div class="la-card" id="la-panel-bloom">
-          <h3 class="la-card-title">B. Bloom 인지 수준 레이더</h3>
-          <p class="la-card-desc">형성평가 문항의 Bloom 레벨별 평균 정답률 — 전체 학생 통합</p>
-          <div class="la-radar-wrap">
-            <svg id="la-radar-svg" viewBox="0 0 320 280" width="320" height="280"></svg>
+      <!-- A: 인지 수준 분포 -->
+      <div class="la-card">
+        <div class="la-card-head">
+          <div>
+            <h3 class="la-card-title">A. 학생 발화 인지 수준 분포</h3>
+            <p class="la-card-desc">Bloom 분류 기준 학생 발화 유형 분포 — 각 막대는 학생 한 명의 발화 구성을 나타냅니다.</p>
           </div>
-          <div class="la-bloom-stats" id="la-bloom-stats"></div>
+          <span class="la-theory-tag">Bloom(2001) · CoI(Garrison,2000)</span>
+        </div>
+        <div id="la-cog-dist-wrap"></div>
+      </div>
+
+      <!-- B: 인지 주도성-성취 매트릭스 -->
+      <div class="la-grid-2">
+        <div class="la-card">
+          <div class="la-card-head">
+            <div>
+              <h3 class="la-card-title">B. 대화 주도성-인지 깊이 매트릭스</h3>
+              <p class="la-card-desc">X축: 학생 질문 비율(Agency) / Y축: 평균 인지 수준 / 원 크기: 총 발화 수</p>
+            </div>
+            <span class="la-theory-tag">Transactional Distance (Moore, 1973)</span>
+          </div>
+          <canvas id="la-agency-canvas" width="440" height="320"></canvas>
+          <div id="la-agency-legend"></div>
+        </div>
+
+        <div class="la-card">
+          <div class="la-card-head">
+            <div>
+              <h3 class="la-card-title">C. 대화 궤적 유형 분류</h3>
+              <p class="la-card-desc">세션 내 인지 수준 변화 방향 — 상승/평탄/하강 궤적별 성취도 비교</p>
+            </div>
+            <span class="la-theory-tag">Productive Failure (Kapur, 2016)</span>
+          </div>
+          <div id="la-trajectory-wrap"></div>
         </div>
       </div>
 
-      <!-- 패널 C: 학습자 유형 분포 -->
-      <div class="la-card" id="la-panel-typology">
-        <h3 class="la-card-title">C. 학습자 유형 분포</h3>
-        <p class="la-card-desc">대화 참여도와 학습 성취도를 기준으로 4가지 학습자 유형으로 분류합니다.</p>
-        <div class="la-typology-grid" id="la-typology-grid"></div>
-      </div>
-
-      <!-- 패널 D: 오개념 패턴 분석 -->
-      <div class="la-card" id="la-panel-misconception">
-        <h3 class="la-card-title">D. 오개념 패턴 분석</h3>
-        <p class="la-card-desc">취약개념 빈도 Top-10 및 챕터별 분포 — 교수 개입 우선순위 도출</p>
-        <div id="la-misconception-content"></div>
-      </div>
-
-      <!-- 패널 E: 피드백 품질-성과 비교 -->
-      <div class="la-card" id="la-panel-feedback">
-        <h3 class="la-card-title">E. 피드백 품질–성과 비교</h3>
-        <p class="la-card-desc">AI 피드백 수준(Feed Up / Feed Back / Feed Forward)에 따른 점수 차이 분석</p>
-        <div id="la-feedback-content"></div>
-      </div>
-
-      <!-- 패널 F: 연구용 종합 데이터 테이블 -->
-      <div class="la-card" id="la-panel-research">
-        <h3 class="la-card-title">F. 연구용 종합 데이터 테이블</h3>
-        <p class="la-card-desc">학생별 핵심 지표를 통합한 논문 직접 활용 테이블 (Table 형식)</p>
-        <div class="la-research-actions">
-          <button class="btn-secondary" id="la-copy-table-btn">클립보드 복사 (TSV)</button>
+      <!-- D: 핵심 학습 사건 -->
+      <div class="la-card">
+        <div class="la-card-head">
+          <div>
+            <h3 class="la-card-title">D. 핵심 학습 사건 탐지</h3>
+            <p class="la-card-desc">대화 내 혼란·돌파·비판적 사고 사건을 감지합니다. 생산적 혼란 지수 = 혼란 후 비판적 사고 또는 돌파 발생 비율</p>
+          </div>
+          <span class="la-theory-tag">SRL (Zimmerman, 2002) · Metacognition</span>
         </div>
-        <div class="la-table-scroll" id="la-research-table-wrap"></div>
+        <div id="la-events-wrap"></div>
+      </div>
+
+      <!-- E: 고-저 성취 집단 대화 특성 비교 -->
+      <div class="la-card">
+        <div class="la-card-head">
+          <div>
+            <h3 class="la-card-title">E. 고성취 vs 저성취 집단 대화 특성 비교</h3>
+            <p class="la-card-desc">상위 33% vs 하위 33% 학생의 발화 패턴 비교 — 논문 Table 직접 활용 가능</p>
+          </div>
+          <span class="la-theory-tag">Evidence-based Analytics</span>
+        </div>
+        <div id="la-compare-wrap"></div>
+      </div>
+
+      <!-- F: 연구용 종합 지표 테이블 -->
+      <div class="la-card">
+        <div class="la-card-head">
+          <div>
+            <h3 class="la-card-title">F. 연구용 종합 지표 테이블</h3>
+            <p class="la-card-desc">학생별 대화 기반 핵심 지표 통합 — 논문 Table 1 직접 활용</p>
+          </div>
+          <button class="btn-secondary" id="la-tsv-btn" style="flex-shrink:0">TSV 복사</button>
+        </div>
+        <div class="la-table-scroll" id="la-research-wrap"></div>
       </div>
 
     </div>
   `;
 
   // 각 패널 렌더링
-  drawScatterPlot(profiles, document.getElementById('la-scatter-canvas'), document.getElementById('la-scatter-legend'));
-  drawBloomRadar(rows, document.getElementById('la-radar-svg'), document.getElementById('la-bloom-stats'));
-  renderTypology(profiles, document.getElementById('la-typology-grid'));
-  renderMisconceptionPanel(rows, document.getElementById('la-misconception-content'));
-  renderFeedbackPanel(rows, document.getElementById('la-feedback-content'));
-  renderResearchTable(profiles, document.getElementById('la-research-table-wrap'));
+  renderCogDist(profiles, document.getElementById('la-cog-dist-wrap'));
+  drawAgencyMatrix(profiles, document.getElementById('la-agency-canvas'), document.getElementById('la-agency-legend'));
+  renderTrajectory(profiles, document.getElementById('la-trajectory-wrap'));
+  renderEvents(profiles, document.getElementById('la-events-wrap'));
+  renderComparison(profiles, document.getElementById('la-compare-wrap'));
+  renderResearchTable(profiles, document.getElementById('la-research-wrap'));
 
-  // 클립보드 복사
-  document.getElementById('la-copy-table-btn')?.addEventListener('click', () => {
-    copyResearchTableTSV(profiles);
-  });
+  document.getElementById('la-tsv-btn')?.addEventListener('click', () => copyTSV(profiles));
 }
 
-// ── 학생 프로파일 구축 ────────────────────────────────────────────
+// ── 프로파일 구축 ─────────────────────────────────────────────────
 
-function buildStudentProfiles(submissions, reflections) {
-  const reflectionSet = new Set(
+function buildProfiles(submissions, reflections) {
+  const reflSet = new Set(
     (Array.isArray(reflections) ? reflections : [])
       .filter((r) => !r?.is_deleted)
       .map((r) => `${r?.student_id}::${r?.chapter_id}`),
@@ -147,551 +190,633 @@ function buildStudentProfiles(submissions, reflections) {
   return [...map.values()].map((p) => {
     const subs = p.submissions;
     const scores = subs.map((s) => Number(s?.score)).filter(Number.isFinite);
-    const avgScore = scores.length ? avg(scores) : 0;
+    const avgScore = scores.length ? avg(scores) : null;
 
-    // 대화 턴 집계
-    const totalTurns = subs.reduce((sum, s) => {
-      const msgs = Array.isArray(s?.messages)
-        ? s.messages.filter((m) => String(m?.role || '').toLowerCase() === 'user').length
-        : 0;
-      const metrics = s?.chat_metrics || {};
-      return sum + (msgs || Number(metrics.user_message_count || metrics.turn_count || 0));
-    }, 0);
+    // 발화 분석
+    let allUserMessages = [];
+    let allEvents = [];
+    let trajectories = [];
+
+    subs.forEach((s) => {
+      const msgs = getUserMessages(s);
+      const classified = msgs.map((m) => ({ ...m, level: classifyUtterance(m.content) }));
+      allUserMessages = allUserMessages.concat(classified);
+
+      const events = detectLearningEvents(getVisibleMessages(s));
+      allEvents = allEvents.concat(events);
+
+      if (classified.length >= 2) {
+        const traj = computeTrajectory(classified.map((m) => m.level));
+        trajectories.push(traj);
+      }
+    });
+
+    const levelCounts = Array(6).fill(0);
+    allUserMessages.forEach((m) => { levelCounts[m.level]++; });
+    const total = allUserMessages.length;
+    const levelRates = levelCounts.map((c) => total > 0 ? Math.round((c / total) * 1000) / 10 : 0);
+    const avgCogLevel = total > 0
+      ? allUserMessages.reduce((s, m) => s + m.level, 0) / total
+      : null;
+    const highOrderRate = total > 0
+      ? ((levelCounts[3] + levelCounts[4] + levelCounts[5]) / total) * 100
+      : null;
+
+    // 학생 질문 비율 (Agency)
+    const questionCount = allUserMessages.filter((m) => isQuestion(m.content)).length;
+    const agencyIndex = total > 0 ? (questionCount / total) * 100 : null;
+
+    // 메시지 평균 길이
+    const avgMsgLength = total > 0
+      ? avg(allUserMessages.map((m) => m.content.length))
+      : null;
+
+    // 생산적 혼란 지수
+    const productiveStruggleIndex = calcProductiveStruggle(allEvents);
+
+    // 지배적 궤적
+    const dominantTrajectory = calcDominantTrajectory(trajectories);
 
     // Bloom 집계
-    const bloomAgg = Object.fromEntries(BLOOM_LEVELS.map((l) => [l, { correct: 0, total: 0 }]));
+    const bloomAgg = Object.fromEntries(['기억','이해','적용','분석','평가','창조'].map((l) => [l, { correct: 0, total: 0 }]));
     subs.forEach((s) => {
       const bd = s?.bloomBreakdown || {};
-      BLOOM_LEVELS.forEach((l) => {
+      Object.keys(bloomAgg).forEach((l) => {
         if (bd[l]) {
           bloomAgg[l].correct += bd[l].correct ?? 0;
           bloomAgg[l].total += bd[l].total ?? 0;
         }
       });
     });
-    const bloomRates = BLOOM_LEVELS.map((l) => {
-      const { correct, total } = bloomAgg[l];
-      return total > 0 ? Math.round((correct / total) * 100) : null;
-    });
-    const highOrderRate = calcHighOrderRate(bloomAgg); // 분석+평가+창조
-
-    // 오개념 집계
-    const misconceptions = new Set();
-    subs.forEach((s) => {
-      (s?.weak_concepts || s?.weakConcepts || []).forEach((c) => misconceptions.add(String(c)));
-      (s?.chat_summary?.misconceptions || []).forEach((c) => misconceptions.add(String(c)));
-    });
 
     // 피드백 품질
-    const feedbackScores = subs.map((s) => {
+    const feedbackQuality = avg(subs.map((s) => {
       let q = 0;
       if (s?.feedUp && s.feedUp.length > 10) q++;
       if (s?.feedBack && s.feedBack.length > 30) q++;
       if (s?.feedForward && s.feedForward.length > 30) q++;
       return q;
-    });
-    const avgFeedbackQuality = feedbackScores.length ? avg(feedbackScores) : 0;
+    }));
 
-    // 성찰일지 제출률
-    const reflectionChapters = subs.filter((s) => {
-      const key = `${p.studentId}::${String(s?.chapter_id || s?.chapterId || '')}`;
-      return reflectionSet.has(key);
-    }).length;
-    const reflectionRate = subs.length > 0 ? Math.round((reflectionChapters / subs.length) * 100) : 0;
+    // 성찰 완성율
+    const reflCount = subs.filter((s) =>
+      reflSet.has(`${p.studentId}::${String(s?.chapter_id || s?.chapterId || '')}`)
+    ).length;
+    const reflectionRate = subs.length > 0 ? (reflCount / subs.length) * 100 : 0;
 
-    // 학습자 유형 분류 (후처리에서 중앙값 기준으로 재분류)
     return {
-      ...p,
-      avgScore: Math.round(avgScore * 10) / 10,
-      totalTurns,
+      studentId: p.studentId,
+      studentName: p.studentName,
       chapterCount: subs.length,
-      bloomRates,
+      avgScore,
+      totalAnalyzedMessages: total,
+      levelCounts,
+      levelRates,
+      avgCogLevel,
       highOrderRate,
-      misconceptionCount: misconceptions.size,
-      misconceptions: [...misconceptions],
-      avgFeedbackQuality: Math.round(avgFeedbackQuality * 10) / 10,
+      agencyIndex,
+      avgMsgLength,
+      events: allEvents,
+      confusionCount: allEvents.filter((e) => e.type === 'confusion').length,
+      breakthroughCount: allEvents.filter((e) => e.type === 'breakthrough').length,
+      criticalCount: allEvents.filter((e) => e.type === 'critical').length,
+      persistenceCount: allEvents.filter((e) => e.type === 'persistence').length,
+      productiveStruggleIndex,
+      dominantTrajectory,
+      feedbackQuality,
       reflectionRate,
+      bloomAgg,
     };
-  }).map((p, _, arr) => {
-    // 중앙값 기준 유형 분류
-    const medTurns = median(arr.map((x) => x.totalTurns));
-    const medScore = median(arr.map((x) => x.avgScore));
-    const highEngage = p.totalTurns >= medTurns;
-    const highAchieve = p.avgScore >= medScore;
-    let typology;
-    if (highEngage && highAchieve) typology = '적극 학습자';
-    else if (highEngage && !highAchieve) typology = '노력형 학습자';
-    else if (!highEngage && highAchieve) typology = '효율 학습자';
-    else typology = '위험 학습자';
-    return { ...p, typology };
   }).sort((a, b) => a.studentId.localeCompare(b.studentId));
 }
 
-// ── 패널 A: 참여-성취 산점도 ──────────────────────────────────────
+// ── 발화 분류 엔진 (Bloom 기반) ─────────────────────────────────────
 
-function drawScatterPlot(profiles, canvas, legendEl) {
-  if (!canvas) return;
+function classifyUtterance(content) {
+  if (!content || content.trim().length < 2) return 0;
+  const t = content;
 
-  const W = canvas.width;
-  const H = canvas.height;
-  const pad = { top: 30, right: 30, bottom: 50, left: 55 };
-  const ctx = canvas.getContext('2d');
-  ctx.clearRect(0, 0, W, H);
+  // L5 메타인지 — 자기 이해 점검, SRL
+  if (/이해(가|가\s*)?\s*(됩니다|됐|됐어|됐어요|안\s*돼|못|안됩)|모르겠|헷갈|어렵|어려운|이제\s*(알겠|이해|됩|됐)|그렇구나|아\s*그렇|확인(해|해줘|해주세요)|맞나요|맞죠|제가\s*(이해|맞게)|다시\s*(설명|생각|이해)|다시\s*한번|이해했|이해가\s*됐/.test(t)) return 5;
 
-  if (!profiles.length) return;
+  // L4 비판적 / 분석적 — 반박·비교·도전
+  if (/근데|하지만|그런데|그러나|아닌가요|잘못|틀린|틀리지|다른\s*방법|왜\s*꼭|차이(가|는|점)|비교(해|하면|했을)|더\s*(나은|좋은|효율|빠른)|대신|그게\s*(아니라|아닌)|반대로|오히려|사실은|그렇다면|그럼에도|그러면서/.test(t)) return 4;
 
-  const maxTurns = Math.max(...profiles.map((p) => p.totalTurns), 1);
-  const medTurns = median(profiles.map((p) => p.totalTurns));
-  const medScore = median(profiles.map((p) => p.avgScore));
+  // L3 적용 / 창조 — 상황 적용·예시 생성
+  if (/이\s*경우|만약|하면\s*(어떻|됩니|되나|될까|어떻게)|적용(하면|했을|이|할|돼)|예를\s*들|경우에|사용하면|이렇게\s*(하면|해도|하면)|실제로|직접\s*(해|적용)|연결(하면|해서)|~라면/.test(t)) return 3;
 
-  const cx = (t) => pad.left + (t / maxTurns) * (W - pad.left - pad.right);
-  const cy = (s) => pad.top + (1 - s / 100) * (H - pad.top - pad.bottom);
+  // L2 개념 이해 — 이유·원리 탐색
+  if ((/왜|어떻게|어떤\s*이유|원리|개념|이해|설명|메커니즘|작동/.test(t) && /[?？]/.test(t)) ||
+      /왜\s*그런지|어떤\s*원리|어떻게\s*(동작|작동|되는|작용)|왜\s*이렇게/.test(t)) return 2;
 
-  // 배경 사분면
-  const mx = cx(medTurns);
-  const my = cy(medScore);
-  const quadColors = ['rgba(16,185,129,0.06)', 'rgba(245,158,11,0.06)',
-    'rgba(99,102,241,0.06)', 'rgba(239,68,68,0.06)'];
-  const quads = [
-    [pad.left, pad.top, mx - pad.left, my - pad.top],     // 고참여/고성취
-    [mx, pad.top, W - pad.right - mx, my - pad.top],      // 저참여/고성취
-    [pad.left, my, mx - pad.left, H - pad.bottom - my],   // 고참여/저성취
-    [mx, my, W - pad.right - mx, H - pad.bottom - my],    // 저참여/저성취
-  ];
-  quads.forEach(([x, y, w, h], i) => {
-    ctx.fillStyle = quadColors[i];
-    ctx.fillRect(x, y, w, h);
-  });
+  // L1 사실 질문 — 정의·개념 묻기
+  if (/뭐(야|예요|에요|인가요|죠|가요|인지)|무엇(인가|이|을)|정의(가|는|를)|뜻(이|은|을)|의미(가|는|를)|언제|어디|누가|[?？]/.test(t)) return 1;
 
-  // 사분면 레이블
-  ctx.font = '10px sans-serif';
-  ctx.fillStyle = 'rgba(0,0,0,0.3)';
-  ctx.textAlign = 'center';
-  ctx.fillText('적극 학습자', (pad.left + mx) / 2, pad.top + 14);
-  ctx.fillText('효율 학습자', (mx + W - pad.right) / 2, pad.top + 14);
-  ctx.fillText('노력형 학습자', (pad.left + mx) / 2, H - pad.bottom - 6);
-  ctx.fillText('위험 학습자', (mx + W - pad.right) / 2, H - pad.bottom - 6);
-
-  // 중앙값 기준선
-  ctx.strokeStyle = '#d1d5db';
-  ctx.setLineDash([4, 4]);
-  ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(mx, pad.top); ctx.lineTo(mx, H - pad.bottom); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(pad.left, my); ctx.lineTo(W - pad.right, my); ctx.stroke();
-  ctx.setLineDash([]);
-
-  // Y축
-  ctx.fillStyle = '#6b7280';
-  ctx.font = '11px sans-serif';
-  ctx.textAlign = 'right';
-  for (let v = 0; v <= 100; v += 20) {
-    const y = cy(v);
-    ctx.fillText(`${v}`, pad.left - 6, y + 4);
-    ctx.strokeStyle = '#f3f4f6';
-    ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(W - pad.right, y); ctx.stroke();
-  }
-
-  // X축
-  ctx.textAlign = 'center';
-  ctx.fillStyle = '#6b7280';
-  for (let t = 0; t <= maxTurns; t += Math.ceil(maxTurns / 5)) {
-    const x = cx(t);
-    ctx.fillText(`${t}`, x, H - pad.bottom + 16);
-  }
-
-  // 축 레이블
-  ctx.fillStyle = '#374151';
-  ctx.font = '11px sans-serif';
-  ctx.textAlign = 'center';
-  ctx.fillText('총 대화 턴 수', pad.left + (W - pad.left - pad.right) / 2, H - pad.bottom + 34);
-  ctx.save();
-  ctx.translate(14, pad.top + (H - pad.top - pad.bottom) / 2);
-  ctx.rotate(-Math.PI / 2);
-  ctx.fillText('평균 점수', 0, 0);
-  ctx.restore();
-
-  // 산점도 점
-  const typeColors = {
-    '적극 학습자': '#10b981',
-    '효율 학습자': '#6366f1',
-    '노력형 학습자': '#f59e0b',
-    '위험 학습자': '#ef4444',
-  };
-  profiles.forEach((p) => {
-    const x = cx(p.totalTurns);
-    const y = cy(p.avgScore);
-    const color = typeColors[p.typology] || '#6b7280';
-    ctx.beginPath();
-    ctx.arc(x, y, 6, 0, Math.PI * 2);
-    ctx.fillStyle = color;
-    ctx.globalAlpha = 0.8;
-    ctx.fill();
-    ctx.globalAlpha = 1;
-    ctx.strokeStyle = '#fff';
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
-  });
-
-  // 범례
-  if (legendEl) {
-    legendEl.innerHTML = Object.entries(typeColors).map(([label, color]) => `
-      <span class="la-legend-item">
-        <span class="la-legend-dot" style="background:${color}"></span>${label}
-      </span>
-    `).join('');
-  }
+  // L0 수동 반응
+  return 0;
 }
 
-// ── 패널 B: Bloom 레이더 차트 ────────────────────────────────────
+function isQuestion(content) {
+  return /[?？]/.test(content) ||
+    /^(왜|어떻게|뭐|무엇|어떤|언제|어디|어느|얼마나)/.test(content.trim());
+}
 
-function drawBloomRadar(submissions, svgEl, statsEl) {
-  if (!svgEl) return;
+// ── 학습 사건 탐지 ─────────────────────────────────────────────────
 
-  const bloomAgg = Object.fromEntries(BLOOM_LEVELS.map((l) => [l, { correct: 0, total: 0 }]));
-  submissions.forEach((s) => {
-    const bd = s?.bloomBreakdown || {};
-    BLOOM_LEVELS.forEach((l) => {
-      if (bd[l]) {
-        bloomAgg[l].correct += bd[l].correct ?? 0;
-        bloomAgg[l].total += bd[l].total ?? 0;
-      }
-    });
+function detectLearningEvents(messages) {
+  const events = [];
+  const userMsgs = messages.filter((m) => m.role === 'user');
+
+  userMsgs.forEach((msg, idx) => {
+    const t = msg.content;
+
+    // 혼란 감지
+    if (/모르겠|헷갈|이해(가)?\s*안|어렵|어려운|(?:잘\s*)?모르|복잡|어떻게\s*해야/.test(t)) {
+      events.push({ type: 'confusion', turn: idx, preview: t.slice(0, 60) });
+    }
+
+    // 돌파 감지 (혼란 이후 이해)
+    if (/이제\s*(알겠|이해|됩|됐)|아!\s*|오!\s*|그렇구나|이해됩|아,\s*이제|맞다!|그렇다!|아하|유레카|드디어/.test(t)) {
+      events.push({ type: 'breakthrough', turn: idx, preview: t.slice(0, 60) });
+    }
+
+    // 비판적 사고
+    if (/근데|하지만|그런데|아닌가요|잘못|틀린|차이|비교|왜\s*꼭|그게\s*아니/.test(t)) {
+      events.push({ type: 'critical', turn: idx, preview: t.slice(0, 60) });
+    }
+
+    // 지속 탐구 (이전 AI 답변 후 추가 질문)
+    if (idx > 0 && t.length > 40 && isQuestion(t)) {
+      events.push({ type: 'persistence', turn: idx, preview: t.slice(0, 60) });
+    }
   });
 
-  const rates = BLOOM_LEVELS.map((l) => {
-    const { correct, total } = bloomAgg[l];
-    return total > 0 ? correct / total : 0;
-  });
+  return events;
+}
 
-  const hasData = rates.some((r) => r > 0);
+function calcProductiveStruggle(events) {
+  const confusions = events.filter((e) => e.type === 'confusion');
+  if (!confusions.length) return null;
+  let productive = 0;
+  confusions.forEach((conf) => {
+    const after = events.filter((e) =>
+      (e.type === 'breakthrough' || e.type === 'critical') && e.turn > conf.turn && e.turn <= conf.turn + 3
+    );
+    if (after.length) productive++;
+  });
+  return Math.round((productive / confusions.length) * 100);
+}
+
+// ── 궤적 분석 ─────────────────────────────────────────────────────
+
+function computeTrajectory(levels) {
+  if (levels.length < 2) return { type: 'insufficient', slope: 0 };
+  const n = levels.length;
+  const xMean = (n - 1) / 2;
+  const yMean = avg(levels);
+  let num = 0, den = 0;
+  levels.forEach((y, x) => { num += (x - xMean) * (y - yMean); den += (x - xMean) ** 2; });
+  const slope = den ? num / den : 0;
+  return {
+    type: slope > 0.08 ? '상승형' : slope < -0.08 ? '하강형' : '평탄형',
+    slope: Math.round(slope * 1000) / 1000,
+  };
+}
+
+function calcDominantTrajectory(trajectories) {
+  if (!trajectories.length) return null;
+  const counts = { '상승형': 0, '평탄형': 0, '하강형': 0 };
+  trajectories.forEach((t) => { if (counts[t.type] !== undefined) counts[t.type]++; });
+  return Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0];
+}
+
+// ── 패널 A: 인지 수준 분포 ───────────────────────────────────────
+
+function renderCogDist(profiles, el) {
+  if (!el) return;
+
+  const hasData = profiles.some((p) => p.totalAnalyzedMessages > 0);
   if (!hasData) {
-    svgEl.innerHTML = '<text x="160" y="140" text-anchor="middle" fill="#9ca3af" font-size="13">Bloom 데이터 없음</text>';
+    el.innerHTML = '<p class="empty-msg la-no-conv">대화 원문 데이터가 필요합니다.</p>';
     return;
   }
 
-  const cx = 160, cy = 145, R = 100, n = BLOOM_LEVELS.length;
-  const angle = (i) => (Math.PI * 2 * i) / n - Math.PI / 2;
-  const px = (r, i) => cx + r * Math.cos(angle(i));
-  const py = (r, i) => cy + r * Math.sin(angle(i));
-
-  let svg = '';
-
-  // 배경 그물
-  [0.25, 0.5, 0.75, 1].forEach((t) => {
-    const pts = BLOOM_LEVELS.map((_, i) => `${px(R * t, i)},${py(R * t, i)}`).join(' ');
-    svg += `<polygon points="${pts}" fill="none" stroke="#e5e7eb" stroke-width="1"/>`;
-    svg += `<text x="${cx + 4}" y="${cy - R * t + 4}" font-size="9" fill="#9ca3af">${Math.round(t * 100)}%</text>`;
-  });
-
-  // 축
-  BLOOM_LEVELS.forEach((l, i) => {
-    svg += `<line x1="${cx}" y1="${cy}" x2="${px(R, i)}" y2="${py(R, i)}" stroke="#e5e7eb" stroke-width="1"/>`;
-    const lx = px(R + 20, i);
-    const ly = py(R + 20, i);
-    const anchor = lx < cx - 5 ? 'end' : lx > cx + 5 ? 'start' : 'middle';
-    svg += `<text x="${lx}" y="${ly + 4}" text-anchor="${anchor}" font-size="11" fill="#374151" font-weight="600">${escapeHtml(l)}</text>`;
-  });
-
-  // 데이터 영역
-  const dataPts = rates.map((r, i) => `${px(R * r, i)},${py(R * r, i)}`).join(' ');
-  svg += `<polygon points="${dataPts}" fill="rgba(99,102,241,0.2)" stroke="#6366f1" stroke-width="2"/>`;
-
-  // 데이터 점
-  rates.forEach((r, i) => {
-    const color = BLOOM_COLORS[i];
-    svg += `<circle cx="${px(R * r, i)}" cy="${py(R * r, i)}" r="4" fill="${color}" stroke="#fff" stroke-width="1.5"/>`;
-  });
-
-  svgEl.innerHTML = svg;
-
-  // 수치 표
-  if (statsEl) {
-    statsEl.innerHTML = `
-      <div class="la-bloom-row">
-        ${BLOOM_LEVELS.map((l, i) => {
-          const { correct, total } = bloomAgg[l];
-          const rate = total > 0 ? Math.round((correct / total) * 100) : null;
-          return `
-            <div class="la-bloom-cell">
-              <span class="la-bloom-dot" style="background:${BLOOM_COLORS[i]}"></span>
-              <span class="la-bloom-level">${l}</span>
-              <strong class="la-bloom-rate">${rate != null ? `${rate}%` : '-'}</strong>
-              <span class="la-bloom-base">(${total > 0 ? `${correct}/${total}` : '데이터없음'})</span>
-            </div>
-          `;
-        }).join('')}
-      </div>
-    `;
-  }
-}
-
-// ── 패널 C: 학습자 유형 분포 ──────────────────────────────────────
-
-function renderTypology(profiles, el) {
-  if (!el) return;
-
-  const types = {
-    '적극 학습자': { color: '#10b981', bg: '#d1fae5', desc: '높은 참여 + 높은 성취', icon: '◆' },
-    '효율 학습자': { color: '#6366f1', bg: '#ede9fe', desc: '낮은 참여 + 높은 성취', icon: '▲' },
-    '노력형 학습자': { color: '#f59e0b', bg: '#fef3c7', desc: '높은 참여 + 낮은 성취', icon: '●' },
-    '위험 학습자': { color: '#ef4444', bg: '#fee2e2', desc: '낮은 참여 + 낮은 성취', icon: '■' },
-  };
-
-  const grouped = {};
-  Object.keys(types).forEach((t) => { grouped[t] = []; });
-  profiles.forEach((p) => { if (grouped[p.typology]) grouped[p.typology].push(p); });
+  // 전체 집계
+  const totalCounts = Array(6).fill(0);
+  profiles.forEach((p) => p.levelCounts.forEach((c, i) => { totalCounts[i] += c; }));
+  const totalAll = totalCounts.reduce((s, c) => s + c, 0);
 
   el.innerHTML = `
-    <div class="la-typology-cards">
-      ${Object.entries(types).map(([name, cfg]) => {
-        const members = grouped[name] || [];
-        const avgSc = members.length ? avg(members.map((p) => p.avgScore)).toFixed(1) : '-';
-        const avgTn = members.length ? Math.round(avg(members.map((p) => p.totalTurns))) : '-';
-        const pct = profiles.length ? Math.round((members.length / profiles.length) * 100) : 0;
-        return `
-          <div class="la-typology-card" style="border-color:${cfg.color};background:${cfg.bg}">
-            <div class="la-typology-icon" style="color:${cfg.color}">${cfg.icon}</div>
-            <div class="la-typology-name" style="color:${cfg.color}">${name}</div>
-            <div class="la-typology-desc">${cfg.desc}</div>
-            <div class="la-typology-count">${members.length}명 <span>(${pct}%)</span></div>
-            <div class="la-typology-metrics">
-              <span>평균 점수 <strong>${avgSc}점</strong></span>
-              <span>평균 턴 <strong>${avgTn}회</strong></span>
-            </div>
-            ${members.length ? `
-              <details class="la-typology-detail">
-                <summary>학생 목록</summary>
-                <ul class="la-typology-member-list">
-                  ${members.map((p) => `<li>${escapeHtml(p.studentName)} <span>(${escapeHtml(p.studentId)})</span></li>`).join('')}
-                </ul>
-              </details>
-            ` : ''}
-          </div>
-        `;
-      }).join('')}
-    </div>
-
-    <div class="la-typology-insight">
-      <strong>해석 가이드:</strong>
-      위험 학습자(낮은 참여+낮은 성취)에게는 즉각적인 교수 개입이 필요합니다.
-      노력형 학습자(높은 참여+낮은 성취)는 학습 전략 지도가 효과적입니다.
-      효율 학습자(낮은 참여+높은 성취)는 선행 지식 보유 가능성이 높습니다.
-    </div>
-  `;
-}
-
-// ── 패널 D: 오개념 패턴 분석 ──────────────────────────────────────
-
-function renderMisconceptionPanel(submissions, el) {
-  if (!el) return;
-
-  // 오개념 빈도 집계
-  const conceptCount = new Map();
-  const conceptChapterMap = new Map();
-
-  submissions.forEach((s) => {
-    const ch = String(s?.chapter_id || s?.chapterId || '?');
-    const concepts = [
-      ...(s?.weak_concepts || s?.weakConcepts || []),
-      ...(s?.chat_summary?.misconceptions || []),
-    ].map((c) => String(c).trim()).filter(Boolean);
-
-    [...new Set(concepts)].forEach((c) => {
-      conceptCount.set(c, (conceptCount.get(c) || 0) + 1);
-      if (!conceptChapterMap.has(c)) conceptChapterMap.set(c, new Map());
-      conceptChapterMap.get(c).set(ch, (conceptChapterMap.get(c).get(ch) || 0) + 1);
-    });
-  });
-
-  if (!conceptCount.size) {
-    el.innerHTML = '<p class="empty-msg">오개념 데이터가 없습니다.</p>';
-    return;
-  }
-
-  const sorted = [...conceptCount.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10);
-  const maxCount = sorted[0][1];
-
-  el.innerHTML = `
-    <div class="la-misconception-wrap">
-      <div class="la-misconception-chart">
-        <h4 class="la-sub-title">빈도 Top-10 취약개념</h4>
-        <div class="la-mc-bars">
-          ${sorted.map(([concept, count], i) => {
-            const pct = Math.round((count / maxCount) * 100);
-            const chapters = [...(conceptChapterMap.get(concept) || new Map()).entries()]
-              .sort((a, b) => b[1] - a[1])
-              .slice(0, 3)
-              .map(([ch, n]) => `Ch.${ch}(${n}명)`)
-              .join(', ');
+    <div class="la-cog-overview">
+      <!-- 전체 파이 차트 -->
+      <div class="la-cog-summary">
+        <h4 class="la-sub-title">전체 발화 분포</h4>
+        <svg viewBox="0 0 200 200" width="180" height="180" id="la-cog-donut"></svg>
+        <div class="la-cog-legend">
+          ${COG_LEVELS.map((l, i) => {
+            const pct = totalAll > 0 ? ((totalCounts[i] / totalAll) * 100).toFixed(1) : '0.0';
             return `
-              <div class="la-mc-row">
-                <span class="la-mc-rank">${i + 1}</span>
-                <div class="la-mc-body">
-                  <div class="la-mc-label-row">
-                    <span class="la-mc-name">${escapeHtml(concept)}</span>
-                    <span class="la-mc-count">${count}명</span>
-                  </div>
-                  <div class="la-mc-bar-wrap">
-                    <div class="la-mc-bar" style="width:${pct}%"></div>
-                  </div>
-                  <div class="la-mc-chapters">${chapters}</div>
-                </div>
+              <div class="la-cog-legend-row">
+                <span class="la-cog-dot" style="background:${l.color}"></span>
+                <span class="la-cog-lname">${l.label}</span>
+                <strong>${pct}%</strong>
+                <span class="la-muted">(${totalCounts[i]}개)</span>
               </div>
             `;
           }).join('')}
         </div>
       </div>
 
-      <div class="la-misconception-summary">
-        <h4 class="la-sub-title">요약 통계</h4>
-        <table class="dash-table">
-          <thead><tr><th>지표</th><th>값</th></tr></thead>
-          <tbody>
-            <tr><td>총 식별 오개념 수</td><td><strong>${conceptCount.size}개</strong></td></tr>
-            <tr><td>가장 빈번한 오개념</td><td><strong>${escapeHtml(sorted[0][0])}</strong></td></tr>
-            <tr><td>최다 오개념 학생 수</td><td><strong>${sorted[0][1]}명</strong></td></tr>
-            <tr><td>오개념 1개 이상 학생</td><td><strong>${countStudentsWithMisconceptions(submissions)}명</strong></td></tr>
-          </tbody>
-        </table>
+      <!-- 학생별 스택 바 -->
+      <div class="la-cog-bars-wrap">
+        <h4 class="la-sub-title">학생별 인지 수준 구성</h4>
+        <div class="la-cog-bars" id="la-cog-bars"></div>
+        <div class="la-cog-bar-legend">
+          ${COG_LEVELS.map((l) => `
+            <span class="la-cog-bar-legend-item">
+              <span style="background:${l.color};display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:3px;"></span>${l.short} ${l.label}
+            </span>
+          `).join('')}
+        </div>
       </div>
     </div>
-  `;
-}
 
-function countStudentsWithMisconceptions(submissions) {
-  const students = new Set();
-  submissions.forEach((s) => {
-    const concepts = [
-      ...(s?.weak_concepts || s?.weakConcepts || []),
-      ...(s?.chat_summary?.misconceptions || []),
-    ];
-    if (concepts.length > 0) {
-      students.add(String(s?.student_id || s?.studentId || ''));
-    }
-  });
-  return students.size;
-}
-
-// ── 패널 E: 피드백 품질-성과 비교 ───────────────────────────────
-
-function renderFeedbackPanel(submissions, el) {
-  if (!el) return;
-
-  // 그룹 분류: 각 피드백 유형 있음/없음
-  const groups = {
-    feedUp: { yes: [], no: [] },
-    feedBack: { yes: [], no: [] },
-    feedForward: { yes: [], no: [] },
-    fullFeedback: { yes: [], no: [] },
-  };
-
-  submissions.forEach((s) => {
-    const score = Number(s?.score);
-    if (!Number.isFinite(score)) return;
-
-    const hasFU = s?.feedUp && s.feedUp.length > 10;
-    const hasFB = s?.feedBack && s.feedBack.length > 30;
-    const hasFF = s?.feedForward && s.feedForward.length > 30;
-
-    groups.feedUp[hasFU ? 'yes' : 'no'].push(score);
-    groups.feedBack[hasFB ? 'yes' : 'no'].push(score);
-    groups.feedForward[hasFF ? 'yes' : 'no'].push(score);
-    groups.fullFeedback[(hasFU && hasFB && hasFF) ? 'yes' : 'no'].push(score);
-  });
-
-  const labels = {
-    feedUp: 'Feed Up',
-    feedBack: 'Feed Back',
-    feedForward: 'Feed Forward',
-    fullFeedback: '3단계 완전 피드백',
-  };
-
-  el.innerHTML = `
-    <div class="la-feedback-wrap">
-      <table class="dash-table la-feedback-table">
-        <thead>
-          <tr>
-            <th>피드백 유형</th>
-            <th>있음 (n)</th>
-            <th>있음 평균 점수</th>
-            <th>없음 (n)</th>
-            <th>없음 평균 점수</th>
-            <th>차이</th>
-            <th>효과 방향</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${Object.entries(groups).map(([key, { yes, no }]) => {
-            const avgYes = yes.length ? avg(yes) : null;
-            const avgNo = no.length ? avg(no) : null;
-            const diff = avgYes != null && avgNo != null ? avgYes - avgNo : null;
-            const direction = diff == null ? '-' : diff > 2 ? '▲ 긍정적' : diff < -2 ? '▼ 부정적' : '→ 유사';
-            const dirClass = diff == null ? '' : diff > 2 ? 'rate-good' : diff < -2 ? 'rate-bad' : 'rate-warn';
-            return `
-              <tr>
-                <td><strong>${labels[key]}</strong></td>
-                <td>${yes.length}건</td>
-                <td>${avgYes != null ? `<strong class="${scoreColor(avgYes)}">${avgYes.toFixed(1)}점</strong>` : '-'}</td>
-                <td>${no.length}건</td>
-                <td>${avgNo != null ? `<strong class="${scoreColor(avgNo)}">${avgNo.toFixed(1)}점</strong>` : '-'}</td>
-                <td>${diff != null ? `${diff > 0 ? '+' : ''}${diff.toFixed(1)}점` : '-'}</td>
-                <td class="${dirClass}">${direction}</td>
-              </tr>
-            `;
-          }).join('')}
-        </tbody>
-      </table>
-      <p class="la-footnote">
-        * 피드백 있음 기준: Feed Up &gt; 10자, Feed Back/Forward &gt; 30자.
-        점수 차이 ±2점 이하는 유사한 것으로 판정합니다.
-      </p>
+    <!-- 인지 수준별 설명 -->
+    <div class="la-cog-desc-row">
+      ${COG_LEVELS.map((l) => `
+        <div class="la-cog-desc-card" style="border-color:${l.color}">
+          <span class="la-cog-desc-badge" style="background:${l.color}">${l.short}</span>
+          <strong>${l.label}</strong>
+          <p>${l.desc}</p>
+        </div>
+      `).join('')}
     </div>
   `;
+
+  // 도넛 차트 (SVG arc)
+  drawDonut(document.getElementById('la-cog-donut'), totalCounts, totalAll);
+
+  // 학생별 스택 바
+  const barsEl = document.getElementById('la-cog-bars');
+  if (barsEl) {
+    const withData = profiles.filter((p) => p.totalAnalyzedMessages > 0);
+    barsEl.innerHTML = withData.map((p) => `
+      <div class="la-cog-bar-row">
+        <span class="la-cog-bar-label" title="${escapeHtml(p.studentId)}">${escapeHtml(p.studentName.slice(0, 5))}</span>
+        <div class="la-cog-stack-bar">
+          ${p.levelCounts.map((c, i) => {
+            const w = p.totalAnalyzedMessages > 0 ? (c / p.totalAnalyzedMessages) * 100 : 0;
+            return w > 0 ? `<div style="width:${w}%;background:${COG_LEVELS[i].color}" title="${COG_LEVELS[i].label}: ${w.toFixed(1)}%"></div>` : '';
+          }).join('')}
+        </div>
+        <span class="la-cog-bar-avg" style="color:${cogLevelColor(p.avgCogLevel)}">
+          ${p.avgCogLevel != null ? p.avgCogLevel.toFixed(1) : '-'}
+        </span>
+      </div>
+    `).join('');
+  }
 }
 
-// ── 패널 F: 연구용 종합 데이터 테이블 ───────────────────────────
+function drawDonut(svgEl, counts, total) {
+  if (!svgEl || !total) return;
+  const cx = 100, cy = 100, R = 80, r = 50;
+  let startAngle = -Math.PI / 2;
+  let paths = '';
+
+  counts.forEach((c, i) => {
+    if (!c) return;
+    const angle = (c / total) * Math.PI * 2;
+    const endAngle = startAngle + angle;
+    const x1 = cx + R * Math.cos(startAngle), y1 = cy + R * Math.sin(startAngle);
+    const x2 = cx + R * Math.cos(endAngle), y2 = cy + R * Math.sin(endAngle);
+    const ix1 = cx + r * Math.cos(startAngle), iy1 = cy + r * Math.sin(startAngle);
+    const ix2 = cx + r * Math.cos(endAngle), iy2 = cy + r * Math.sin(endAngle);
+    const large = angle > Math.PI ? 1 : 0;
+    paths += `<path d="M${x1},${y1} A${R},${R} 0 ${large} 1 ${x2},${y2} L${ix2},${iy2} A${r},${r} 0 ${large} 0 ${ix1},${iy1} Z"
+      fill="${COG_LEVELS[i].color}" opacity="0.85"/>`;
+    startAngle = endAngle;
+  });
+
+  svgEl.innerHTML = paths + `<text x="${cx}" y="${cy - 6}" text-anchor="middle" font-size="14" font-weight="700" fill="#374151">${total}</text>
+    <text x="${cx}" y="${cy + 12}" text-anchor="middle" font-size="10" fill="#6b7280">발화</text>`;
+}
+
+// ── 패널 B: 대화 주도성-인지 깊이 매트릭스 ──────────────────────
+
+function drawAgencyMatrix(profiles, canvas, legendEl) {
+  if (!canvas) return;
+
+  const W = canvas.width, H = canvas.height;
+  const pad = { top: 30, right: 20, bottom: 50, left: 55 };
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, W, H);
+
+  const withData = profiles.filter((p) => p.agencyIndex != null && p.avgCogLevel != null && p.avgScore != null);
+  if (!withData.length) {
+    ctx.fillStyle = '#9ca3af';
+    ctx.font = '12px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('대화 데이터 없음', W / 2, H / 2);
+    return;
+  }
+
+  const medAgency = median(withData.map((p) => p.agencyIndex));
+  const medCog = median(withData.map((p) => p.avgCogLevel));
+
+  const cx = (v) => pad.left + (v / 100) * (W - pad.left - pad.right);
+  const cy = (v) => pad.top + (1 - v / 5) * (H - pad.top - pad.bottom);
+
+  const mx = cx(medAgency), my = cy(medCog);
+
+  // 사분면 배경
+  const quadCfg = [
+    { x: pad.left, y: pad.top, w: mx - pad.left, h: my - pad.top, color: 'rgba(99,102,241,0.06)', label: '심층 학습자' },
+    { x: mx, y: pad.top, w: W - pad.right - mx, h: my - pad.top, color: 'rgba(16,185,129,0.06)', label: '효율 학습자' },
+    { x: pad.left, y: my, w: mx - pad.left, h: H - pad.bottom - my, color: 'rgba(245,158,11,0.06)', label: '탐색 학습자' },
+    { x: mx, y: my, w: W - pad.right - mx, h: H - pad.bottom - my, color: 'rgba(239,68,68,0.06)', label: '수동 학습자' },
+  ];
+  quadCfg.forEach(({ x, y, w, h, color, label }) => {
+    ctx.fillStyle = color; ctx.fillRect(x, y, w, h);
+    ctx.fillStyle = 'rgba(0,0,0,0.2)'; ctx.font = '9px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText(label, x + w / 2, y + 13);
+  });
+
+  // 기준선
+  ctx.strokeStyle = '#d1d5db'; ctx.setLineDash([3, 3]); ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(mx, pad.top); ctx.lineTo(mx, H - pad.bottom); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(pad.left, my); ctx.lineTo(W - pad.right, my); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // 축 눈금
+  ctx.fillStyle = '#6b7280'; ctx.font = '10px sans-serif'; ctx.textAlign = 'right';
+  for (let v = 0; v <= 5; v++) {
+    const y = cy(v);
+    ctx.fillText(v, pad.left - 6, y + 3);
+    ctx.strokeStyle = '#f3f4f6'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(W - pad.right, y); ctx.stroke();
+  }
+  ctx.textAlign = 'center';
+  [0, 25, 50, 75, 100].forEach((v) => {
+    ctx.fillText(`${v}%`, cx(v), H - pad.bottom + 16);
+  });
+
+  // 축 레이블
+  ctx.fillStyle = '#374151'; ctx.font = '11px sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText('학생 질문 비율 (Agency Index, %)', pad.left + (W - pad.left - pad.right) / 2, H - 6);
+  ctx.save();
+  ctx.translate(13, pad.top + (H - pad.top - pad.bottom) / 2);
+  ctx.rotate(-Math.PI / 2); ctx.fillText('평균 인지 수준 (0-5)', 0, 0); ctx.restore();
+
+  // 산점도
+  const maxScore = Math.max(...withData.map((p) => p.avgScore));
+  withData.forEach((p) => {
+    const x = cx(p.agencyIndex), y = cy(p.avgCogLevel);
+    const radius = 4 + (p.totalAnalyzedMessages / 20) * 4;
+    const t = p.avgScore / maxScore;
+    const color = `hsl(${Math.round(t * 120)}, 70%, 50%)`;
+
+    ctx.beginPath(); ctx.arc(x, y, Math.min(radius, 12), 0, Math.PI * 2);
+    ctx.fillStyle = color; ctx.globalAlpha = 0.75; ctx.fill();
+    ctx.globalAlpha = 1; ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.stroke();
+
+    // 이름 레이블
+    ctx.fillStyle = '#374151'; ctx.font = '9px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText(p.studentName.slice(0, 3), x, y - Math.min(radius, 12) - 2);
+  });
+
+  if (legendEl) {
+    legendEl.innerHTML = `
+      <div class="la-agency-legend">
+        <span>원 크기 = 발화 수</span>
+        <span>색상: <span style="color:#ef4444">●</span> 저성취 → <span style="color:#10b981">●</span> 고성취</span>
+        <span>중앙선: 전체 중앙값 (Agency ${medAgency.toFixed(1)}% / 인지 ${medCog.toFixed(2)})</span>
+      </div>
+    `;
+  }
+}
+
+// ── 패널 C: 대화 궤적 분류 ────────────────────────────────────────
+
+function renderTrajectory(profiles, el) {
+  if (!el) return;
+
+  const withData = profiles.filter((p) => p.dominantTrajectory != null);
+  if (!withData.length) {
+    el.innerHTML = '<p class="empty-msg">궤적 분석에 충분한 대화 데이터가 없습니다.</p>';
+    return;
+  }
+
+  const typeCfg = {
+    '상승형': { color: '#10b981', bg: '#d1fae5', icon: '↗', desc: '대화 진행 중 인지 수준 상승 — 적극적 학습 전략' },
+    '평탄형': { color: '#6366f1', bg: '#ede9fe', icon: '→', desc: '안정적 참여 — 일정한 인지 수준 유지' },
+    '하강형': { color: '#ef4444', bg: '#fee2e2', icon: '↘', desc: '대화 후반부 인지 수준 하락 — 이탈·피로 신호' },
+  };
+
+  const groups = { '상승형': [], '평탄형': [], '하강형': [] };
+  withData.forEach((p) => { if (groups[p.dominantTrajectory]) groups[p.dominantTrajectory].push(p); });
+
+  el.innerHTML = `
+    <div class="la-traj-cards">
+      ${Object.entries(typeCfg).map(([type, cfg]) => {
+        const members = groups[type] || [];
+        const avgSc = members.length ? avg(members.map((p) => p.avgScore).filter((v) => v != null)) : null;
+        const avgCog = members.length ? avg(members.map((p) => p.avgCogLevel).filter((v) => v != null)) : null;
+        const pct = withData.length ? Math.round((members.length / withData.length) * 100) : 0;
+        return `
+          <div class="la-traj-card" style="border-color:${cfg.color};background:${cfg.bg}">
+            <div class="la-traj-icon" style="color:${cfg.color}">${cfg.icon}</div>
+            <div class="la-traj-name" style="color:${cfg.color}">${type}</div>
+            <p class="la-traj-desc">${cfg.desc}</p>
+            <div class="la-traj-stat">
+              <span>${members.length}명 (${pct}%)</span>
+              <span>평균 점수 <strong class="${scoreColor(avgSc)}">${avgSc != null ? `${avgSc.toFixed(1)}점` : '-'}</strong></span>
+              <span>평균 인지 <strong>${avgCog != null ? avgCog.toFixed(2) : '-'}</strong></span>
+            </div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+    <p class="la-footnote">* 궤적: 세션 내 발화 인지 수준 시퀀스의 선형 회귀 기울기로 분류 (기울기 &gt;0.08 = 상승, &lt;-0.08 = 하강).</p>
+  `;
+}
+
+// ── 패널 D: 핵심 학습 사건 탐지 ─────────────────────────────────
+
+function renderEvents(profiles, el) {
+  if (!el) return;
+
+  const withData = profiles.filter((p) => p.totalAnalyzedMessages > 0);
+  if (!withData.length) {
+    el.innerHTML = '<p class="empty-msg">대화 원문 데이터가 필요합니다.</p>';
+    return;
+  }
+
+  const totConf = withData.reduce((s, p) => s + p.confusionCount, 0);
+  const totBrk  = withData.reduce((s, p) => s + p.breakthroughCount, 0);
+  const totCrit = withData.reduce((s, p) => s + p.criticalCount, 0);
+  const totPers = withData.reduce((s, p) => s + p.persistenceCount, 0);
+  const avgPS   = avg(withData.map((p) => p.productiveStruggleIndex).filter((v) => v != null));
+
+  el.innerHTML = `
+    <div class="la-events-top">
+      ${Object.entries(EVENT_TYPES).map(([type, cfg]) => {
+        const total = type === 'confusion' ? totConf : type === 'breakthrough' ? totBrk
+          : type === 'critical' ? totCrit : totPers;
+        return `
+          <div class="la-event-card" style="border-color:${cfg.color}">
+            <span class="la-event-icon" style="color:${cfg.color}">${cfg.icon}</span>
+            <strong class="la-event-count" style="color:${cfg.color}">${total}</strong>
+            <span class="la-event-label">${cfg.label} 사건</span>
+          </div>
+        `;
+      }).join('')}
+      <div class="la-event-card la-event-ps">
+        <span class="la-event-icon">⚡</span>
+        <strong class="la-event-count">${Number.isFinite(avgPS) ? `${avgPS.toFixed(0)}%` : '-'}</strong>
+        <span class="la-event-label">생산적 혼란 지수*</span>
+      </div>
+    </div>
+
+    <table class="dash-table la-events-table">
+      <thead>
+        <tr>
+          <th>학번</th><th>이름</th>
+          <th title="${EVENT_TYPES.confusion.label}">혼란</th>
+          <th title="${EVENT_TYPES.breakthrough.label}">돌파</th>
+          <th title="${EVENT_TYPES.critical.label}">비판</th>
+          <th title="${EVENT_TYPES.persistence.label}">지속</th>
+          <th>생산적 혼란(%)</th>
+          <th>평균 점수</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${withData.map((p) => `
+          <tr>
+            <td>${escapeHtml(p.studentId)}</td>
+            <td>${escapeHtml(p.studentName)}</td>
+            <td><span class="la-event-badge" style="background:#fee2e2;color:#991b1b">${p.confusionCount}</span></td>
+            <td><span class="la-event-badge" style="background:#d1fae5;color:#065f46">${p.breakthroughCount}</span></td>
+            <td><span class="la-event-badge" style="background:#fef3c7;color:#92400e">${p.criticalCount}</span></td>
+            <td><span class="la-event-badge" style="background:#dbeafe;color:#1e40af">${p.persistenceCount}</span></td>
+            <td>${p.productiveStruggleIndex != null ? `<strong>${p.productiveStruggleIndex}%</strong>` : '-'}</td>
+            <td class="${scoreColor(p.avgScore)}">${p.avgScore != null ? `${p.avgScore.toFixed(1)}점` : '-'}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+    <p class="la-footnote">* 생산적 혼란 지수 = 혼란 사건 후 3턴 이내에 돌파 또는 비판적 사고 사건이 발생한 비율 (Kapur, 2016 기반).</p>
+  `;
+}
+
+// ── 패널 E: 고-저 성취 집단 비교 ─────────────────────────────────
+
+function renderComparison(profiles, el) {
+  if (!el) return;
+
+  const scored = profiles.filter((p) => p.avgScore != null).sort((a, b) => b.avgScore - a.avgScore);
+  if (scored.length < 3) {
+    el.innerHTML = '<p class="empty-msg">비교 분석을 위해 최소 3명 이상의 데이터가 필요합니다.</p>';
+    return;
+  }
+
+  const n = Math.max(1, Math.floor(scored.length / 3));
+  const high = scored.slice(0, n);
+  const low  = scored.slice(scored.length - n);
+
+  const metrics = [
+    { key: 'avgScore',              label: '평균 점수',          unit: '점',  fmt: (v) => v?.toFixed(1) ?? '-' },
+    { key: 'avgCogLevel',           label: '평균 인지 수준',     unit: '',    fmt: (v) => v?.toFixed(2) ?? '-' },
+    { key: 'highOrderRate',         label: '고차 사고 비율',     unit: '%',   fmt: (v) => v?.toFixed(1) ?? '-' },
+    { key: 'agencyIndex',           label: '학생 질문 비율',     unit: '%',   fmt: (v) => v?.toFixed(1) ?? '-' },
+    { key: 'avgMsgLength',          label: '평균 발화 길이',     unit: '자',  fmt: (v) => v?.toFixed(0) ?? '-' },
+    { key: 'productiveStruggleIndex', label: '생산적 혼란 지수', unit: '%',   fmt: (v) => v?.toFixed(0) ?? '-' },
+    { key: 'confusionCount',        label: '혼란 사건 수',       unit: '회',  fmt: (v) => v ?? '-' },
+    { key: 'breakthroughCount',     label: '돌파 사건 수',       unit: '회',  fmt: (v) => v ?? '-' },
+    { key: 'feedbackQuality',       label: '피드백 품질 (0-3)', unit: '',    fmt: (v) => v?.toFixed(1) ?? '-' },
+    { key: 'reflectionRate',        label: '성찰일지 완성(%)',   unit: '%',   fmt: (v) => v?.toFixed(0) ?? '-' },
+  ];
+
+  const avgGroup = (group, key) => avg(group.map((p) => p[key]).filter((v) => v != null && Number.isFinite(v)));
+
+  el.innerHTML = `
+    <div class="la-compare-info">
+      <span class="la-compare-badge la-high">상위 ${n}명 (평균 ${avg(high.map((p)=>p.avgScore)).toFixed(1)}점)</span>
+      <span class="la-compare-badge la-low">하위 ${n}명 (평균 ${avg(low.map((p)=>p.avgScore)).toFixed(1)}점)</span>
+    </div>
+    <table class="dash-table la-compare-table">
+      <thead>
+        <tr>
+          <th>지표</th>
+          <th class="la-high-col">상위 집단 (n=${n})</th>
+          <th class="la-low-col">하위 집단 (n=${n})</th>
+          <th>차이</th>
+          <th>방향</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${metrics.map(({ key, label, unit, fmt }) => {
+          const h = avgGroup(high, key);
+          const l = avgGroup(low, key);
+          const diff = Number.isFinite(h) && Number.isFinite(l) ? h - l : null;
+          const dir = diff == null ? '-' : Math.abs(diff) < 0.1 ? '→ 유사' : diff > 0 ? '▲ 상위 높음' : '▼ 하위 높음';
+          const dirClass = diff == null ? '' : Math.abs(diff) < 0.1 ? '' : diff > 0 ? 'rate-good' : 'rate-bad';
+          return `
+            <tr>
+              <td><strong>${label}</strong></td>
+              <td class="la-high-col">${Number.isFinite(h) ? `${fmt(h)}${unit}` : '-'}</td>
+              <td class="la-low-col">${Number.isFinite(l) ? `${fmt(l)}${unit}` : '-'}</td>
+              <td>${diff != null ? `${diff > 0 ? '+' : ''}${fmt(diff)}${unit}` : '-'}</td>
+              <td class="${dirClass}">${dir}</td>
+            </tr>
+          `;
+        }).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+// ── 패널 F: 연구용 종합 테이블 ────────────────────────────────────
 
 function renderResearchTable(profiles, el) {
   if (!el) return;
 
   el.innerHTML = `
-    <table class="dash-table la-research-table" id="la-research-data-table">
+    <table class="dash-table la-research-table" id="la-rt">
       <thead>
         <tr>
           <th>학번</th>
           <th>이름</th>
-          <th>챕터 수</th>
-          <th>총 대화턴</th>
-          <th>평균점수</th>
-          <th>고차사고율*</th>
-          <th>오개념 수</th>
-          <th>성찰 완성(%)</th>
-          <th>피드백 품질†</th>
-          <th>학습자 유형</th>
+          <th>발화수</th>
+          <th>평균 인지 수준</th>
+          <th>고차 사고(%)</th>
+          <th>질문 비율(%)</th>
+          <th>혼란</th>
+          <th>돌파</th>
+          <th>생산적 혼란(%)</th>
+          <th>대화 궤적</th>
+          <th>피드백 품질</th>
+          <th>성찰(%)</th>
+          <th>평균 점수</th>
         </tr>
       </thead>
       <tbody>
         ${profiles.map((p) => {
-          const scoreClass = scoreColor(p.avgScore);
-          const typeColors = {
-            '적극 학습자': 'la-type-active',
-            '효율 학습자': 'la-type-efficient',
-            '노력형 학습자': 'la-type-effort',
-            '위험 학습자': 'la-type-risk',
-          };
+          const trajCfg = { '상승형': 'rate-good', '평탄형': '', '하강형': 'rate-bad' };
           return `
             <tr>
               <td>${escapeHtml(p.studentId)}</td>
               <td>${escapeHtml(p.studentName)}</td>
-              <td>${p.chapterCount}</td>
-              <td>${p.totalTurns}</td>
-              <td class="${scoreClass}"><strong>${p.avgScore.toFixed(1)}</strong></td>
-              <td>${p.highOrderRate != null ? `${p.highOrderRate}%` : '-'}</td>
-              <td>${p.misconceptionCount}</td>
-              <td>${p.reflectionRate}%</td>
-              <td>${p.avgFeedbackQuality.toFixed(1)}/3</td>
-              <td><span class="la-type-badge ${typeColors[p.typology] || ''}">${p.typology}</span></td>
+              <td>${p.totalAnalyzedMessages}</td>
+              <td>${p.avgCogLevel != null ? p.avgCogLevel.toFixed(2) : '-'}</td>
+              <td>${p.highOrderRate != null ? `${p.highOrderRate.toFixed(1)}` : '-'}</td>
+              <td>${p.agencyIndex != null ? `${p.agencyIndex.toFixed(1)}` : '-'}</td>
+              <td>${p.confusionCount}</td>
+              <td>${p.breakthroughCount}</td>
+              <td>${p.productiveStruggleIndex != null ? p.productiveStruggleIndex : '-'}</td>
+              <td class="${trajCfg[p.dominantTrajectory] || ''}">${p.dominantTrajectory || '-'}</td>
+              <td>${p.feedbackQuality.toFixed(1)}</td>
+              <td>${p.reflectionRate.toFixed(0)}</td>
+              <td class="${scoreColor(p.avgScore)}"><strong>${p.avgScore != null ? p.avgScore.toFixed(1) : '-'}</strong></td>
             </tr>
           `;
         }).join('')}
@@ -699,54 +824,65 @@ function renderResearchTable(profiles, el) {
       <tfoot>
         <tr class="la-research-avg-row">
           <td colspan="2"><strong>평균</strong></td>
-          <td>${avg(profiles.map((p) => p.chapterCount)).toFixed(1)}</td>
-          <td>${avg(profiles.map((p) => p.totalTurns)).toFixed(1)}</td>
-          <td class="${scoreColor(avg(profiles.map((p) => p.avgScore)))}">
-            <strong>${avg(profiles.map((p) => p.avgScore)).toFixed(1)}</strong>
-          </td>
-          <td>${avgNullable(profiles.map((p) => p.highOrderRate))}</td>
-          <td>${avg(profiles.map((p) => p.misconceptionCount)).toFixed(1)}</td>
-          <td>${avg(profiles.map((p) => p.reflectionRate)).toFixed(1)}%</td>
-          <td>${avg(profiles.map((p) => p.avgFeedbackQuality)).toFixed(2)}</td>
+          <td>${avg(profiles.map((p) => p.totalAnalyzedMessages)).toFixed(0)}</td>
+          <td>${avgNullable(profiles.map((p) => p.avgCogLevel), 2)}</td>
+          <td>${avgNullable(profiles.map((p) => p.highOrderRate), 1)}</td>
+          <td>${avgNullable(profiles.map((p) => p.agencyIndex), 1)}</td>
+          <td>${avg(profiles.map((p) => p.confusionCount)).toFixed(1)}</td>
+          <td>${avg(profiles.map((p) => p.breakthroughCount)).toFixed(1)}</td>
+          <td>${avgNullable(profiles.map((p) => p.productiveStruggleIndex), 0)}</td>
           <td>-</td>
+          <td>${avg(profiles.map((p) => p.feedbackQuality)).toFixed(2)}</td>
+          <td>${avg(profiles.map((p) => p.reflectionRate)).toFixed(0)}</td>
+          <td class="${scoreColor(avg(profiles.map((p) => p.avgScore).filter(Boolean)))}">
+            <strong>${avgNullable(profiles.map((p) => p.avgScore), 1)}</strong>
+          </td>
         </tr>
       </tfoot>
     </table>
-    <p class="la-footnote">
-      * 고차사고율: Bloom 분석+평가+창조 문항의 평균 정답률.<br>
-      † 피드백 품질: Feed Up/Back/Forward 존재 여부 합산 (0–3점 척도).
-    </p>
   `;
 }
 
-function copyResearchTableTSV(profiles) {
-  const headers = ['학번', '이름', '챕터수', '총대화턴', '평균점수', '고차사고율', '오개념수', '성찰완성율', '피드백품질', '학습자유형'];
+function copyTSV(profiles) {
+  const headers = ['학번','이름','발화수','평균인지수준','고차사고율','질문비율','혼란','돌파','생산적혼란','대화궤적','피드백품질','성찰완성율','평균점수'];
   const rows = profiles.map((p) => [
-    p.studentId, p.studentName, p.chapterCount, p.totalTurns,
-    p.avgScore.toFixed(1),
-    p.highOrderRate != null ? p.highOrderRate : '',
-    p.misconceptionCount, p.reflectionRate, p.avgFeedbackQuality.toFixed(1),
-    p.typology,
+    p.studentId, p.studentName, p.totalAnalyzedMessages,
+    p.avgCogLevel?.toFixed(2) ?? '', p.highOrderRate?.toFixed(1) ?? '',
+    p.agencyIndex?.toFixed(1) ?? '', p.confusionCount, p.breakthroughCount,
+    p.productiveStruggleIndex ?? '', p.dominantTrajectory ?? '',
+    p.feedbackQuality.toFixed(1), p.reflectionRate.toFixed(0),
+    p.avgScore?.toFixed(1) ?? '',
   ]);
   const tsv = [headers, ...rows].map((r) => r.join('\t')).join('\n');
-  navigator.clipboard.writeText(tsv).then(() => {
-    const btn = document.getElementById('la-copy-table-btn');
-    if (btn) { btn.textContent = '복사 완료!'; setTimeout(() => { btn.textContent = '클립보드 복사 (TSV)'; }, 2000); }
-  }).catch(() => {
-    alert('클립보드 복사에 실패했습니다. 브라우저 권한을 확인하세요.');
-  });
+  navigator.clipboard.writeText(tsv)
+    .then(() => {
+      const btn = document.getElementById('la-tsv-btn');
+      if (btn) { btn.textContent = '복사 완료!'; setTimeout(() => { btn.textContent = 'TSV 복사'; }, 2000); }
+    })
+    .catch(() => alert('클립보드 복사 실패 — 브라우저 권한 확인'));
 }
 
 // ── 유틸 ──────────────────────────────────────────────────────────
+
+function getVisibleMessages(submission) {
+  return (Array.isArray(submission?.messages) ? submission.messages : [])
+    .filter((m) => String(m?.role || '').toLowerCase() !== 'system')
+    .map((m) => ({ role: String(m.role), content: String(m.content || '').trim() }))
+    .filter((m) => m.content);
+}
+
+function getUserMessages(submission) {
+  return getVisibleMessages(submission).filter((m) => m.role === 'user');
+}
 
 function avg(arr) {
   const valid = arr.filter(Number.isFinite);
   return valid.length ? valid.reduce((s, v) => s + v, 0) / valid.length : 0;
 }
 
-function avgNullable(arr) {
+function avgNullable(arr, decimals = 1) {
   const valid = arr.filter((v) => v != null && Number.isFinite(v));
-  return valid.length ? `${(valid.reduce((s, v) => s + v, 0) / valid.length).toFixed(1)}%` : '-';
+  return valid.length ? (valid.reduce((s, v) => s + v, 0) / valid.length).toFixed(decimals) : '-';
 }
 
 function median(arr) {
@@ -756,12 +892,20 @@ function median(arr) {
   return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
 }
 
-function calcHighOrderRate(bloomAgg) {
-  const highOrder = ['분석', '평가', '창조'];
-  let correct = 0, total = 0;
-  highOrder.forEach((l) => {
-    correct += bloomAgg[l]?.correct ?? 0;
-    total += bloomAgg[l]?.total ?? 0;
-  });
-  return total > 0 ? Math.round((correct / total) * 100) : null;
+function cogLevelColor(level) {
+  if (level == null) return '#9ca3af';
+  if (level >= 4) return '#8b5cf6';
+  if (level >= 3) return '#f59e0b';
+  if (level >= 2) return '#10b981';
+  if (level >= 1) return '#3b82f6';
+  return '#9ca3af';
+}
+
+function buildKPI(label, value) {
+  return `
+    <div class="la-kpi">
+      <span>${label}</span>
+      <strong>${value}</strong>
+    </div>
+  `;
 }

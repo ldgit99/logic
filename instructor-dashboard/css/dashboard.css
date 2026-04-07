@@ -2486,150 +2486,114 @@ html:not(.light):not(.dark) .dash-sidebar .role-badge {
   }
 }
 
-/* ── 학습 분석 (Learning Analytics) ──────────────────────────────── */
+/* ── 학습 분석 (Dialogue-Based Learning Analytics) ──────────────── */
 
-.la-page {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
+.la-page { display: flex; flex-direction: column; gap: 20px; }
 
 /* 헤더 */
 .la-header {
-  background: var(--color-surface);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  padding: 20px 24px;
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 24px;
-  flex-wrap: wrap;
+  background: var(--color-surface); border-radius: var(--radius); box-shadow: var(--shadow);
+  padding: 20px 24px; display: flex; align-items: flex-start;
+  justify-content: space-between; gap: 24px; flex-wrap: wrap;
   border-left: 4px solid var(--color-primary);
 }
 .la-header-eyebrow { font-size: 11px; font-weight: 700; color: var(--color-primary); letter-spacing: .06em; text-transform: uppercase; margin-bottom: 4px; }
 .la-header-title { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
-.la-header-desc { font-size: 12px; color: var(--color-muted); line-height: 1.55; max-width: 520px; }
-.la-header-stat-row { display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start; flex-shrink: 0; }
-.la-header-stat { display: flex; flex-direction: column; align-items: center; gap: 2px; }
-.la-header-stat span { font-size: 11px; color: var(--color-muted); }
-.la-header-stat strong { font-size: 20px; font-weight: 700; color: var(--color-primary); }
+.la-header-desc { font-size: 12px; color: var(--color-muted); line-height: 1.6; max-width: 560px; }
+.la-ref { font-size: 11px; color: var(--color-primary); }
+.la-kpi-row { display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-start; flex-shrink: 0; }
+.la-kpi { display: flex; flex-direction: column; align-items: center; gap: 2px; background: var(--color-bg); border-radius: var(--radius); padding: 10px 14px; min-width: 80px; }
+.la-kpi span { font-size: 10px; color: var(--color-muted); text-align: center; }
+.la-kpi strong { font-size: 18px; font-weight: 700; color: var(--color-primary); }
+.la-warn-banner { background: #fef3c7; border: 1px solid #fbbf24; border-radius: var(--radius); padding: 10px 16px; font-size: 12px; color: #92400e; }
 
-/* 카드 공통 */
-.la-card {
-  background: var(--color-surface);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  padding: 20px 24px;
-}
+/* 카드 */
+.la-card { background: var(--color-surface); border-radius: var(--radius); box-shadow: var(--shadow); padding: 20px 24px; }
+.la-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
 .la-card-title { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
-.la-card-desc { font-size: 12px; color: var(--color-muted); margin-bottom: 16px; line-height: 1.5; }
+.la-card-desc { font-size: 12px; color: var(--color-muted); line-height: 1.5; }
+.la-theory-tag { font-size: 10px; font-weight: 600; color: var(--color-primary); background: #eff6ff; border-radius: 10px; padding: 3px 8px; white-space: nowrap; flex-shrink: 0; margin-top: 2px; }
 .la-sub-title { font-size: 13px; font-weight: 600; margin-bottom: 10px; color: var(--color-text); }
+.la-muted { color: var(--color-muted); font-size: 11px; }
+.la-footnote { font-size: 11px; color: var(--color-muted); margin-top: 10px; line-height: 1.6; }
+.la-no-conv { font-style: italic; color: var(--color-muted); }
 
 /* 2열 그리드 */
-.la-grid-2 {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
-}
+.la-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
 
-/* 패널 A: 산점도 */
-#la-scatter-canvas { display: block; max-width: 100%; }
-.la-scatter-legend { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
-.la-legend-item { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--color-muted); }
-.la-legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+/* 패널 A: 인지 수준 분포 */
+.la-cog-overview { display: grid; grid-template-columns: 220px 1fr; gap: 24px; margin-bottom: 16px; }
+.la-cog-summary { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.la-cog-legend { width: 100%; }
+.la-cog-legend-row { display: flex; align-items: center; gap: 6px; font-size: 12px; margin-bottom: 4px; }
+.la-cog-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.la-cog-lname { flex: 1; color: var(--color-muted); }
+.la-cog-bars-wrap { overflow: hidden; }
+.la-cog-bars { display: flex; flex-direction: column; gap: 5px; max-height: 320px; overflow-y: auto; }
+.la-cog-bar-row { display: flex; align-items: center; gap: 8px; }
+.la-cog-bar-label { width: 52px; font-size: 11px; text-align: right; color: var(--color-muted); flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.la-cog-stack-bar { flex: 1; height: 16px; display: flex; border-radius: 3px; overflow: hidden; background: #f3f4f6; }
+.la-cog-stack-bar div { transition: width .3s; }
+.la-cog-bar-avg { width: 28px; font-size: 12px; font-weight: 700; text-align: right; flex-shrink: 0; }
+.la-cog-bar-legend { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.la-cog-bar-legend-item { font-size: 11px; color: var(--color-muted); }
+.la-cog-desc-row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
+.la-cog-desc-card { border-top: 3px solid; border-radius: var(--radius); padding: 10px 12px; font-size: 11px; }
+.la-cog-desc-card strong { display: block; margin: 4px 0 2px; font-size: 12px; }
+.la-cog-desc-card p { color: var(--color-muted); line-height: 1.4; }
+.la-cog-desc-badge { display: inline-block; color: #fff; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 8px; }
 
-/* 패널 B: 레이더 */
-.la-radar-wrap { display: flex; justify-content: center; margin-bottom: 12px; }
-.la-bloom-row { display: flex; flex-wrap: wrap; gap: 8px; }
-.la-bloom-cell { display: flex; align-items: center; gap: 4px; font-size: 11px; padding: 4px 8px; background: var(--color-bg); border-radius: 6px; }
-.la-bloom-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-.la-bloom-level { color: var(--color-muted); }
-.la-bloom-rate { font-weight: 700; color: var(--color-text); }
-.la-bloom-base { color: var(--color-muted); }
+/* 패널 B: Agency 매트릭스 */
+#la-agency-canvas { display: block; max-width: 100%; }
+.la-agency-legend { display: flex; flex-wrap: wrap; gap: 12px; font-size: 11px; color: var(--color-muted); margin-top: 8px; }
 
-/* 패널 C: 학습자 유형 */
-.la-typology-cards {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 14px;
-  margin-bottom: 14px;
-}
-.la-typology-card {
-  border: 2px solid;
-  border-radius: var(--radius);
-  padding: 14px 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.la-typology-icon { font-size: 20px; }
-.la-typology-name { font-size: 14px; font-weight: 700; }
-.la-typology-desc { font-size: 11px; color: var(--color-muted); }
-.la-typology-count { font-size: 22px; font-weight: 700; }
-.la-typology-count span { font-size: 13px; font-weight: 400; color: var(--color-muted); }
-.la-typology-metrics { display: flex; gap: 10px; font-size: 11px; color: var(--color-muted); flex-wrap: wrap; }
-.la-typology-metrics strong { font-weight: 700; color: var(--color-text); }
-.la-typology-detail { margin-top: 4px; }
-.la-typology-detail summary { font-size: 11px; cursor: pointer; color: var(--color-primary); }
-.la-typology-member-list { list-style: none; margin-top: 6px; display: flex; flex-direction: column; gap: 2px; }
-.la-typology-member-list li { font-size: 11px; }
-.la-typology-member-list li span { color: var(--color-muted); }
-.la-typology-insight {
-  font-size: 12px;
-  color: var(--color-muted);
-  background: var(--color-bg);
-  border-radius: 6px;
-  padding: 10px 14px;
-  line-height: 1.6;
-  border-left: 3px solid var(--color-primary);
-}
+/* 패널 C: 궤적 */
+.la-traj-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 10px; }
+.la-traj-card { border: 2px solid; border-radius: var(--radius); padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; }
+.la-traj-icon { font-size: 24px; }
+.la-traj-name { font-size: 15px; font-weight: 700; }
+.la-traj-desc { font-size: 11px; color: var(--color-muted); line-height: 1.4; }
+.la-traj-stat { display: flex; flex-direction: column; gap: 3px; font-size: 12px; color: var(--color-muted); }
+.la-traj-stat strong { color: var(--color-text); }
 
-/* 패널 D: 오개념 */
-.la-misconception-wrap { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; align-items: start; }
-.la-mc-bars { display: flex; flex-direction: column; gap: 8px; }
-.la-mc-row { display: flex; align-items: flex-start; gap: 10px; }
-.la-mc-rank { width: 20px; font-size: 12px; font-weight: 700; color: var(--color-muted); flex-shrink: 0; padding-top: 2px; text-align: center; }
-.la-mc-body { flex: 1; }
-.la-mc-label-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 3px; }
-.la-mc-name { font-size: 13px; font-weight: 600; }
-.la-mc-count { font-size: 12px; color: var(--color-muted); }
-.la-mc-bar-wrap { height: 6px; background: #e5e7eb; border-radius: 3px; margin-bottom: 3px; overflow: hidden; }
-.la-mc-bar { height: 100%; background: var(--color-danger); border-radius: 3px; }
-.la-mc-chapters { font-size: 11px; color: var(--color-muted); }
-.la-misconception-summary { align-self: start; }
+/* 패널 D: 학습 사건 */
+.la-events-top { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+.la-event-card { background: var(--color-bg); border: 2px solid; border-radius: var(--radius); padding: 12px 16px; display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 90px; flex: 1; }
+.la-event-icon { font-size: 18px; font-weight: 700; }
+.la-event-count { font-size: 24px; font-weight: 700; }
+.la-event-label { font-size: 11px; color: var(--color-muted); text-align: center; }
+.la-event-ps { border-color: #6366f1; }
+.la-event-ps .la-event-count { color: #6366f1; }
+.la-events-table thead th { font-size: 11px; }
+.la-events-table tbody td { font-size: 12px; }
+.la-event-badge { display: inline-block; font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 10px; }
 
-/* 패널 E: 피드백 */
-.la-feedback-wrap {}
-.la-feedback-table { margin-bottom: 8px; }
-.la-footnote { font-size: 11px; color: var(--color-muted); margin-top: 8px; line-height: 1.6; }
+/* 패널 E: 비교 */
+.la-compare-info { display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+.la-compare-badge { font-size: 12px; font-weight: 600; padding: 4px 12px; border-radius: 12px; }
+.la-high { background: #d1fae5; color: #065f46; }
+.la-low  { background: #fee2e2; color: #991b1b; }
+.la-compare-table thead th { font-size: 11px; }
+.la-compare-table tbody td { font-size: 12px; }
+.la-high-col { color: #065f46; }
+.la-low-col  { color: #991b1b; }
 
 /* 패널 F: 연구 테이블 */
-.la-research-actions { margin-bottom: 12px; }
 .la-table-scroll { overflow-x: auto; }
-.la-research-table thead th { font-size: 11px; }
+.la-research-table thead th { font-size: 11px; white-space: nowrap; }
 .la-research-table tbody td { font-size: 12px; }
 .la-research-avg-row td { background: #f9fafb; font-size: 12px; font-weight: 600; border-top: 2px solid var(--color-border); }
-.la-type-badge {
-  display: inline-block;
-  font-size: 11px;
-  font-weight: 600;
-  padding: 2px 8px;
-  border-radius: 10px;
-  white-space: nowrap;
-}
-.la-type-active   { background: #d1fae5; color: #065f46; }
-.la-type-efficient { background: #ede9fe; color: #5b21b6; }
-.la-type-effort   { background: #fef3c7; color: #92400e; }
-.la-type-risk     { background: #fee2e2; color: #991b1b; }
 
+@media (max-width: 1100px) {
+  .la-cog-desc-row { grid-template-columns: repeat(3, 1fr); }
+}
 @media (max-width: 900px) {
   .la-grid-2 { grid-template-columns: 1fr; }
-  .la-typology-cards { grid-template-columns: 1fr 1fr; }
-  .la-misconception-wrap { grid-template-columns: 1fr; }
+  .la-cog-overview { grid-template-columns: 1fr; }
+  .la-traj-cards { grid-template-columns: 1fr; }
+  .la-cog-desc-row { grid-template-columns: repeat(2, 1fr); }
 }
-
 @media (max-width: 600px) {
-  .la-typology-cards { grid-template-columns: 1fr; }
   .la-header { flex-direction: column; }
+  .la-cog-desc-row { grid-template-columns: 1fr; }
 }
