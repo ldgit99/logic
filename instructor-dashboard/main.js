@@ -32,6 +32,7 @@ import { renderStudentReport } from './views/studentReport.js?v=20260326a';
 import { renderRoster } from './views/roster.js?v=20260326a';
 import { renderQuestions } from './views/questions.js?v=20260326a';
 import { renderReflectionAnalysis } from './views/reflectionAnalysis.js?v=20260326a';
+import { renderLearningAnalysis } from './views/learningAnalysis.js?v=20260407a';
 import { openStudentModal } from './views/studentModal.js?v=20260326a';
 import { exportCSV } from './utils/csv.js?v=20260326a';
 import { escapeHtml } from './utils/format.js?v=20260326a';
@@ -166,6 +167,7 @@ function configureDashboardNav() {
     assessment: { icon: 'AS', label: '형성평가', order: '2' },
     reflections: { icon: 'RF', label: '성찰일지', order: '3' },
     conversations: { icon: 'CH', label: '대화 내용', order: '4' },
+    'learning-analysis': { icon: 'LA', label: '학습 분석', order: '5' },
   };
 
   document.querySelectorAll('.nav-tab').forEach((tab) => {
@@ -194,6 +196,8 @@ function resolveViewId(view) {
       return 'reflection-analysis';
     case 'conversations':
       return 'interaction-analysis';
+    case 'learning-analysis':
+      return 'learning-analysis';
     default:
       return view;
   }
@@ -472,6 +476,24 @@ async function loadView(view) {
             actions: { deleteReflection, restoreReflection },
             reload: () => loadView('reflection-analysis'),
           },
+        );
+        break;
+      }
+
+      case 'learning-analysis': {
+        const [studData, reflData] = await Promise.all([
+          fetchStudents(currentFilters),
+          fetchReflections({
+            chapter_id: currentFilters.chapter || '',
+            student_id: currentFilters.studentId || '',
+            from: currentFilters.from || '',
+            to: currentFilters.to || '',
+          }),
+        ]);
+        renderLearningAnalysis(
+          studData.submissions || [],
+          document.getElementById('learning-analysis-wrap'),
+          reflData.reflections || [],
         );
         break;
       }
