@@ -187,28 +187,26 @@ function updateButtons() {
   // 답안 제출
   const submitBtn = el('assessment-submit');
   if (submitBtn) {
-    submitBtn.textContent = '답안 제출';
     submitBtn.classList.toggle('hidden', isCompleted);
     submitBtn.disabled = busy || isCompleted || Boolean(state?.awaitingNext);
   }
 
-  // 다음 문제 풀이
+  // 다음 문항
   const nextBtn = el('assessment-next-question');
   if (nextBtn) {
-    const showNext = !isCompleted && state?.awaitingNext
-      && state.questionIdx < total - 1;
+    const showNext = !isCompleted && state?.awaitingNext && state.questionIdx < total - 1;
     nextBtn.classList.toggle('hidden', !showNext);
     nextBtn.disabled = busy || !showNext;
   }
 
-  // 최종 제출
+  // 최종 제출 — 마지막 문항(questionIdx === total-1)에서 답변 완료 후에만 표시
   const finalBtn = el('assessment-final-submit');
   if (finalBtn) {
-    finalBtn.classList.toggle('hidden', isCompleted);
-    finalBtn.disabled = busy || answered === 0;
-    finalBtn.title = answered === 0 ? '최소 1문항을 제출해야 합니다'
-      : answered < total ? `${total - answered}문항 미완성 — 그래도 제출 가능`
-      : '최종 제출';
+    const isLastQuestion = state?.questionIdx === total - 1;
+    const lastAnswered = state?.results?.[total - 1]?.judgment;
+    const showFinal = !isCompleted && isLastQuestion && !!lastAnswered;
+    finalBtn.classList.toggle('hidden', !showFinal);
+    finalBtn.disabled = busy;
   }
 }
 
@@ -451,15 +449,11 @@ async function submitCurrentAnswer() {
 async function finalSubmit() {
   if (!state || busy) return;
 
-  const answered = state.results.filter((r) => r.judgment).length;
-  if (answered === 0) {
-    showToast('최소 1문항 이상 제출해야 합니다.', 'error');
-    return;
-  }
   const total = state.questions.length;
-  if (answered < total) {
-    const ok = confirm(`${total - answered}개 문항이 미완성입니다. 그래도 최종 제출하시겠습니까?`);
-    if (!ok) return;
+  const lastAnswered = state.results[total - 1]?.judgment;
+  if (!lastAnswered) {
+    showToast('마지막 문항까지 모두 풀어야 최종 제출할 수 있습니다.', 'error');
+    return;
   }
 
   setBusy(true);
@@ -472,8 +466,8 @@ async function finalSubmit() {
   render();
 
   // 교수 대시보드 전송
-  const profile = getStudentProfile?.() || {};
-  const results = state.results;
+  const profile  = getStudentProfile?.() || {};
+  const results  = state.results;
   const correct  = results.filter((r) => r.judgment === 'correct').length;
   const partial  = results.filter((r) => r.judgment === 'partial').length;
   const score    = Math.round(((correct + partial * 0.5) / total) * 100);

@@ -434,6 +434,87 @@
   gap: 12px;
 }
 
+/* ── 형성평가 전용 footer ───────────────────────────────────── */
+.assessment-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 0 0;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.assessment-footer-left  { display: flex; gap: 8px; }
+.assessment-footer-right { display: flex; gap: 8px; align-items: center; }
+
+/* 작은 보조 버튼 (닫기, 다시 시작) */
+.btn-ghost {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px 14px;
+  font-size: 0.82rem;
+  font-family: 'Noto Sans KR', sans-serif;
+  color: var(--text-secondary);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all .15s;
+}
+.btn-ghost:hover { background: var(--bg-tertiary); color: var(--text-primary); }
+.btn-ghost:disabled { opacity: .4; cursor: not-allowed; }
+
+/* 다음 문제 풀이 */
+.btn-next {
+  background: none;
+  border: 1.5px solid var(--accent-blue);
+  border-radius: var(--radius);
+  padding: 8px 16px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-family: 'Noto Sans KR', sans-serif;
+  color: var(--accent-blue);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all .15s;
+}
+.btn-next:hover { background: var(--accent-blue); color: #fff; }
+.btn-next:disabled { opacity: .4; cursor: not-allowed; }
+
+/* 답안 제출 */
+.btn-submit-answer {
+  background: var(--accent-blue);
+  border: none;
+  border-radius: var(--radius);
+  padding: 10px 22px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  font-family: 'Noto Sans KR', sans-serif;
+  color: #fff;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background .15s;
+}
+.btn-submit-answer:hover:not(:disabled) { background: var(--accent-blue-hover); }
+.btn-submit-answer:disabled { opacity: .4; cursor: not-allowed; }
+
+/* 최종 제출 */
+.btn-final {
+  background: #059669;
+  border: none;
+  border-radius: var(--radius);
+  padding: 10px 20px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  font-family: 'Noto Sans KR', sans-serif;
+  color: #fff;
+  cursor: pointer;
+  white-space: nowrap;
+  display: flex; align-items: center; gap: 6px;
+  transition: background .15s;
+}
+.btn-final:hover:not(:disabled) { background: #047857; }
+.btn-final:disabled { opacity: .4; cursor: not-allowed; }
+
 .reflection-saved-at {
   font-size: 0.76rem;
   color: var(--text-muted);
