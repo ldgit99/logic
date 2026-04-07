@@ -534,6 +534,118 @@
   overflow: hidden;
 }
 
+.feedback-result-box {
+  width: min(640px, calc(100vw - 32px));
+}
+
+.feedback-result-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.feedback-result-chapter {
+  margin: 6px 0 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.feedback-result-close {
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.feedback-result-summary {
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  gap: 16px;
+  padding: 16px;
+  background: var(--bg-tertiary);
+  border-radius: 14px;
+  margin-bottom: 16px;
+}
+
+.feedback-result-kicker {
+  display: block;
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.feedback-result-score {
+  display: block;
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--accent-blue);
+}
+
+.feedback-result-weak {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.feedback-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: rgba(239, 68, 68, 0.12);
+  color: #b91c1c;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.feedback-chip--muted {
+  background: rgba(107, 114, 128, 0.12);
+  color: var(--text-secondary);
+}
+
+.feedback-result-sections {
+  display: grid;
+  gap: 12px;
+}
+
+.feedback-result-section {
+  padding: 14px 16px;
+  border-radius: 14px;
+}
+
+.feedback-result-section h3 {
+  margin: 0 0 6px;
+  font-size: 15px;
+}
+
+.feedback-result-section p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--text-primary);
+}
+
+.feedback-result-section--up {
+  background: rgba(16, 185, 129, 0.1);
+}
+
+.feedback-result-section--back {
+  background: rgba(37, 99, 235, 0.1);
+}
+
+.feedback-result-section--forward {
+  background: rgba(245, 158, 11, 0.12);
+}
+
+@media (max-width: 640px) {
+  .feedback-result-summary {
+    grid-template-columns: 1fr;
+  }
+}
+
 .assessment-modal-body {
   overflow-y: auto;
   flex: 1;

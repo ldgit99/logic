@@ -26,7 +26,9 @@ export async function handleAssessments(request, env) {
   if (error) return jsonResponse({ error }, 400);
 
   const key = `assessment:${body.student_id}:${body.chapter_id}:${body.session_id}`;
-  const value = JSON.stringify({ ...body, _savedAt: new Date().toISOString() });
+  const savedAt = new Date().toISOString();
+  const saved = { ...body, _savedAt: savedAt };
+  const value = JSON.stringify(saved);
   await env.SUBMISSIONS.put(key, value, { expirationTtl: 15552000 });
 
   // 시간 순 인덱스 (전체 목록 조회용)
@@ -49,7 +51,20 @@ export async function handleAssessments(request, env) {
     })();
   }
 
-  return jsonResponse({ ok: true }, 201);
+  return jsonResponse({
+    ok: true,
+    submission: saved,
+    feedback: {
+      score: Number(body.score ?? 0),
+      correctCount: Number(body.correct_count ?? 0),
+      totalCount: Number(body.total_count ?? 0),
+      weakConcepts: Array.isArray(body.weak_concepts) ? body.weak_concepts : [],
+      feedUp: String(body.feed_up || ''),
+      feedBack: String(body.feed_back || ''),
+      feedForward: String(body.feed_forward || ''),
+      qualityMetrics: body.quality_metrics && typeof body.quality_metrics === 'object' ? body.quality_metrics : {},
+    },
+  }, 201);
 }
 
 // ── 이메일 발송 (Resend API) ──────────────────────────────────
