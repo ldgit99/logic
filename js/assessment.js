@@ -99,6 +99,50 @@ function loadState(chapterId) {
   }
 }
 
+async function fetchQuestions(chapterId) {
+  let lastError = null;
+  for (const url of WORKER_URLS) {
+    try {
+      const base = url.endsWith('/') ? url.slice(0, -1) : url;
+      const res = await fetch(`${base}/questions/${encodeURIComponent(chapterId)}`, {
+        method: 'GET',
+        cache: 'no-store',
+      });
+      if (!res.ok) {
+        if (res.status === 404) return null;
+        throw new Error(`HTTP ${res.status}`);
+      }
+      return await res.json();
+    } catch (err) {
+      lastError = err;
+    }
+  }
+  if (lastError) throw lastError;
+  return null;
+}
+
+function normalizeQuestions(chapterData, remotePayload) {
+  if (Array.isArray(remotePayload?.questions?.questions) && remotePayload.questions.questions.length > 0) {
+    return remotePayload.questions.questions;
+  }
+  if (Array.isArray(chapterData?.formativeAssessment?.questions)) {
+    return chapterData.formativeAssessment.questions;
+  }
+  return [];
+}
+
+function questionSignature(questions) {
+  return JSON.stringify(
+    (questions || []).map((question) => ({
+      id: question?.id || '',
+      question: question?.question || '',
+      concept: question?.concept || '',
+      keyAnswer: question?.keyAnswer || question?.answer || '',
+      hints: Array.isArray(question?.hints) ? question.hints : [],
+    })),
+  );
+}
+
 function clearState(chapterId) {
   try {
     localStorage.removeItem(storageKey(chapterId));
@@ -451,18 +495,35 @@ export function initAssessmentFeature(options = {}) {
   bindModalEvents();
 }
 
-export function openAssessmentModal(chapterData) {
-  const questions = Array.isArray(chapterData?.formativeAssessment?.questions)
-    ? chapterData.formativeAssessment.questions
-    : [];
-  if (!chapterData?.id || questions.length === 0) {
+export async function openAssessmentModal(chapterData) {
+  if (!chapterData?.id) {
     showToast('이 장에는 형성평가 문항이 아직 준비되지 않았습니다.', 'error');
     return;
   }
 
-  currentChapter = chapterData;
+  let remotePayload = null;
+  try {
+    remotePayload = await fetchQuestions(chapterData.id);
+  } catch {}
+
+  const questions = normalizeQuestions(chapterData, remotePayload);
+  if (questions.length === 0) {
+    showToast('\uC774 \uC7A5\uC5D0\uB294 \uD615\uC131\uD3C9\uAC00 \uBB38\uD56D\uC774 \uC544\uC9C1 \uC900\uBE44\uB418\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4.', 'error');
+    return;
+  }
+
+  currentChapter = {
+    ...chapterData,
+    formativeAssessment: {
+      ...(chapterData.formativeAssessment || {}),
+      totalQuestions: questions.length,
+      questions,
+    },
+  };
   const saved = loadState(chapterData.id);
-  state = saved?.status ? saved : createInitialState(chapterData);
+  state = (saved?.status && questionSignature(saved.questions) === questionSignature(questions))
+    ? saved
+    : createInitialState(currentChapter);
   saveState();
   syncBadge(chapterData.id);
   render();

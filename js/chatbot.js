@@ -4,8 +4,11 @@ import { getStudentProfile } from './auth.js?v=20260311c';
 const ORIGIN = window.location.origin.endsWith('/') ? window.location.origin : `${window.location.origin}/`;
 const WORKER_URLS = [
   'https://logic-proxy.dongkuklee99.workers.dev/',
-  'https://logic.dongkuklee99.workers.dev/',
-  ...(window.location.origin.includes('localhost') || window.location.origin.includes('127.0.0.1') ? [ORIGIN] : []),
+  ...((window.location.origin.includes('localhost')
+    || window.location.origin.includes('127.0.0.1')
+    || /(^|\.)workers\.dev$/i.test(window.location.hostname || ''))
+    ? [ORIGIN]
+    : []),
 ];
 const VERSION = '20260326b';
 const ASSESSMENT_TRIGGER = '형성평가';
@@ -13,7 +16,7 @@ const MAX_HINTS = 3;
 const INDEX_KEY = 'logic_session_index_v5';
 const SESSION_KEY = 'logic_session_v5';
 const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 30;
-const ChatMode = { LEARNING: 'learning', ASSESSMENT: 'assessment', DONE: 'assessment_complete' };
+const ChatMode = { LEARNING: 'learning' };
 
 let chapterRef = null;
 let isBusy = false;
@@ -121,27 +124,16 @@ function snapshot() {
     sessionId,
     chapterId: chapterRef?.id || '',
     currentMode,
-    assessmentComplete,
-    assessmentQuestions,
-    assessmentQIdx,
-    assessmentHintCount,
-    assessmentTrace,
+    assessmentComplete: false,
+    assessmentQuestions: [],
+    assessmentQIdx: 0,
+    assessmentHintCount: 0,
+    assessmentTrace: [],
     logMessages,
     memorySummary,
     qualityMetrics: derivedMetrics(),
     savedAt: Date.now(),
   };
-}
-function serializableAssessmentQuestions() {
-  return (assessmentQuestions || []).map((q, i) => ({
-    id: q?.id || `Q${i + 1}`,
-    question: q?.question || '',
-    concept: q?.concept || '',
-    bloomLevel: q?.bloomLevel || q?.bloom || '',
-    keyAnswer: q?.keyAnswer || q?.answer || '',
-    answer: q?.answer || q?.keyAnswer || '',
-    hints: Array.isArray(q?.hints) ? q.hints : [],
-  }));
 }
 function sessionStateSnapshot() {
   return {
@@ -157,11 +149,6 @@ function sessionStateSnapshot() {
 }
 function hydrateServerState(state = {}) {
   currentMode = ChatMode.LEARNING;
-  assessmentComplete = false;
-  assessmentQuestions = [];
-  assessmentQIdx = 0;
-  assessmentHintCount = 0;
-  assessmentTrace = [];
   memorySummary = state.memorySummary ? { ...emptyMemory(), ...state.memorySummary } : emptyMemory();
   qualityMetrics = state.qualityMetrics ? { ...emptyMetrics(), ...state.qualityMetrics } : emptyMetrics();
 }
@@ -191,11 +178,6 @@ function loadLocalSession(chapterId) {
 function hydrate(parsed) {
   sessionId = parsed.sessionId || createSessionId(chapterRef?.id || '00');
   currentMode = ChatMode.LEARNING;
-  assessmentComplete = false;
-  assessmentQuestions = [];
-  assessmentQIdx = 0;
-  assessmentHintCount = 0;
-  assessmentTrace = [];
   logMessages = Array.isArray(parsed.logMessages) ? parsed.logMessages : [];
   memorySummary = parsed.memorySummary ? { ...emptyMemory(), ...parsed.memorySummary } : emptyMemory();
   qualityMetrics = parsed.qualityMetrics ? { ...emptyMetrics(), ...parsed.qualityMetrics } : emptyMetrics();
@@ -358,26 +340,6 @@ async function workerRouteJson(path, body) {
   }
   throw lastError || new Error(`All worker endpoints failed for ${path}`);
 }
-async function requestAssessmentDecision(payload) {
-  let lastError = null;
-
-  for (let attempt = 0; attempt < 2; attempt += 1) {
-    try {
-      const data = await workerRouteJson('/chat/respond', payload);
-      const result = parseCompletionJson(data);
-      if (!result) throw new Error('Invalid assessment JSON');
-      return result;
-    } catch (err) {
-      lastError = err;
-      console.error(`assessment route failed (attempt ${attempt + 1}/2):`, err);
-      if (attempt === 0) {
-        await new Promise((resolve) => setTimeout(resolve, 350));
-      }
-    }
-  }
-
-  throw lastError || new Error('Assessment request failed');
-}
 async function apiGet(path, token) {
   let lastError = null;
   for (const base of WORKER_URLS) {
@@ -399,13 +361,24 @@ async function apiGet(path, token) {
   return null;
 }
 async function fetchQuestions(chapterId) {
-  for (const workerUrl of WORKER_URLS) {
+  let lastError = null;
+  for (const base of WORKER_URLS) {
     try {
-      const base = workerUrl.endsWith('/') ? workerUrl.slice(0, -1) : workerUrl;
-      const res = await fetch(`${base}/questions/${chapterId}`);
-      if (res.ok) return await res.json();
-    } catch {}
+      const normalized = base.endsWith('/') ? base.slice(0, -1) : base;
+      const res = await fetch(`${normalized}/questions/${encodeURIComponent(chapterId)}`, {
+        method: 'GET',
+        cache: 'no-store',
+      });
+      if (!res.ok) {
+        if (res.status === 404) return null;
+        throw new Error(`questions api error ${res.status}`);
+      }
+      return await res.json();
+    } catch (err) {
+      lastError = err;
+    }
   }
+  if (lastError) throw lastError;
   return null;
 }
 async function fetchLocks() {
@@ -421,36 +394,6 @@ async function fetchLocks() {
       }
     } catch {}
   }
-}
-function questionText(question, index, total) {
-  return `Q${index + 1}/${total}. ${question.question}`;
-}
-function learningLike(text) {
-  const q = trim(text);
-  if (!q) return false;
-  return q.includes('?') || ['설명', '이해', '정리', '개념', '차이', '무엇'].some((word) => q.includes(word));
-}
-function parseAssessmentTrigger(text) {
-  const value = trim(text);
-  if (value === ASSESSMENT_TRIGGER || value === '평가') return 0;
-  if (value.includes(ASSESSMENT_TRIGGER)) {
-    const match = value.match(/(\d+)\s*번/);
-    if (match) return Math.max(0, Number.parseInt(match[1], 10) - 1);
-    return 0;
-  }
-  return null;
-}
-function trackHint() {
-  qualityMetrics.hint_request_count += 1;
-  const s = student();
-  if (!s.studentId) return;
-  sendEvent('hint_used', {
-    chapterId: chapterRef?.id || '',
-    sessionId,
-    studentId: s.studentId,
-    studentName: s.studentName,
-    payload: { question_index: assessmentQIdx, hint_index: assessmentHintCount, timestamp: nowIso() },
-  });
 }
 async function respondLearning(userText) {
   let result = null;
@@ -622,6 +565,13 @@ function finishAssessment() {
 async function sendToAI(text) {
   const input = trim(text);
   if (!input || isBusy) return;
+  if (input === '형성평가' || input === '평가') {
+    const msg = '채팅은 학습 전용입니다. 형성평가는 왼쪽 목차의 연필 버튼에서 진행해 주세요.';
+    bubble('system', msg);
+    pushLog('system', msg, currentMode);
+    persist();
+    return;
+  }
   const opts = { force: true };
 
   if (!opts.force && currentMode === ChatMode.ASSESSMENT && !assessmentComplete && learningLike(input)) {
