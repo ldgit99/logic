@@ -1,9 +1,17 @@
 /**
  * views/summary.js
  * Assessment-first summary cards + submission table
+ *
+ * 테이블 구조:
+ *  학번 | 이름 | 형성평가(N건) | 대화 내용(N건) | 성찰일지(N건) | 평균점수 | 완료 현황
+ *
+ * 형성평가/대화 내용/성찰일지 셀 클릭 → 챕터별 제출일시 목록 인라인 펼침
+ * 각 챕터 행의 [보기] 버튼 → 상세 모달 또는 성찰일지 내용 패널
  */
 
 import { escapeHtml, formatDate, scoreColor } from '../utils/format.js';
+
+// ── 진입점: 요약 카드 ─────────────────────────────────────────────
 
 export function renderSummaryCards(summary, container, submissions = [], reflections = []) {
   if (!container) return;
@@ -15,20 +23,20 @@ export function renderSummaryCards(summary, container, submissions = [], reflect
   const avgScoreDisplay = Number.isFinite(avgScoreNum) ? `${avgScoreNum.toFixed(1)}점` : '-';
   const uniqueStudents = new Set(
     rows
-      .map((submission) => String(submission?.student_id || submission?.studentId || '').trim())
+      .map((s) => String(s?.student_id || s?.studentId || '').trim())
       .filter(Boolean),
   ).size || totalCount;
 
   const lastSubmittedAt = rows
-    .map((submission) => String(submission?.submitted_at || submission?.submittedAt || submission?.timestamp || ''))
+    .map((s) => String(s?.submitted_at || s?.submittedAt || s?.timestamp || ''))
     .filter(Boolean)
     .sort((a, b) => b.localeCompare(a))[0] || '';
 
-  const reflectionLinked = rows.filter((submission) => reflectionMap.has(makeStudentChapterKey(submission))).length;
+  const reflectionLinked = rows.filter((s) => reflectionMap.has(makeStudentChapterKey(s))).length;
   const conversationLinked = rows.filter(hasConversationLog).length;
-  const fullyLinked = rows.filter((submission) => (
-    reflectionMap.has(makeStudentChapterKey(submission)) && hasConversationLog(submission)
-  )).length;
+  const fullyLinked = rows.filter((s) =>
+    reflectionMap.has(makeStudentChapterKey(s)) && hasConversationLog(s),
+  ).length;
 
   container.innerHTML = `
     <div class="summary-shell">
@@ -56,9 +64,9 @@ export function renderSummaryCards(summary, container, submissions = [], reflect
   `;
 }
 
-function buildStatCard(label, value, meta, className = '') {
+function buildStatCard(label, value, meta) {
   return `
-    <article class="summary-stat-card ${className}">
+    <article class="summary-stat-card">
       <span class="summary-stat-card__label">${escapeHtml(label)}</span>
       <strong class="summary-stat-card__value">${escapeHtml(value)}</strong>
       <span class="summary-stat-card__meta">${escapeHtml(meta)}</span>
@@ -66,11 +74,13 @@ function buildStatCard(label, value, meta, className = '') {
   `;
 }
 
+// ── 진입점: 제출 현황 테이블 ──────────────────────────────────────
+
 export function renderSummaryTable(submissions, tbody, { onRowClick, onDelete } = {}, reflections = []) {
   if (!tbody) return;
 
   const list = Array.isArray(submissions) ? submissions : [];
-  const reflMap = buildReflectionMap(reflections);
+  const reflMap = buildReflectionObjectMap(reflections); // key → reflection 객체
   if (!list.length) { tbody.innerHTML = ''; return; }
 
   // ── 학생별 집계 ──────────────────────────────────────────────────
@@ -93,60 +103,33 @@ export function renderSummaryTable(submissions, tbody, { onRowClick, onDelete } 
   tbody.innerHTML = students.map((student) => {
     const subs = student.submissions;
 
-    // 각 유형별 제출 수
     const assessCount = subs.length;
-    const convCount   = subs.filter((s) => hasConversationLog(s)).length;
+    const convCount   = subs.filter(hasConversationLog).length;
     const reflCount   = subs.filter((s) => reflMap.has(makeStudentChapterKey(s))).length;
     const fullCount   = subs.filter((s) =>
-      hasConversationLog(s) && reflMap.has(makeStudentChapterKey(s))
+      hasConversationLog(s) && reflMap.has(makeStudentChapterKey(s)),
     ).length;
 
     const scores = subs.map((s) => Number(s?.score)).filter(Number.isFinite);
-    const avgScore = scores.length ? (scores.reduce((a, b) => a + b, 0) / scores.length) : null;
+    const avgScore = scores.length ? scores.reduce((a, b) => a + b, 0) / scores.length : null;
     const avgScoreClass = avgScore != null ? scoreColor(avgScore) : '';
     const total = subs.length;
 
-    const statusBadge = (n, t) => {
-      const cls = n === t ? 'summary-status--ok' : n > 0 ? 'summary-status--warn' : 'summary-status--miss';
-      return `<span class="summary-status ${cls}">${n}/${t}</span>`;
+    const typeBadge = (n, t, type) => {
+      const cls = n === t ? 'st-badge--ok' : n > 0 ? 'st-badge--warn' : 'st-badge--miss';
+      return `<button class="st-type-badge ${cls}" data-sid="${escapeHtml(student.studentId)}" data-type="${type}">${n}/${t}건</button>`;
     };
-
-    // 챕터 목록 (상세용)
-    const sortedSubs = [...subs].sort((a, b) =>
-      String(a?.chapter_id || a?.chapterId || '').localeCompare(
-        String(b?.chapter_id || b?.chapterId || ''), undefined, { numeric: true }
-      )
-    );
-
-    const chapterDetailHtml = sortedSubs.map((s, idx) => {
-      const ch = String(s?.chapter_id || s?.chapterId || '');
-      const hasConv = hasConversationLog(s);
-      const hasRefl = reflMap.has(makeStudentChapterKey(s));
-      const sc = s?.score != null ? Number(s.score) : null;
-      const scClass = sc != null ? scoreColor(sc) : '';
-      return `
-        <div class="st-ch-row">
-          <span class="st-ch-label">Ch.${escapeHtml(ch)}</span>
-          <span class="st-ch-icon ${true ? 'st-ok' : 'st-miss'}" title="형성평가">평 ✓</span>
-          <span class="st-ch-icon ${hasConv ? 'st-ok' : 'st-miss'}" title="대화">${hasConv ? '대 ✓' : '대 ✗'}</span>
-          <span class="st-ch-icon ${hasRefl ? 'st-ok' : 'st-miss'}" title="성찰일지">${hasRefl ? '성 ✓' : '성 ✗'}</span>
-          ${sc != null ? `<span class="st-ch-score ${scClass}">${sc}점</span>` : ''}
-          <button class="btn-detail st-ch-detail-btn" data-sub-idx="${idx}" data-sid="${escapeHtml(student.studentId)}">상세</button>
-          <button class="btn-delete st-ch-del-btn" data-sub-idx="${idx}" data-sid="${escapeHtml(student.studentId)}">삭제</button>
-        </div>
-      `;
-    }).join('');
 
     return `
       <tr class="st-student-row" data-sid="${escapeHtml(student.studentId)}">
         <td>${escapeHtml(student.studentId)}</td>
         <td>
           <span class="st-name">${escapeHtml(student.studentName)}</span>
-          <span class="st-expand-hint">▸ 클릭하여 챕터 상세</span>
+          <span class="st-expand-hint">셀 클릭하여 상세 확인</span>
         </td>
-        <td>${statusBadge(assessCount, total)}</td>
-        <td>${statusBadge(convCount, total)}</td>
-        <td>${statusBadge(reflCount, total)}</td>
+        <td class="st-type-cell">${typeBadge(assessCount, total, 'assess')}</td>
+        <td class="st-type-cell">${typeBadge(convCount, total, 'conv')}</td>
+        <td class="st-type-cell">${typeBadge(reflCount, total, 'refl')}</td>
         <td class="${avgScoreClass}">
           ${avgScore != null
             ? `<div class="score-bar-wrap"><div class="score-bar ${avgScoreClass}-bar" style="width:${Math.min(avgScore, 100)}%"></div></div><strong>${avgScore.toFixed(1)}점</strong>`
@@ -158,67 +141,207 @@ export function renderSummaryTable(submissions, tbody, { onRowClick, onDelete } 
             : `<span class="summary-status summary-status--warn">${fullCount}/${total} 완료</span>`}
         </td>
       </tr>
-      <tr class="st-detail-row hidden" data-sid="${escapeHtml(student.studentId)}">
-        <td colspan="7" class="st-detail-td">
-          <div class="st-detail-body">
-            <strong class="st-detail-heading">챕터별 제출 현황</strong>
-            <div class="st-ch-list">${chapterDetailHtml}</div>
-          </div>
+      <tr class="st-expand-row hidden" data-sid="${escapeHtml(student.studentId)}">
+        <td colspan="7" class="st-expand-td">
+          <div class="st-expand-body" id="st-expand-${escapeHtml(student.studentId)}"></div>
         </td>
       </tr>
     `;
   }).join('');
 
-  // 행 클릭 → 챕터 상세 토글
-  tbody.querySelectorAll('.st-student-row').forEach((row) => {
-    row.addEventListener('click', (e) => {
-      if (e.target.closest('button')) return; // 버튼 클릭 시 무시
-      const sid = row.dataset.sid;
-      const detail = tbody.querySelector(`.st-detail-row[data-sid="${sid}"]`);
-      if (!detail) return;
-      const isOpen = !detail.classList.contains('hidden');
-      tbody.querySelectorAll('.st-detail-row').forEach((r) => r.classList.add('hidden'));
-      tbody.querySelectorAll('.st-student-row').forEach((r) => r.classList.remove('st-row-open'));
-      if (!isOpen) { detail.classList.remove('hidden'); row.classList.add('st-row-open'); }
-    });
-  });
-
-  // 상세보기 버튼
-  tbody.querySelectorAll('.st-ch-detail-btn').forEach((btn) => {
+  // ── 이벤트 바인딩 ─────────────────────────────────────────────────
+  tbody.querySelectorAll('.st-type-badge').forEach((btn) => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
       const sid = btn.dataset.sid;
-      const idx = Number(btn.dataset.subIdx);
+      const type = btn.dataset.type;
+      const expandRow = tbody.querySelector(`.st-expand-row[data-sid="${sid}"]`);
+      const expandBody = document.getElementById(`st-expand-${sid}`);
       const student = students.find((s) => s.studentId === sid);
-      if (student && onRowClick) {
-        const sortedSubs = [...student.submissions].sort((a, b) =>
-          String(a?.chapter_id || a?.chapterId || '').localeCompare(
-            String(b?.chapter_id || b?.chapterId || ''), undefined, { numeric: true }
-          )
-        );
-        onRowClick(sortedSubs[idx]);
+      if (!expandRow || !expandBody || !student) return;
+
+      const isOpen = !expandRow.classList.contains('hidden');
+      const currentType = expandRow.dataset.openType;
+
+      // 같은 타입 재클릭 → 닫기
+      if (isOpen && currentType === type) {
+        expandRow.classList.add('hidden');
+        expandRow.dataset.openType = '';
+        btn.classList.remove('st-badge--active');
+        return;
       }
+
+      // 다른 행 닫기
+      tbody.querySelectorAll('.st-expand-row').forEach((r) => {
+        r.classList.add('hidden');
+        r.dataset.openType = '';
+      });
+      tbody.querySelectorAll('.st-type-badge').forEach((b) => b.classList.remove('st-badge--active'));
+
+      // 내용 렌더링
+      expandBody.innerHTML = buildExpandContent(student, type, reflMap, { onRowClick, onDelete });
+      expandRow.dataset.openType = type;
+      expandRow.classList.remove('hidden');
+      btn.classList.add('st-badge--active');
+
+      // 펼쳐진 패널 내 버튼 바인딩
+      bindExpandButtons(expandBody, student, type, reflMap, { onRowClick, onDelete });
+    });
+  });
+}
+
+// ── 펼침 패널 내용 생성 ───────────────────────────────────────────
+
+function buildExpandContent(student, type, reflMap, { onRowClick, onDelete } = {}) {
+  const sortedSubs = [...student.submissions].sort((a, b) =>
+    String(a?.chapter_id || a?.chapterId || '').localeCompare(
+      String(b?.chapter_id || b?.chapterId || ''), undefined, { numeric: true },
+    ),
+  );
+
+  const typeLabels = { assess: '형성평가', conv: '대화 내용', refl: '성찰일지' };
+  const title = typeLabels[type] || '';
+
+  const rows = sortedSubs.map((s, idx) => {
+    const ch = String(s?.chapter_id || s?.chapterId || '');
+    const key = makeStudentChapterKey(s);
+
+    if (type === 'assess') {
+      const submittedAt = s?.submitted_at || s?.submittedAt || '';
+      const sc = s?.score != null ? Number(s.score) : null;
+      return `
+        <div class="st-exp-row">
+          <span class="st-exp-ch">Ch.${escapeHtml(ch)}</span>
+          <span class="st-exp-date">${submittedAt ? formatDate(submittedAt) : '일시 미확인'}</span>
+          ${sc != null ? `<span class="st-exp-score ${scoreColor(sc)}">${sc}점</span>` : ''}
+          <span class="st-exp-ok">제출 완료</span>
+          <button class="btn-detail st-exp-btn" data-idx="${idx}" data-sid="${escapeHtml(student.studentId)}">상세보기</button>
+          <button class="btn-delete st-exp-del" data-idx="${idx}" data-sid="${escapeHtml(student.studentId)}">삭제</button>
+        </div>
+      `;
+    }
+
+    if (type === 'conv') {
+      const hasConv = hasConversationLog(s);
+      const submittedAt = s?.submitted_at || s?.submittedAt || '';
+      const turns = countConversationTurns(s);
+      if (!hasConv) {
+        return `
+          <div class="st-exp-row st-exp-row--miss">
+            <span class="st-exp-ch">Ch.${escapeHtml(ch)}</span>
+            <span class="st-exp-miss">미제출</span>
+          </div>
+        `;
+      }
+      return `
+        <div class="st-exp-row">
+          <span class="st-exp-ch">Ch.${escapeHtml(ch)}</span>
+          <span class="st-exp-date">${submittedAt ? formatDate(submittedAt) : '일시 미확인'}</span>
+          <span class="st-exp-ok">${turns > 0 ? `${turns}턴` : '제출 완료'}</span>
+          <button class="btn-detail st-exp-btn" data-idx="${idx}" data-sid="${escapeHtml(student.studentId)}">대화 보기</button>
+        </div>
+      `;
+    }
+
+    if (type === 'refl') {
+      const refl = reflMap.get(key);
+      if (!refl) {
+        return `
+          <div class="st-exp-row st-exp-row--miss">
+            <span class="st-exp-ch">Ch.${escapeHtml(ch)}</span>
+            <span class="st-exp-miss">미제출</span>
+          </div>
+        `;
+      }
+      const submittedAt = refl?.submitted_at || refl?.submittedAt || '';
+      const preview = String(refl?.content || refl?.reflection_text || '').slice(0, 60);
+      return `
+        <div class="st-exp-row">
+          <span class="st-exp-ch">Ch.${escapeHtml(ch)}</span>
+          <span class="st-exp-date">${submittedAt ? formatDate(submittedAt) : '일시 미확인'}</span>
+          ${preview ? `<span class="st-exp-preview">${escapeHtml(preview)}…</span>` : ''}
+          <button class="st-exp-btn st-exp-refl-btn" data-key="${escapeHtml(key)}" data-idx="${idx}" data-sid="${escapeHtml(student.studentId)}">내용 보기</button>
+        </div>
+      `;
+    }
+
+    return '';
+  }).join('');
+
+  return `
+    <div class="st-exp-header">
+      <strong class="st-exp-title">${escapeHtml(student.studentName)} — ${title} 제출 현황</strong>
+      <span class="st-exp-close-hint">다시 클릭하면 닫힙니다</span>
+    </div>
+    <div class="st-exp-list">${rows || '<p class="empty-msg">데이터가 없습니다.</p>'}</div>
+  `;
+}
+
+function bindExpandButtons(expandBody, student, type, reflMap, { onRowClick, onDelete } = {}) {
+  const sortedSubs = [...student.submissions].sort((a, b) =>
+    String(a?.chapter_id || a?.chapterId || '').localeCompare(
+      String(b?.chapter_id || b?.chapterId || ''), undefined, { numeric: true },
+    ),
+  );
+
+  // 상세보기 / 대화 보기 버튼
+  expandBody.querySelectorAll('.st-exp-btn:not(.st-exp-refl-btn)').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const idx = Number(btn.dataset.idx);
+      if (onRowClick) onRowClick(sortedSubs[idx]);
     });
   });
 
   // 삭제 버튼
-  tbody.querySelectorAll('.st-ch-del-btn').forEach((btn) => {
+  expandBody.querySelectorAll('.st-exp-del').forEach((btn) => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
-      const sid = btn.dataset.sid;
-      const idx = Number(btn.dataset.subIdx);
-      const student = students.find((s) => s.studentId === sid);
-      if (student && onDelete) {
-        const sortedSubs = [...student.submissions].sort((a, b) =>
-          String(a?.chapter_id || a?.chapterId || '').localeCompare(
-            String(b?.chapter_id || b?.chapterId || ''), undefined, { numeric: true }
-          )
-        );
-        onDelete(sortedSubs[idx]);
-      }
+      const idx = Number(btn.dataset.idx);
+      if (onDelete) onDelete(sortedSubs[idx]);
+    });
+  });
+
+  // 성찰일지 내용 보기 버튼
+  expandBody.querySelectorAll('.st-exp-refl-btn').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const key = btn.dataset.key;
+      const refl = reflMap.get(key);
+      if (!refl) return;
+      showReflectionPanel(expandBody, btn, refl);
     });
   });
 }
+
+// ── 성찰일지 인라인 패널 ─────────────────────────────────────────
+
+function showReflectionPanel(expandBody, triggerBtn, refl) {
+  const existing = expandBody.querySelector('.st-refl-panel');
+  if (existing) existing.remove();
+
+  const content = String(refl?.content || refl?.reflection_text || '내용 없음');
+  const submittedAt = refl?.submitted_at || refl?.submittedAt || '';
+
+  const panel = document.createElement('div');
+  panel.className = 'st-refl-panel';
+  panel.innerHTML = `
+    <div class="st-refl-panel-head">
+      <strong>성찰일지 내용</strong>
+      ${submittedAt ? `<span class="st-refl-date">${formatDate(submittedAt)}</span>` : ''}
+      <button class="st-refl-close">✕</button>
+    </div>
+    <p class="st-refl-content">${escapeHtml(content)}</p>
+  `;
+  panel.querySelector('.st-refl-close').addEventListener('click', () => panel.remove());
+
+  // 트리거 버튼 다음에 삽입
+  const row = triggerBtn.closest('.st-exp-row');
+  if (row) row.after(panel);
+  else expandBody.appendChild(panel);
+}
+
+// ── 유틸 ──────────────────────────────────────────────────────────
 
 function makeStudentChapterKey(item) {
   const studentId = String(item?.student_id || item?.studentId || '').trim();
@@ -226,18 +349,31 @@ function makeStudentChapterKey(item) {
   return `${studentId}::${chapterId}`;
 }
 
+/** key → boolean Set (카드 필터용) */
 function buildReflectionMap(reflections = []) {
   return new Set(
     (Array.isArray(reflections) ? reflections : [])
-      .filter((item) => !item?.is_deleted)
+      .filter((r) => !r?.is_deleted)
       .map(makeStudentChapterKey)
-      .filter((key) => key !== '::'),
+      .filter((k) => k !== '::'),
   );
+}
+
+/** key → reflection 객체 Map (내용 표시용) */
+function buildReflectionObjectMap(reflections = []) {
+  const map = new Map();
+  (Array.isArray(reflections) ? reflections : [])
+    .filter((r) => !r?.is_deleted)
+    .forEach((r) => {
+      const key = makeStudentChapterKey(r);
+      if (key !== '::') map.set(key, r);
+    });
+  return map;
 }
 
 function countConversationTurns(submission) {
   const messages = Array.isArray(submission?.messages)
-    ? submission.messages.filter((item) => String(item?.role || '').toLowerCase() !== 'system')
+    ? submission.messages.filter((m) => String(m?.role || '').toLowerCase() !== 'system')
     : [];
   if (messages.length) return messages.length;
   const metrics = submission?.chat_metrics || {};
