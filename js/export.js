@@ -124,14 +124,12 @@ function closeModal() {
 function openFeedbackModal(feedback, chapterData) {
   const modal = getEl('feedback-result-modal');
   const chapterEl = getEl('feedback-result-chapter');
-  const scoreEl = getEl('feedback-result-score');
   const weakEl = getEl('feedback-result-weak');
   const sectionsEl = getEl('feedback-result-sections');
-  if (!modal || !chapterEl || !scoreEl || !weakEl || !sectionsEl) return;
+  if (!modal || !chapterEl || !weakEl || !sectionsEl) return;
 
   const normalized = normalizeFeedback(feedback);
   chapterEl.textContent = chapterData?.title || `Ch.${chapterData?.id || ''}`;
-  scoreEl.textContent = `${normalized.score}점 (${normalized.correctCount}/${normalized.totalCount})`;
   weakEl.innerHTML = normalized.weakConcepts.length
     ? normalized.weakConcepts.map((item) => `<span class="feedback-chip">${escapeHtml(item)}</span>`).join('')
     : '<span class="feedback-chip feedback-chip--muted">취약 개념 없음</span>';

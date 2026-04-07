@@ -561,13 +561,15 @@
 }
 
 .feedback-result-summary {
-  display: grid;
-  grid-template-columns: 160px 1fr;
-  gap: 16px;
+  display: block;
   padding: 16px;
   background: var(--bg-tertiary);
   border-radius: 14px;
   margin-bottom: 16px;
+}
+
+.feedback-result-summary > div:first-child {
+  display: none;
 }
 
 .feedback-result-kicker {
