@@ -241,11 +241,8 @@ function renderSummary() {
   const partial  = results.filter((r) => r.judgment === 'partial').length;
   const incorrect = results.filter((r) => r.judgment === 'incorrect').length;
   const unanswered = results.filter((r) => !r.judgment).length;
-  const total = results.length || 1;
-  const score = Math.round(((correct + partial * 0.5) / total) * 100);
   return `
     <div class="assessment-summary-card">
-      <div class="assessment-summary-score">${score}점</div>
       <div class="assessment-summary-meta">
         정답 ${correct} · 부분정답 ${partial} · 보완 필요 ${incorrect}
         ${unanswered > 0 ? ` · 미응시 ${unanswered}` : ''}

@@ -151,7 +151,6 @@ function renderResults(body, data) {
             <span class="ms-check-icon">${hasAssess ? '✓' : '✗'}</span>
             <span class="ms-check-label">형성평가</span>
             ${hasAssess ? `<span class="ms-check-date">${fmt(a.submitted_at)}</span>` : ''}
-            ${hasAssess && a.score != null ? `<span class="ms-score">${a.score}점</span>` : ''}
           </div>
           <div class="ms-check ${hasConv ? 'ms-ok' : 'ms-miss'}">
             <span class="ms-check-icon">${hasConv ? '✓' : '✗'}</span>
