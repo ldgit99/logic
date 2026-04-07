@@ -1,5 +1,3 @@
-import { generateFeedback } from './feedback.js';
-
 function showToast(message, type = 'info') {
   let container = document.getElementById('toast-container');
   if (!container) {
@@ -101,7 +99,7 @@ function resolveConversationMessages({ studentId, chapterId, sessionId }) {
   return getDomMessages();
 }
 
-function setLoading(visible, message = '\uD53C\uB4DC\uBC31\uC744 \uC0DD\uC131\uD558\uB294 \uC911\uC785\uB2C8\uB2E4...') {
+function setLoading(visible, message = 'PDF를 생성하는 중입니다...') {
   const overlay = getEl('loading-overlay');
   const msg = getEl('loading-message');
 
@@ -138,7 +136,7 @@ function normalizeFeedback(feedback, totalCount) {
   };
 }
 
-function buildReportHTML(studentName, studentId, chapterData, messages, feedback) {
+function buildReportHTML(studentName, studentId, chapterData, messages) {
   const now = new Date();
   const createdAt = now.toLocaleString('ko-KR', { hour12: false });
 
@@ -146,56 +144,37 @@ function buildReportHTML(studentName, studentId, chapterData, messages, feedback
   const chatRows = printableMessages.length
     ? printableMessages
       .map((m) => {
-        const roleLabel = m.role === 'user' ? '\\uD559\\uC0DD' : 'AI \\uD29C\\uD130';
-
+        const roleLabel = m.role === 'user' ? '학생' : 'AI 튜터';
+        const bgColor = m.role === 'user' ? '#eff6ff' : '#f9fafb';
         return `
-          <div style="border:1px solid #dbe4f0;border-radius:8px;padding:8px;margin-bottom:8px;overflow-wrap:anywhere;word-break:break-word;">
-            <div style="font-weight:700;margin-bottom:4px;">${roleLabel}</div>
+          <div style="border:1px solid #dbe4f0;border-radius:8px;padding:8px;margin-bottom:8px;overflow-wrap:anywhere;word-break:break-word;background:${bgColor};">
+            <div style="font-weight:700;margin-bottom:4px;font-size:10pt;">${roleLabel}</div>
             <div style="white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;">${escapeHtml(m.content || '')}</div>
           </div>
         `;
       })
       .join('')
-    : '<p style="margin:0;">\uB300\uD654 \uB85C\uADF8\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4.</p>';
-
-  const weakConcepts = feedback.weakConcepts.length
-    ? feedback.weakConcepts.map((item) => `<li>${escapeHtml(item)}</li>`).join('')
-    : '<li>\uD574\uB2F9 \uC5C6\uC74C</li>';
+    : '<p style="margin:0;">대화 로그가 없습니다.</p>';
 
   return `
     <div style="width:794px;padding:24px;background:#fff;color:#111827;font-family:'Noto Sans KR','Malgun Gothic',sans-serif;font-size:10.7pt;line-height:1.45;overflow-wrap:anywhere;word-break:break-word;">
-      <h1 style="margin:0 0 8px;font-size:10.7pt;font-weight:700;">\uB514\uC9C0\uD138 \uB17C\uB9AC\uD68C\uB85C \uD615\uC131\uD3C9\uAC00 \uACB0\uACFC</h1>
+      <h1 style="margin:0 0 8px;font-size:13pt;font-weight:700;">디지털 논리회로 — AI 튜터 대화 기록</h1>
       <div style="height:2px;background:#2563eb;margin-bottom:10px;"></div>
 
-      <table style="width:100%;border-collapse:collapse;margin-bottom:10px;font-size:10.7pt;table-layout:fixed;">
-        <tr><td style="padding:3px 0;width:90px;font-weight:700;">\uC774\uB984</td><td>${escapeHtml(studentName)}</td></tr>
-        <tr><td style="padding:3px 0;font-weight:700;">\uD559\uBC88</td><td>${escapeHtml(studentId)}</td></tr>
-        <tr><td style="padding:3px 0;font-weight:700;">\uCC55\uD130</td><td>${escapeHtml(chapterData.title)}</td></tr>
-        <tr><td style="padding:3px 0;font-weight:700;">\uC791\uC131 \uC2DC\uAC04</td><td>${escapeHtml(createdAt)}</td></tr>
+      <table style="width:100%;border-collapse:collapse;margin-bottom:14px;font-size:10.7pt;table-layout:fixed;">
+        <tr><td style="padding:3px 0;width:90px;font-weight:700;">이름</td><td>${escapeHtml(studentName)}</td></tr>
+        <tr><td style="padding:3px 0;font-weight:700;">학번</td><td>${escapeHtml(studentId)}</td></tr>
+        <tr><td style="padding:3px 0;font-weight:700;">챕터</td><td>${escapeHtml(chapterData.title || chapterData.id || '')}</td></tr>
+        <tr><td style="padding:3px 0;font-weight:700;">제출 시간</td><td>${escapeHtml(createdAt)}</td></tr>
       </table>
 
-      <h2 style="margin:10px 0 6px;font-size:10.7pt;font-weight:700;">\uC804\uCCB4 \uB300\uD654 \uB85C\uADF8</h2>
+      <h2 style="margin:0 0 8px;font-size:10.7pt;font-weight:700;">전체 대화 로그</h2>
       ${chatRows}
-
-      <h2 style="margin:12px 0 6px;font-size:10.7pt;font-weight:700;">\uD53C\uB4DC\uBC31</h2>
-      <p style="margin:0 0 6px;font-size:10.7pt;"><strong>\uC810\uC218:</strong> ${feedback.score}\uC810 (${feedback.correctCount}/${feedback.totalCount})</p>
-
-      <h3 style="margin:8px 0 4px;font-size:10.7pt;font-weight:700;">Feed Up</h3>
-      <p style="margin:0 0 6px;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;font-size:10.7pt;">${escapeHtml(feedback.feedUp || '-')}</p>
-
-      <h3 style="margin:8px 0 4px;font-size:10.7pt;font-weight:700;">Feed Back</h3>
-      <p style="margin:0 0 6px;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;font-size:10.7pt;">${escapeHtml(feedback.feedBack || '-')}</p>
-
-      <h3 style="margin:8px 0 4px;font-size:10.7pt;font-weight:700;">Feed Forward</h3>
-      <p style="margin:0 0 6px;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;font-size:10.7pt;">${escapeHtml(feedback.feedForward || '-')}</p>
-
-      <h3 style="margin:8px 0 4px;font-size:10.7pt;font-weight:700;">\uCDE8\uC57D \uAC1C\uB150</h3>
-      <ul style="margin:0 0 0 16px;padding:0;overflow-wrap:anywhere;word-break:break-word;font-size:10.7pt;">${weakConcepts}</ul>
     </div>
   `;
 }
 
-async function savePdf(studentName, studentId, chapterData, messages, feedback) {
+async function savePdf(studentName, studentId, chapterData, messages) {
   const jspdfNs = window.jspdf;
   if (!jspdfNs || !jspdfNs.jsPDF) {
     throw new Error('jsPDF library not found');
@@ -204,7 +183,7 @@ async function savePdf(studentName, studentId, chapterData, messages, feedback) 
     throw new Error('html2canvas library not found');
   }
 
-  const html = buildReportHTML(studentName, studentId, chapterData, messages, feedback);
+  const html = buildReportHTML(studentName, studentId, chapterData, messages);
   const host = document.createElement('div');
   host.style.position = 'fixed';
   host.style.left = '-100000px';
@@ -275,15 +254,13 @@ async function handleConfirmSubmit() {
   }
 
   closeModal();
-  setLoading(true);
+  setLoading(true, 'PDF를 생성하는 중입니다...');
 
   try {
     const chatSnapshot = getChatSessionSnapshot();
-    const rawFeedback = await generateFeedback(chapterData, messages, chatSnapshot);
-    const feedback = normalizeFeedback(rawFeedback, chapterData.formativeAssessment?.totalQuestions ?? 0);
-    await savePdf(studentName, studentId, chapterData, messages, feedback);
+    await savePdf(studentName, studentId, chapterData, messages);
 
-    // ?쒕쾭 ?꾩넚 ??PDF? ?낅┰?곸쑝濡??ㅽ뻾 (?ㅽ뙣?대룄 ?ъ슜?먯뿉寃??뚮━吏 ?딆쓬)
+    // 대화 데이터를 교수용 대시보드에 저장 (PDF 다운로드와 별개로 진행)
     const submittedAt = new Date().toISOString();
     const reportSessionId = sessionId || ((typeof crypto !== 'undefined' && crypto.randomUUID)
       ? crypto.randomUUID()
@@ -295,34 +272,18 @@ async function handleConfirmSubmit() {
       chapter_id: chapterData.id,
       chapter_title: chapterData.title || '',
       submitted_at: submittedAt,
-      correct_count: feedback.correctCount,
-      total_count: feedback.totalCount,
-      score: feedback.score,
-      weak_concepts: feedback.weakConcepts,
-      feed_up: feedback.feedUp,
-      feed_back: feedback.feedBack,
-      feed_forward: feedback.feedForward,
+      score: null,
+      weak_concepts: [],
       chat_summary: chatSnapshot.memorySummary || {},
       chat_metrics: chatSnapshot.qualityMetrics || {},
       assessment_trace: chatSnapshot.assessmentTrace || [],
-      feedback_meta: feedback.qualityMetrics || {},
       messages: messages.filter((m) => m.role !== 'system'),
     });
-    sendFeedbackReport({
-      session_id: reportSessionId,
-      student_id: studentId,
-      chapter_id: chapterData.id,
-      submitted_at: submittedAt,
-      feed_up: feedback.feedUp,
-      feed_back: feedback.feedBack,
-      feed_forward: feedback.feedForward,
-      quality_metrics: feedback.qualityMetrics || {},
-    });
 
-    showToast('PDF \uC0DD\uC131\uC774 \uC644\uB8CC\uB418\uC5C8\uC2B5\uB2C8\uB2E4.', 'success');
+    showToast('PDF 생성이 완료되었습니다.', 'success');
   } catch (err) {
     console.error('PDF export error:', err);
-    showToast('PDF \uC0DD\uC131\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4. \uC7A0\uC2DC \uD6C4 \uB2E4\uC2DC \uC2DC\uB3C4\uD574\uC8FC\uC138\uC694.', 'error');
+    showToast('PDF 생성에 실패했습니다. 잠시 후 다시 시도해주세요.', 'error');
   } finally {
     setLoading(false);
   }

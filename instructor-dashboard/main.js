@@ -215,10 +215,7 @@ function configureAssessmentFirstCopy() {
     summaryDesc.textContent = '형성평가를 제출한 학생이 성찰일지와 대화 로그까지 제대로 남겼는지 먼저 확인합니다.';
   }
 
-  const headerLabels = ['학번', '이름', '챕터', '형성평가', '성찰일지', '대화 내용', '점수', '취약개념', '제출시간', ''];
-  document.querySelectorAll('#summary-table thead th').forEach((th, index) => {
-    if (headerLabels[index] !== undefined) th.textContent = headerLabels[index];
-  });
+  // thead는 index.html에서 이미 올바르게 설정됨 — 덮어쓰지 않음
 }
 
 // ── 필터 ─────────────────────────────────────────────────────────

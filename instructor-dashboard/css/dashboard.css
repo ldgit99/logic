@@ -2652,3 +2652,66 @@ details[open] .la-tb-summary::after { transform: rotate(90deg); }
   .la-header { flex-direction: column; }
   .la-cog-desc-row { grid-template-columns: 1fr; }
 }
+
+/* ── 요약 테이블 — 학생별 집계 행 ─────────────────────────────────── */
+.st-student-row { cursor: pointer; transition: background .12s; }
+.st-student-row:hover { background: #f0f6ff; }
+.st-student-row.st-row-open { background: #eff6ff; }
+.st-name { font-weight: 600; display: block; }
+.st-expand-hint { font-size: 11px; color: var(--color-muted); display: block; }
+
+.st-detail-row td { padding: 0 !important; }
+.st-detail-body {
+  padding: 12px 16px;
+  background: #f8faff;
+  border-top: 1px solid var(--color-border);
+  border-bottom: 2px solid var(--color-primary);
+}
+.st-detail-heading {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-muted);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+.st-ch-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.st-ch-row {
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 10px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  font-size: 12px;
+}
+.st-ch-label { font-weight: 600; min-width: 44px; }
+.st-ch-icon { font-size: 11px; padding: 2px 4px; border-radius: 4px; }
+.st-ok  { background: #d1fae5; color: #065f46; }
+.st-miss { background: #fee2e2; color: #991b1b; }
+.st-ch-score { font-size: 11px; font-weight: 700; min-width: 32px; text-align: right; }
+.st-ch-detail-btn, .st-ch-del-btn {
+  font-size: 11px; padding: 2px 8px; border-radius: 4px; cursor: pointer;
+  border: 1px solid var(--color-border); background: var(--color-surface);
+}
+.st-ch-detail-btn:hover { background: #dbeafe; border-color: var(--color-primary); color: var(--color-primary); }
+.st-ch-del-btn { color: var(--color-danger); }
+.st-ch-del-btn:hover { background: #fee2e2; border-color: var(--color-danger); }
+
+/* 점수 바 */
+.score-bar-wrap {
+  height: 4px; background: var(--color-border); border-radius: 2px;
+  margin-bottom: 4px; overflow: hidden; width: 100%;
+}
+.score-bar { height: 100%; border-radius: 2px; transition: width .3s; }
+.score-high-bar { background: var(--color-ok); }
+.score-mid-bar  { background: var(--color-warn); }
+.score-low-bar  { background: var(--color-danger); }
+
+/* dark mode */
+.dark .st-student-row:hover { background: #1e293b; }
+.dark .st-student-row.st-row-open { background: #1e3a5f; }
+.dark .st-detail-body { background: #1a2332; }
+.dark .st-ch-row { background: #1e293b; border-color: #334155; }
+.dark .st-ok  { background: #064e3b; color: #6ee7b7; }
+.dark .st-miss { background: #7f1d1d; color: #fca5a5; }
