@@ -6,27 +6,38 @@
 const WORKER_BASE = 'https://logic-proxy.dongkuklee99.workers.dev';
 
 const CH_LABELS = {
-  '01': '들어가기',    '02': '수 체계',        '03': '코드 체계',
-  '04': '불 대수',    '05': '불 함수',         '06': '논리회로 간소화',
-  '07': '조합논리회로', '08': '플립플롭',       '09': '순서논리회로',
-  '10': '레지스터/카운터', '11': '기억장치',
+  '01': '들어가기',
+  '02': '수 체계',
+  '03': '코드 체계',
+  '04': '불 대수',
+  '05': '불 함수',
+  '06': '논리 회로 간소화',
+  '07': '조합논리회로',
+  '08': '플립플롭',
+  '09': '동기 순서논리회로',
+  '10': '레지스터/카운터',
+  '11': '기억장치',
 };
-const ALL_CHAPTERS = ['01','02','03','04','05','06','07','08','09','10','11'];
+const ALL_CHAPTERS = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11'];
 
 function fmt(isoStr) {
   if (!isoStr) return '';
   try {
     const d = new Date(isoStr);
     return d.toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' })
-      + ' ' + d.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
-  } catch { return isoStr.slice(0, 16).replace('T', ' '); }
+      + ' · '
+      + d.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
+  } catch {
+    return String(isoStr).slice(0, 16).replace('T', ' ');
+  }
 }
 
 function esc(s) {
-  return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
 }
-
-// ── 패널 HTML 삽입 ───────────────────────────────────────────────
 
 function ensurePanel() {
   if (document.getElementById('my-sub-panel')) return;
@@ -39,7 +50,10 @@ function ensurePanel() {
   panel.innerHTML = `
     <div class="my-sub-inner">
       <div class="my-sub-head">
-        <strong class="my-sub-title">내 제출 현황</strong>
+        <div class="my-sub-head-copy">
+          <strong class="my-sub-title">내 제출 현황</strong>
+          <span class="my-sub-sync-note">5분 안에 반영됩니다.</span>
+        </div>
         <button class="my-sub-close" id="my-sub-close" aria-label="닫기">✕</button>
       </div>
       <div class="my-sub-legend">
@@ -47,14 +61,16 @@ function ensurePanel() {
         <span class="ms-miss">✗ 미제출</span>
       </div>
       <div id="my-sub-body" class="my-sub-body">
-        <div class="my-sub-loading">불러오는 중…</div>
+        <div class="my-sub-loading">불러오는 중...</div>
       </div>
     </div>
   `;
   document.body.appendChild(panel);
 
-  document.getElementById('my-sub-close').addEventListener('click', closePanel);
-  panel.addEventListener('click', (e) => { if (e.target === panel) closePanel(); });
+  document.getElementById('my-sub-close')?.addEventListener('click', closePanel);
+  panel.addEventListener('click', (e) => {
+    if (e.target === panel) closePanel();
+  });
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && !panel.classList.contains('hidden')) closePanel();
   });
@@ -62,7 +78,7 @@ function ensurePanel() {
 
 function openPanel() {
   ensurePanel();
-  document.getElementById('my-sub-panel').classList.remove('hidden');
+  document.getElementById('my-sub-panel')?.classList.remove('hidden');
   loadAndRender();
 }
 
@@ -70,19 +86,18 @@ function closePanel() {
   document.getElementById('my-sub-panel')?.classList.add('hidden');
 }
 
-// ── 데이터 로딩 ──────────────────────────────────────────────────
-
 async function loadAndRender() {
   const body = document.getElementById('my-sub-body');
   if (!body) return;
-  body.innerHTML = '<div class="my-sub-loading">불러오는 중…</div>';
+  body.innerHTML = '<div class="my-sub-loading">불러오는 중...</div>';
 
-  // 토큰 가져오기
   let token = '';
   try {
     const authMod = await import('./auth.js?v=20260311c');
     token = authMod.getStudentProfile?.()?.token || '';
-  } catch { /* fallback */ }
+  } catch {
+    // ignore
+  }
 
   if (!token) {
     body.innerHTML = '<p class="my-sub-error">로그인이 필요합니다.</p>';
@@ -97,33 +112,32 @@ async function loadAndRender() {
     const data = await res.json();
     renderResults(body, data);
   } catch (err) {
-    // 네트워크 실패 시 localStorage 기반 로컬 데이터로 폴백
     renderLocalFallback(body, err);
   }
 }
 
-// ── 서버 데이터 렌더링 ───────────────────────────────────────────
-
 function renderResults(body, data) {
-  const assessMap = new Map((data.assessments || []).map((a) => [String(a.chapter_id), a]));
-  const reflMap   = new Map((data.reflections || []).map((r) => [String(r.chapter_id), r]));
+  const assessMap = new Map((data.assessments || []).map((item) => [String(item.chapter_id), item]));
+  const reflMap = new Map((data.reflections || []).map((item) => [String(item.chapter_id), item]));
 
-  const totalCh   = ALL_CHAPTERS.length;
+  const totalCh = ALL_CHAPTERS.length;
   const doneAssess = ALL_CHAPTERS.filter((ch) => assessMap.has(ch)).length;
-  const doneConv   = ALL_CHAPTERS.filter((ch) => assessMap.get(ch)?.has_conversation).length;
-  const doneRefl   = ALL_CHAPTERS.filter((ch) => reflMap.has(ch)).length;
+  const doneConv = ALL_CHAPTERS.filter((ch) => assessMap.get(ch)?.has_conversation).length;
+  const doneRefl = ALL_CHAPTERS.filter((ch) => reflMap.has(ch)).length;
 
   const rows = ALL_CHAPTERS.map((ch) => {
     const a = assessMap.get(ch);
     const r = reflMap.get(ch);
     const hasAssess = !!a;
-    const hasConv   = !!a?.has_conversation;
-    const hasRefl   = !!r;
-    const allDone   = hasAssess && hasConv && hasRefl;
+    const hasConv = !!a?.has_conversation;
+    const hasRefl = !!r;
+    const allDone = hasAssess && hasConv && hasRefl;
 
-    const rowCls = allDone ? 'ms-row ms-row--full'
-      : (hasAssess || hasConv || hasRefl) ? 'ms-row ms-row--partial'
-      : 'ms-row ms-row--empty';
+    const rowCls = allDone
+      ? 'ms-row ms-row--full'
+      : (hasAssess || hasConv || hasRefl)
+        ? 'ms-row ms-row--partial'
+        : 'ms-row ms-row--empty';
 
     return `
       <div class="${rowCls}">
@@ -150,7 +164,8 @@ function renderResults(body, data) {
             ${hasRefl ? `<span class="ms-check-date">${fmt(r.saved_at)}</span>` : ''}
           </div>
         </div>
-      </div>`;
+      </div>
+    `;
   }).join('');
 
   body.innerHTML = `
@@ -172,22 +187,23 @@ function renderResults(body, data) {
   `;
 }
 
-// ── 로컬스토리지 폴백 (서버 응답 실패 시) ───────────────────────
-
 function renderLocalFallback(body, err) {
   body.innerHTML = `
     <p class="my-sub-error" style="margin-bottom:8px;">서버 조회에 실패했습니다 (${esc(err?.message || String(err))}).</p>
     <p class="my-sub-error" style="font-size:11px;">로컬에 저장된 성찰일지 정보만 표시합니다.</p>
     <div class="ms-list">
       ${ALL_CHAPTERS.map((ch) => {
-        const key = `logic_reflection_${ch}_`;
-        // localStorage 키는 학번이 포함되어 정확히 알 수 없으므로 prefix 매칭
         const hasRefl = Object.keys(localStorage)
-          .filter((k) => k.startsWith(`logic_reflection_${ch}_`))
-          .some((k) => {
-            try { const d = JSON.parse(localStorage.getItem(k)); return d?.answers?.some((a) => a?.trim()); }
-            catch { return false; }
+          .filter((key) => key.startsWith(`logic_reflection_${ch}_`))
+          .some((key) => {
+            try {
+              const item = JSON.parse(localStorage.getItem(key));
+              return item?.answers?.some((answer) => answer?.trim());
+            } catch {
+              return false;
+            }
           });
+
         return `
           <div class="ms-row ${hasRefl ? 'ms-row--partial' : 'ms-row--empty'}">
             <div class="ms-ch-head">
@@ -202,17 +218,16 @@ function renderLocalFallback(body, err) {
                 <span class="ms-check-label">성찰일지 (로컬)</span>
               </div>
             </div>
-          </div>`;
+          </div>
+        `;
       }).join('')}
-    </div>`;
+    </div>
+  `;
 }
 
-// ── 공개 초기화 ──────────────────────────────────────────────────
-
-export function initMySubmissions(getProfile) {
+export function initMySubmissions() {
   ensurePanel();
 
-  // 헤더 버튼 생성
   const header = document.getElementById('auth-user');
   if (header && !document.getElementById('btn-my-submissions')) {
     const btn = document.createElement('button');
