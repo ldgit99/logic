@@ -2486,6 +2486,61 @@ html:not(.light):not(.dark) .dash-sidebar .role-badge {
   }
 }
 
+/* ── 이론 박스 (Theory Box) ──────────────────────────────────────── */
+
+.la-theory-box {
+  border: 1px solid #dbeafe;
+  border-radius: var(--radius);
+  background: #f0f7ff;
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+.la-tb-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-primary);
+  list-style: none;
+  user-select: none;
+}
+.la-tb-summary::-webkit-details-marker { display: none; }
+.la-tb-summary::after { content: '▸'; margin-left: auto; font-size: 11px; transition: transform .2s; }
+details[open] .la-tb-summary::after { transform: rotate(90deg); }
+.la-tb-icon { font-size: 14px; }
+.la-tb-cite { font-size: 10px; font-weight: 400; color: #6b7280; background: #fff; border-radius: 8px; padding: 2px 8px; border: 1px solid #dbeafe; }
+.la-tb-body { padding: 14px 16px; border-top: 1px solid #dbeafe; }
+.la-tb-theory-row { display: grid; grid-template-columns: 1fr 1.6fr; gap: 20px; }
+.la-tb-label { font-size: 10px; font-weight: 700; color: var(--color-primary); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 6px; }
+.la-tb-theory { font-size: 13px; font-weight: 600; color: var(--color-text); margin-bottom: 6px; }
+.la-tb-summary-text { font-size: 12px; color: var(--color-muted); line-height: 1.6; }
+.la-tb-right { border-left: 1px solid #dbeafe; padding-left: 20px; }
+.la-tb-metric { display: flex; flex-direction: column; gap: 2px; padding: 7px 0; border-bottom: 1px solid #e8f0fe; }
+.la-tb-metric:last-child { border-bottom: none; }
+.la-tb-metric-name { font-size: 12px; font-weight: 700; color: var(--color-text); }
+.la-tb-metric-def { font-size: 11px; color: #374151; line-height: 1.5; }
+.la-tb-metric-interp { font-size: 11px; color: var(--color-primary); background: #eff6ff; border-radius: 4px; padding: 2px 6px; margin-top: 2px; line-height: 1.5; }
+.la-tb-caution { font-size: 11px; color: #92400e; background: #fef3c7; border-radius: 4px; padding: 6px 10px; margin-top: 10px; line-height: 1.5; }
+
+@media (max-width: 800px) {
+  .la-tb-theory-row { grid-template-columns: 1fr; }
+  .la-tb-right { border-left: none; padding-left: 0; border-top: 1px solid #dbeafe; padding-top: 12px; }
+}
+
+/* 다크모드 */
+.dark .la-theory-box { background: #1e3a5f; border-color: #1e40af; }
+.dark .la-tb-summary { color: #93c5fd; }
+.dark .la-tb-cite { background: #1f2937; border-color: #1e40af; color: #9ca3af; }
+.dark .la-tb-body { border-top-color: #1e40af; }
+.dark .la-tb-right { border-left-color: #1e40af; }
+.dark .la-tb-metric { border-bottom-color: #1e3a5f; }
+.dark .la-tb-metric-def { color: #d1d5db; }
+.dark .la-tb-metric-interp { background: #1e3a5f; color: #93c5fd; }
+.dark .la-tb-caution { background: #451a03; color: #fbbf24; }
+
 /* ── 학습 분석 (Dialogue-Based Learning Analytics) ──────────────── */
 
 .la-page { display: flex; flex-direction: column; gap: 20px; }

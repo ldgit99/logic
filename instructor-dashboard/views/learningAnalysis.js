@@ -14,6 +14,43 @@
 
 import { escapeHtml, scoreColor } from '../utils/format.js';
 
+// ── 이론 박스 헬퍼 ────────────────────────────────────────────────
+
+/**
+ * 패널별 이론 설명 박스를 생성합니다.
+ * @param {{ theory: string, cite: string, summary: string, metrics: {name:string, def:string, interpret:string}[], caution?: string }} cfg
+ */
+function buildTheoryBox(cfg) {
+  const metricsHtml = (cfg.metrics || []).map((m) => `
+    <div class="la-tb-metric">
+      <span class="la-tb-metric-name">${escapeHtml(m.name)}</span>
+      <span class="la-tb-metric-def">${escapeHtml(m.def)}</span>
+      ${m.interpret ? `<span class="la-tb-metric-interp">${escapeHtml(m.interpret)}</span>` : ''}
+    </div>
+  `).join('');
+
+  return `
+    <details class="la-theory-box">
+      <summary class="la-tb-summary">
+        <span class="la-tb-icon">📖</span>
+        이론 및 지표 설명
+        <span class="la-tb-cite">${escapeHtml(cfg.cite)}</span>
+      </summary>
+      <div class="la-tb-body">
+        <div class="la-tb-theory-row">
+          <div class="la-tb-left">
+            <p class="la-tb-label">이론적 근거</p>
+            <p class="la-tb-theory">${escapeHtml(cfg.theory)}</p>
+            <p class="la-tb-summary-text">${escapeHtml(cfg.summary)}</p>
+          </div>
+          ${metricsHtml ? `<div class="la-tb-right"><p class="la-tb-label">측정 지표</p>${metricsHtml}</div>` : ''}
+        </div>
+        ${cfg.caution ? `<p class="la-tb-caution">⚠ ${escapeHtml(cfg.caution)}</p>` : ''}
+      </div>
+    </details>
+  `;
+}
+
 // ── 인지 수준 체계 (Bloom 기반 6단계) ──────────────────────────────
 
 const COG_LEVELS = [
@@ -406,7 +443,21 @@ function renderCogDist(profiles, el) {
   profiles.forEach((p) => p.levelCounts.forEach((c, i) => { totalCounts[i] += c; }));
   const totalAll = totalCounts.reduce((s, c) => s + c, 0);
 
-  el.innerHTML = `
+  el.innerHTML = buildTheoryBox({
+    theory: 'Bloom의 개정 분류체계 (Anderson & Krathwohl, 2001) · Community of Inquiry (Garrison et al., 2000)',
+    cite: 'Anderson & Krathwohl(2001); Garrison et al.(2000)',
+    summary: '학생이 AI에게 보낸 발화를 인지적 깊이에 따라 6단계로 자동 분류합니다. 단순 확인(L0)부터 메타인지적 자기점검(L5)까지 발화 내용의 패턴을 텍스트 규칙 기반으로 판별합니다.',
+    metrics: [
+      { name: 'L0 수동 반응', def: '"네", "알겠어요" 등 단순 확인·수용 발화. 10자 미만 또는 확인 표현만 포함.', interpret: '높을수록 AI 응답을 그대로 수용하는 수동적 참여.' },
+      { name: 'L1 사실 질문 — 기억(Remember)', def: '"~이 뭐예요?", "정의가 뭔가요?" 등 사실·정의를 묻는 발화.', interpret: '가장 기본적인 인지 참여. 개념 도입 초기에 자연스럽게 높게 나타남.' },
+      { name: 'L2 개념 이해 — 이해(Understand)', def: '"왜 그런가요?", "어떻게 동작해요?" 등 이유·원리를 탐색하는 질문.', interpret: '단순 암기를 넘어 의미 이해를 추구하는 참여 신호.' },
+      { name: 'L3 적용 시도 — 적용(Apply)', def: '"이 경우에 어떻게 되나요?", "만약 ~하면?" 등 구체적 상황에 적용하려는 발화.', interpret: '학습 내용을 새로운 맥락에 연결하려는 고차 사고의 시작.' },
+      { name: 'L4 비판적 사고 — 분석/평가(Analyze/Evaluate)', def: '"근데", "하지만", "차이가 뭔가요?" 등 AI 설명을 비교·도전·반박하는 발화.', interpret: '가장 생산적인 참여 형태. 개념 구조를 능동적으로 검증하는 행동.' },
+      { name: 'L5 메타인지 — 자기조절(Metacognition)', def: '"이해가 안 돼요", "이제 알겠어요", "다시 설명해줄 수 있어요?" 등 자신의 이해 상태를 점검하는 발화.', interpret: '자기조절학습(SRL)의 핵심 지표. 높을수록 학습 전략적 행동 가능성 높음.' },
+      { name: '고차 사고 비율 (%)', def: '(L3 + L4 + L5 발화 수) ÷ 전체 발화 수 × 100', interpret: '핵심 연구 변수. 학습 성과와 정적 상관이 예측됨.' },
+    ],
+    caution: '자동 분류는 한국어 텍스트 패턴 매칭 기반으로 측정됩니다. 논문 작성 시 수동 코딩과의 일치율(Cohen\'s κ) 보고 및 분류 한계 명시를 권장합니다.',
+  }) + `
     <div class="la-cog-overview">
       <!-- 전체 파이 차트 -->
       <div class="la-cog-summary">
@@ -591,7 +642,20 @@ function drawAgencyMatrix(profiles, canvas, legendEl) {
         <span>색상: <span style="color:#ef4444">●</span> 저성취 → <span style="color:#10b981">●</span> 고성취</span>
         <span>중앙선: 전체 중앙값 (Agency ${medAgency.toFixed(1)}% / 인지 ${medCog.toFixed(2)})</span>
       </div>
-    `;
+    ` + buildTheoryBox({
+      theory: '거래적 거리 이론 (Transactional Distance Theory, Moore, 1973)',
+      cite: 'Moore(1973). Theory of transactional distance. In D. Keegan (Ed.)',
+      summary: '학습자와 교수자(AI) 사이의 심리적·의사소통적 거리를 "대화(Dialogue)"와 "구조(Structure)"로 측정합니다. 대화가 많을수록, 구조가 유연할수록 거래적 거리가 줄어들고 학습이 촉진됩니다. 이 매트릭스는 두 가지 대화 품질 지표로 거리를 가시화합니다.',
+      metrics: [
+        { name: 'Agency Index (학생 질문 비율, %)', def: '전체 학생 발화 중 질문 형태("?", "왜", "어떻게" 등)인 발화의 비율.', interpret: '높을수록 학생이 대화를 주도적으로 이끄는 능동적 학습자. Moore의 대화(Dialogue) 차원을 반영.' },
+        { name: '평균 인지 수준 (0–5)', def: '해당 학생의 모든 발화 Bloom 수준(L0-L5)의 평균값.', interpret: '높을수록 인지적 깊이 있는 상호작용. Community of Inquiry의 인지적 실재감(Cognitive Presence) 지표.' },
+        { name: '심층 학습자 (고Agency + 고인지)', def: '질문도 많고 질문의 수준도 높은 학습자.', interpret: '이상적 학습 행동. 개입 불필요.' },
+        { name: '효율 학습자 (저Agency + 고인지)', def: '질문 수는 적지만 질문 품질이 높은 학습자.', interpret: '선택적·전략적 질문. 높은 사전 지식 보유 가능.' },
+        { name: '탐색 학습자 (고Agency + 저인지)', def: '질문은 많지만 표면적 질문 위주인 학습자.', interpret: '참여 의지는 높으나 사고의 깊이가 부족. 개념적 질문을 유도하는 교수 전략 필요.' },
+        { name: '수동 학습자 (저Agency + 저인지)', def: '질문도 적고 인지 수준도 낮은 학습자.', interpret: '즉각적 교수 개입 필요. 이탈 위험군.' },
+      ],
+      caution: '중앙값 기준 사분면 분류이므로 집단 크기에 따라 경계가 달라집니다. 절대 기준 해석보다는 집단 내 상대적 위치로 해석하세요.',
+    });
   }
 }
 
@@ -615,7 +679,18 @@ function renderTrajectory(profiles, el) {
   const groups = { '상승형': [], '평탄형': [], '하강형': [] };
   withData.forEach((p) => { if (groups[p.dominantTrajectory]) groups[p.dominantTrajectory].push(p); });
 
-  el.innerHTML = `
+  el.innerHTML = buildTheoryBox({
+    theory: '생산적 실패 이론 (Productive Failure, Kapur, 2016) · 근접발달영역 (Vygotsky, 1978)',
+    cite: 'Kapur(2016). Examining Productive Failure. Cognition & Instruction; Vygotsky(1978). Mind in Society.',
+    summary: '대화 세션 내에서 학생 발화의 인지 수준이 어떤 방향으로 변화하는지 선형 회귀로 분류합니다. Kapur는 초기의 혼란과 실패가 이후 깊은 이해로 이어질 때 가장 효과적인 학습이 일어난다고 주장합니다. 상승형 궤적이 이 생산적 실패 패턴을 가장 잘 반영합니다.',
+    metrics: [
+      { name: '궤적 기울기 (Slope)', def: '세션 내 발화 인지 수준 시퀀스(L0-L5)에 대한 선형 회귀 기울기.', interpret: '기울기 > 0: 대화가 깊어짐, < 0: 대화가 얕아짐.' },
+      { name: '상승형 (Slope > 0.08)', def: '대화가 진행될수록 더 높은 인지 수준의 발화로 발전.', interpret: 'AI와의 상호작용에서 인지적 성장이 실시간으로 일어나고 있음. 가장 바람직한 패턴.' },
+      { name: '평탄형 (|Slope| ≤ 0.08)', def: '대화 전반에 걸쳐 일정한 인지 수준을 유지.', interpret: '안정적 참여. 이미 적절한 수준에서 상호작용하거나, 성장 없이 정체된 상태일 수 있음.' },
+      { name: '하강형 (Slope < −0.08)', def: '대화 후반부로 갈수록 인지 수준이 낮아짐.', interpret: '피로, 이탈, 또는 초기 탐색 후 단순 확인으로 마무리하는 패턴. 대화 설계 재검토 필요.' },
+    ],
+    caution: '학생당 여러 챕터의 세션이 존재할 경우 지배적 궤적으로 집계합니다. 발화 수가 2개 미만인 세션은 궤적 분석에서 제외됩니다.',
+  }) + `
     <div class="la-traj-cards">
       ${Object.entries(typeCfg).map(([type, cfg]) => {
         const members = groups[type] || [];
@@ -657,7 +732,19 @@ function renderEvents(profiles, el) {
   const totPers = withData.reduce((s, p) => s + p.persistenceCount, 0);
   const avgPS   = avg(withData.map((p) => p.productiveStruggleIndex).filter((v) => v != null));
 
-  el.innerHTML = `
+  el.innerHTML = buildTheoryBox({
+    theory: '자기조절학습 (Self-Regulated Learning, Zimmerman, 2002) · 메타인지 (Flavell, 1979) · 생산적 혼란 (Kapur, 2016)',
+    cite: 'Zimmerman(2002). Becoming a Self-Regulated Learner. Theory Into Practice; Flavell(1979). Metacognition. American Psychologist.',
+    summary: '대화 텍스트에서 4가지 핵심 학습 사건을 텍스트 패턴으로 자동 탐지합니다. Zimmerman의 SRL 모델에서 자기모니터링과 자기평가, Kapur의 생산적 실패에서 혼란→이해 전환 개념을 통합합니다.',
+    metrics: [
+      { name: '혼란 사건 (Confusion Event)', def: '"모르겠어요", "헷갈려요", "이해가 안 돼요" 등 인지적 갈등을 명시적으로 표현한 발화.', interpret: '학습의 필수 선행 조건. 혼란 없이는 개념적 변화가 일어나기 어렵습니다(Cognitive Disequilibrium, Piaget).' },
+      { name: '돌파 사건 (Breakthrough Event)', def: '"아!", "이제 알겠어요", "그렇구나" 등 개념 이해의 전환점을 나타내는 발화.', interpret: 'Aha-moment 또는 개념적 변화(Conceptual Change) 순간. 혼란 사건과 쌍을 이룰 때 특히 유의미함.' },
+      { name: '비판적 사건 (Critical Thinking Event)', def: '"근데", "하지만", "차이가 뭔가요?" 등 AI 설명을 비교·검증·반박하는 발화.', interpret: 'Bloom L4(분석/평가)의 실제 발현. 고차 인지 참여의 직접적 증거.' },
+      { name: '지속 탐구 사건 (Persistence Event)', def: 'AI 응답 이후 40자 이상의 추가 질문을 보내는 발화.', interpret: '학습 지속성(Academic Persistence)과 관련. 쉬운 답변에 만족하지 않고 더 깊이 탐색하는 행동.' },
+      { name: '생산적 혼란 지수 (Productive Struggle Index, %)', def: '혼란 사건 후 3턴 이내에 돌파 또는 비판적 사건이 뒤따른 비율.', interpret: '핵심 연구 지표. Kapur(2016) 생산적 실패 이론의 조작적 정의. 높을수록 AI 튜터링이 효과적으로 작동함을 의미.' },
+    ],
+    caution: '텍스트 패턴 기반 자동 탐지이므로 동일 발화에 복수의 사건이 중복 감지될 수 있습니다. 생산적 혼란 지수는 3턴 이내 연속성을 기준으로 하며, 더 긴 간격의 지연 이해는 포착하지 못합니다.',
+  }) + `
     <div class="la-events-top">
       ${Object.entries(EVENT_TYPES).map(([type, cfg]) => {
         const total = type === 'confusion' ? totConf : type === 'breakthrough' ? totBrk
@@ -738,7 +825,21 @@ function renderComparison(profiles, el) {
 
   const avgGroup = (group, key) => avg(group.map((p) => p[key]).filter((v) => v != null && Number.isFinite(v)));
 
-  el.innerHTML = `
+  el.innerHTML = buildTheoryBox({
+    theory: '학습 분석 기반 증거 (Evidence-based Learning Analytics, Siemens & Long, 2011) · 집단 비교 설계',
+    cite: 'Siemens & Long(2011). Penetrating the Fog. EDUCAUSE Review.',
+    summary: '학습 성과(평균 점수) 기준 상위 33%와 하위 33% 학생 집단의 대화 행동 지표를 비교합니다. 두 집단 간에 유의미한 차이를 보이는 지표는 학습 성과 예측 변수로 활용할 수 있습니다.',
+    metrics: [
+      { name: '평균 인지 수준 (0–5)', def: '발화 Bloom 수준 평균. 전반적 인지 참여 깊이를 요약하는 단일 지표.', interpret: '고성취 집단이 유의하게 높으면 인지 수준 → 성과 예측 관계 성립.' },
+      { name: '고차 사고 비율 (%)', def: 'L3+L4+L5 발화 비율. 분석·평가·메타인지 참여도.', interpret: '논문의 핵심 예측 변수 후보. ANCOVA 또는 회귀분석에 직접 투입 가능.' },
+      { name: '학생 질문 비율 — Agency Index (%)', def: '질문 형태 발화 비율. 대화 주도성 측정.', interpret: 'Moore(1973) 거래적 거리 이론의 조작적 정의. 대화 주도성과 성과의 관계 확인.' },
+      { name: '평균 발화 길이 (자)', def: '학생 발화의 평균 글자 수. 설명의 정교화(Elaboration) 수준 대리 측정.', interpret: '길수록 더 상세한 설명을 시도하는 적극적 참여. 단, 반복 복붙은 노이즈 요인.' },
+      { name: '생산적 혼란 지수 (%)', def: '혼란 후 이해로 연결된 비율. Kapur(2016) 조작적 정의.', interpret: '학습 과정의 질을 직접 측정하는 과정 지표(process indicator).' },
+      { name: '피드백 품질 (0–3)', def: 'AI가 제공한 Feed Up·Feed Back·Feed Forward 각 충족 시 1점, 합산 0–3점.', interpret: 'Hattie & Timperley(2007) 3단계 피드백 모델 기반. 피드백 질이 성과에 미치는 영향 분석.' },
+      { name: '성찰일지 완성율 (%)', def: '형성평가 제출 챕터 수 대비 성찰일지 작성 챕터 수 비율.', interpret: 'Zimmerman(2002) SRL 성찰 단계(Self-reflection phase) 이행 정도.' },
+    ],
+    caution: '집단 크기(n)가 작을 경우 통계적 유의성 해석에 주의하세요. 논문에서는 독립표본 t-검정 또는 Mann-Whitney U 검정으로 집단 차이를 검증하기를 권장합니다.',
+  }) + `
     <div class="la-compare-info">
       <span class="la-compare-badge la-high">상위 ${n}명 (평균 ${avg(high.map((p)=>p.avgScore)).toFixed(1)}점)</span>
       <span class="la-compare-badge la-low">하위 ${n}명 (평균 ${avg(low.map((p)=>p.avgScore)).toFixed(1)}점)</span>
@@ -780,7 +881,23 @@ function renderComparison(profiles, el) {
 function renderResearchTable(profiles, el) {
   if (!el) return;
 
-  el.innerHTML = `
+  el.innerHTML = buildTheoryBox({
+    theory: '다변량 학습자 프로파일링 (Multivariate Learner Profiling) · SSCI 논문 Table 설계',
+    cite: 'Gašević et al.(2016). Learning Analytics Should Not Promote One Size Fits All. Internet & Higher Ed.',
+    summary: '모든 대화 기반 지표를 학생별로 통합하여 단일 테이블로 제공합니다. 이 테이블은 논문 Table 1 또는 Appendix로 직접 활용 가능하며, SPSS·R·Python에 바로 투입할 수 있도록 TSV 형식으로 복사됩니다.',
+    metrics: [
+      { name: '발화 수', def: '분석된 총 학생 발화 수 (system 메시지 제외, 2자 미만 제외).', interpret: '참여량의 기본 지표. 단독으로는 해석에 한계 있음 — 반드시 인지 수준과 함께 해석.' },
+      { name: '평균 인지 수준 (0–5)', def: '전체 발화의 Bloom 수준 평균. 소수점 둘째 자리까지 보고.', interpret: 'SSCI 논문에서 주요 독립변수로 활용. 회귀분석 시 연속 변수로 투입.' },
+      { name: '고차 사고율 (%)', def: 'L3+L4+L5 발화 비율.', interpret: '학습자 유형 분류(클러스터링)의 핵심 특성 변수.' },
+      { name: '질문 비율 — Agency Index (%)', def: '질문 형태 발화 / 전체 발화 × 100.', interpret: 'Moore(1973) 대화 차원의 조작적 정의. 구조방정식 모델(SEM)에서 잠재변수 지표로 활용 가능.' },
+      { name: '혼란 · 돌파 사건 수', def: '각 사건 유형별 탐지 횟수.', interpret: '과정 지표(process indicator). 성과 지표(점수)와의 시간적 선행 관계 분석에 활용.' },
+      { name: '생산적 혼란 지수 (%)', def: '혼란 사건 후 돌파·비판으로 이어진 비율.', interpret: 'Kapur(2016) 생산적 실패의 조작적 정의. 중재 분석(Mediation Analysis)에서 매개변수로 활용 가능.' },
+      { name: '대화 궤적', def: '상승형·평탄형·하강형 — 범주형 변수.', interpret: '분산분석(ANOVA) 독립변수로 활용. 이진 코딩(상승=1, 그외=0)으로 로지스틱 회귀 가능.' },
+      { name: '피드백 품질 (0–3)', def: 'Hattie & Timperley(2007) 3단계 피드백 충족 합산.', interpret: '교수설계 변수. 학생 변수(인지 수준)와의 상호작용 효과 검증에 활용.' },
+      { name: '성찰 완성율 (%)', def: '챕터별 성찰일지 작성 비율.', interpret: 'SRL 성찰 단계 이행 지표. 대화 품질과의 상관 분석 시 흥미로운 패턴 발견 기대.' },
+    ],
+    caution: 'TSV 복사 후 Excel에 붙여넣기하면 열 정렬이 자동으로 됩니다. R에서는 read.delim(text=clipboard)으로 바로 로드 가능합니다.',
+  }) + `
     <table class="dash-table la-research-table" id="la-rt">
       <thead>
         <tr>
