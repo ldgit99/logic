@@ -451,6 +451,101 @@ body {
   .sr-sidebar { border-right: none; border-bottom: 1px solid var(--color-border); max-height: 240px; }
 }
 
+.rv-layout,
+.cv-layout {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 0;
+  height: calc(100vh - 180px);
+  min-height: 500px;
+}
+
+.rv-detail,
+.cv-detail {
+  overflow-y: auto;
+}
+
+.rv-section {
+  margin-bottom: 18px;
+}
+
+.rv-card {
+  background: var(--color-surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 14px;
+  margin-bottom: 12px;
+}
+
+.rv-card--deleted {
+  opacity: 0.76;
+}
+
+.rv-card-status,
+.rv-student-status {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.rv-card-status.good,
+.rv-student-status.good,
+.rv-student-status.ok {
+  color: var(--color-ok);
+}
+
+.rv-card-status.warn,
+.rv-student-status.bad {
+  color: var(--color-danger);
+}
+
+.rv-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.cv-message-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cv-message {
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: var(--color-bg);
+}
+
+.cv-message--user {
+  border-color: rgba(37, 99, 235, 0.25);
+}
+
+.cv-message--assistant {
+  border-color: rgba(16, 185, 129, 0.28);
+}
+
+.cv-message-role {
+  display: inline-block;
+  margin-bottom: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-muted);
+}
+
+.cv-message-text {
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+@media (max-width: 860px) {
+  .rv-layout,
+  .cv-layout {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+}
+
 /* ?? 怨듯넻 ???????????????????????????????????????????????? */
 .empty-msg { color: var(--color-muted); font-size: 13px; padding: 24px 0; text-align: center; }
 
@@ -2195,6 +2290,33 @@ html:not(.light):not(.dark) .dash-sidebar .role-badge {
 .btn-delete {
   padding: 6px 10px;
   border-radius: 12px;
+}
+
+.summary-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 72px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.summary-status--primary {
+  background: rgba(37, 99, 235, 0.12);
+  color: #1d4ed8;
+}
+
+.summary-status--ok {
+  background: rgba(16, 185, 129, 0.14);
+  color: #047857;
+}
+
+.summary-status--warn {
+  background: rgba(245, 158, 11, 0.18);
+  color: #b45309;
 }
 
 .empty-msg {

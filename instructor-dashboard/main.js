@@ -49,6 +49,7 @@ let lastKnownCount = null;
 document.addEventListener('DOMContentLoaded', () => {
   applyTheme(localStorage.getItem('dash_theme') || 'auto');
   configureDashboardNav();
+  configureAssessmentFirstCopy();
 
   const savedToken = sessionStorage.getItem('dash_token');
   if (savedToken) {
@@ -134,7 +135,7 @@ function showNewSubmissionBadge(count) {
   if (!badge) {
     badge = document.createElement('span');
     badge.className = 'new-badge';
-    summaryTab.appendChild(badge);
+    overallTab.appendChild(badge);
   }
   const existing = parseInt(badge.dataset.count || '0', 10);
   badge.dataset.count = String(existing + count);
@@ -170,16 +171,16 @@ function configureDashboardNav() {
   document.querySelectorAll('.nav-tab').forEach((tab) => {
     const view = tab.dataset.view;
     const config = labels[view];
-    if (!config) {
+    if (!config && view !== 'questions') {
       tab.style.display = 'none';
       return;
     }
     tab.style.display = '';
-    tab.style.order = config.order;
+    tab.style.order = config?.order || '5';
     const icon = tab.querySelector('.nav-tab-icon');
     const label = tab.querySelector('.nav-tab-label');
-    if (icon) icon.textContent = config.icon;
-    if (label) label.textContent = config.label;
+    if (icon && config?.icon) icon.textContent = config.icon;
+    if (label && config?.label) label.textContent = config.label;
   });
 }
 
@@ -196,6 +197,24 @@ function resolveViewId(view) {
     default:
       return view;
   }
+}
+
+function configureAssessmentFirstCopy() {
+  const kicker = document.querySelector('.summary-table-kicker');
+  if (kicker) kicker.textContent = 'Assessment Submission Status';
+
+  const summaryHeader = document.querySelector('.summary-table-header h2');
+  if (summaryHeader) summaryHeader.textContent = '형성평가 제출 현황';
+
+  const summaryDesc = document.querySelector('.summary-table-header > p:last-child');
+  if (summaryDesc) {
+    summaryDesc.textContent = '형성평가를 제출한 학생이 성찰일지와 대화 로그까지 제대로 남겼는지 먼저 확인합니다.';
+  }
+
+  const headerLabels = ['학번', '이름', '챕터', '형성평가', '성찰일지', '대화 내용', '점수', '취약개념', '제출시간', ''];
+  document.querySelectorAll('#summary-table thead th').forEach((th, index) => {
+    if (headerLabels[index] !== undefined) th.textContent = headerLabels[index];
+  });
 }
 
 // ── 필터 ─────────────────────────────────────────────────────────
@@ -290,14 +309,20 @@ async function loadView(view) {
   try {
     switch (resolvedView) {
       case 'summary': {
-        const [summary, students] = await Promise.all([
+        const [summary, students, reflections] = await Promise.all([
           fetchSummary(currentFilters),
           fetchStudents(currentFilters),
+          fetchReflections({
+            chapter_id: currentFilters.chapter || '',
+            student_id: currentFilters.studentId || '',
+            from: currentFilters.from || '',
+            to: currentFilters.to || '',
+          }),
         ]);
         allSubmissions = students.submissions || [];
         lastKnownCount = summary?.totalSubmissions ?? allSubmissions.length;
         clearNewBadge();
-        renderSummaryCards(summary, document.getElementById('summary-cards'), allSubmissions);
+        renderSummaryCards(summary, document.getElementById('summary-cards'), allSubmissions, reflections.reflections || []);
         renderSummaryTable(allSubmissions, document.getElementById('summary-table-body'), {
           onRowClick: (submission) => openStudentModal(submission),
           onDelete: async (submission) => {
@@ -323,7 +348,7 @@ async function loadView(view) {
               console.error('[summary delete]', e);
             }
           },
-        });
+        }, reflections.reflections || []);
         document.getElementById('summary-empty').classList.toggle('hidden', allSubmissions.length > 0);
         updateResultCount(allSubmissions.length);
         break;
