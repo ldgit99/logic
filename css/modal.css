@@ -698,3 +698,33 @@
 [data-theme="light"] .ms-row { background: #fff; }
 [data-theme="light"] .ms-row--full { background: #f0fdf4; }
 [data-theme="light"] .ms-row--partial { background: #fffbeb; }
+
+/* ── 형성평가 문항 탐색 아이콘 ───────────────────────────────── */
+.assessment-nav-dots {
+  display: flex; align-items: center; justify-content: center;
+  gap: 8px; padding: 12px 16px 0;
+  flex-wrap: wrap;
+}
+.nav-dot {
+  width: 36px; height: 36px; border-radius: 50%;
+  font-size: 13px; font-weight: 700; line-height: 1;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 2px solid transparent; transition: all .15s; flex-shrink: 0;
+}
+button.nav-dot { cursor: pointer; }
+button.nav-dot:hover { transform: scale(1.12); box-shadow: 0 2px 8px rgba(0,0,0,.18); }
+.nd-empty    { background: var(--bg-tertiary, #f3f4f6); color: var(--text-secondary, #6b7280); border-color: var(--border, #e5e7eb); }
+.nd-current  { background: var(--accent-blue, #2563eb); color: #fff; border-color: var(--accent-blue, #2563eb); box-shadow: 0 0 0 3px rgba(37,99,235,.25); }
+.nd-ok       { background: #d1fae5; color: #065f46; border-color: #6ee7b7; }
+.nd-partial  { background: #fef3c7; color: #92400e; border-color: #fcd34d; }
+.nd-incorrect{ background: #fee2e2; color: #991b1b; border-color: #fca5a5; }
+
+/* ── 최종 제출 버튼 ─────────────────────────────────────────── */
+.btn-final-submit {
+  padding: 8px 18px; border-radius: var(--radius-sm, 6px); cursor: pointer;
+  font-size: 14px; font-weight: 700; border: none;
+  background: #059669; color: #fff;
+  transition: background .15s, transform .1s;
+}
+.btn-final-submit:hover:not(:disabled) { background: #047857; transform: translateY(-1px); }
+.btn-final-submit:disabled { opacity: .5; cursor: not-allowed; transform: none; }
