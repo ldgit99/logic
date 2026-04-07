@@ -20,6 +20,29 @@ let busy = false;
 function el(id) { return document.getElementById(id); }
 function trim(text) { return String(text || '').trim(); }
 
+function softenJudgment(judgment, result = {}, question = null, answer = '') {
+  const normalized = trim(judgment).toLowerCase() || 'incorrect';
+  if (normalized !== 'partial') return normalized;
+
+  const confidence = trim(result?.confidence).toLowerCase();
+  const weakConcept = trim(result?.weak_concept);
+  const feedback = trim(result?.feedback);
+  const modelAnswer = trim(result?.model_answer);
+  const concept = trim(question?.concept);
+  const answerText = trim(answer).toLowerCase();
+  const conceptWords = concept.split(/[,\s/()]+/).map((item) => trim(item).toLowerCase()).filter((item) => item.length >= 2);
+  const mentionsConcept = conceptWords.some((word) => answerText.includes(word));
+  const feedbackSuggestsMostlyCorrect = /(대체로|대부분|핵심|주요|잘 이해|맞|정확)/.test(feedback);
+  const modelAnswerShort = modelAnswer && modelAnswer.length <= 24;
+  const answerCloseToModel = modelAnswerShort && answerText && answerText.includes(modelAnswer.toLowerCase());
+
+  if (!weakConcept && (confidence === 'high' || feedbackSuggestsMostlyCorrect || mentionsConcept || answerCloseToModel)) {
+    return 'correct';
+  }
+
+  return normalized;
+}
+
 // ── JSON 파싱 ──────────────────────────────────────────────────
 
 function parseJson(text) {
@@ -397,7 +420,7 @@ async function submitCurrentAnswer() {
 
     const current = state.results[state.questionIdx];
     current.attempts += 1;
-    current.judgment    = trim(result.judgment) || 'incorrect';
+    current.judgment    = softenJudgment(result.judgment, result, question, answer);
     current.confidence  = trim(result.confidence) || 'medium';
     current.answer      = answer;
     current.feedback    = trim(result.feedback) || '';
@@ -466,7 +489,16 @@ async function finalSubmit() {
   render();
 
   // 교수 대시보드 전송
-  const profile  = getStudentProfile?.() || {};
+  let profile = getStudentProfile?.() || {};
+  // studentId가 없으면 localStorage에서 직접 읽기
+  if (!profile.studentId) {
+    try {
+      const stored = JSON.parse(localStorage.getItem('logic_auth_v2') || 'null');
+      if (stored?.studentId) {
+        profile = { studentId: stored.studentId, studentName: stored.studentName || '', token: stored.token || '' };
+      }
+    } catch {}
+  }
   const results  = state.results;
   const correct  = results.filter((r) => r.judgment === 'correct').length;
   const partial  = results.filter((r) => r.judgment === 'partial').length;
@@ -474,11 +506,12 @@ async function finalSubmit() {
   const weakConcepts = [...new Set(results.map((r) => r.weakConcept).filter(Boolean))];
 
   try {
-    const { sendAssessment } = await import('./instrumentation.js?v=20260309e');
-    const sessionId = `assess_${state.chapterId}_${profile.studentId || 'anon'}_${Date.now()}`;
+    const { sendAssessment } = await import('./instrumentation.js?v=20260407b');
+    if (!profile.studentId) throw new Error('로그인 정보를 찾을 수 없습니다. 다시 로그인 후 제출해 주세요.');
+    const sessionId = `assess_${state.chapterId}_${profile.studentId}_${Date.now()}`;
     await sendAssessment({
       session_id: sessionId,
-      student_id:    profile.studentId || '',
+      student_id:    profile.studentId,
       student_name:  profile.studentName || '',
       chapter_id:    state.chapterId,
       chapter_title: state.chapterTitle || '',
@@ -529,8 +562,19 @@ function restartAssessment() {
   render();
 }
 
+function isAssessmentInProgress() {
+  return state && state.status !== 'completed' && state.results?.some((r) => r?.judgment);
+}
+
 function closeModal() {
   el('assessment-modal')?.classList.add('hidden');
+}
+
+function tryCloseModal() {
+  if (isAssessmentInProgress()) {
+    if (!confirm('형성평가가 진행 중입니다. 창을 닫으면 현재까지의 진행 상태는 저장되며 나중에 이어서 풀 수 있습니다.\n\n닫으시겠습니까?')) return;
+  }
+  closeModal();
 }
 
 // ── 이벤트 바인딩 ─────────────────────────────────────────────
@@ -540,8 +584,8 @@ function bindModalEvents() {
   if (!modal || modal.dataset.bound === 'true') return;
   modal.dataset.bound = 'true';
 
-  el('assessment-modal-close')?.addEventListener('click', closeModal);
-  el('assessment-modal-cancel')?.addEventListener('click', closeModal);
+  el('assessment-modal-close')?.addEventListener('click', tryCloseModal);
+  el('assessment-modal-cancel')?.addEventListener('click', tryCloseModal);
   el('assessment-submit')?.addEventListener('click', submitCurrentAnswer);
   el('assessment-next-question')?.addEventListener('click', goToNextQuestion);
   el('assessment-final-submit')?.addEventListener('click', finalSubmit);
@@ -549,9 +593,12 @@ function bindModalEvents() {
     if (!confirm('현재 진행 상태를 초기화하고 처음부터 다시 시작할까요?')) return;
     restartAssessment();
   });
-  modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+  // 배경 클릭 및 Escape는 진행 중에 닫히지 않도록 무시
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) tryCloseModal();
+  });
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && !modal.classList.contains('hidden')) closeModal();
+    if (e.key === 'Escape' && !modal.classList.contains('hidden')) tryCloseModal();
   });
   el('assessment-answer')?.addEventListener('input', (e) => {
     if (!state) return;

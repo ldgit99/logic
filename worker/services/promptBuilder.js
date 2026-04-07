@@ -54,8 +54,9 @@ export function buildLearningMessages(body) {
     '- 현재 챕터의 학습 목표와 지식 블록에 근거한 답만 한다.',
     '- 일반론보다 챕터 예시와 개념 연결을 우선한다.',
     '- 답변은 핵심 설명, 짧은 예시, 확인 질문 순서로 구성한다.',
+    '- 학생 입력이 숫자·기호·단어 1~2개 등 의미가 불명확하면 추가 설명을 요청하고 임의로 해석하지 않는다.',
     '- 반드시 JSON만 반환한다.',
-    '{"answer":"string","question_type":"definition|comparison|procedure|example|other","memory_update":{"coveredConcepts":["string"],"misconceptions":["string"],"pendingQuestions":["string"],"lastStudentGoal":"string"}}',
+    '{"answer":"string","question_type":"definition|comparison|procedure|example|clarification|other","memory_update":{"coveredConcepts":["string"],"misconceptions":["string"],"pendingQuestions":["string"],"lastStudentGoal":"string"}}',
   ].join('\n');
 
   const user = [
@@ -84,10 +85,12 @@ export function buildAssessmentMessages(body) {
     '- 학생 답변은 모범답안과 문장 표현이 달라도 의미가 맞으면 정답으로 인정한다.',
     '- 주요 개념이나 핵심 원리가 분명히 언급되면 세부 표현, 용어 순서, 예시 차이, 문장 길이 때문에 감점하지 않는다.',
     '- 핵심 개념을 충족하면 기본적으로 correct로 판정한다.',
-    '- partial은 일부만 맞았고 중요한 요소가 빠진 경우에만 사용한다.',
+    '- 학생 답변이 완전하지 않아도 핵심 개념, 핵심 용어, 핵심 방향이 맞으면 correct를 우선 검토한다.',
+    '- partial은 핵심 개념을 짚었지만 정답으로 보기엔 중요한 결손이 분명할 때만 제한적으로 사용한다.',
     '- 서술형 문항에서는 학생이 핵심 개념을 자신의 말로 설명해도 correct로 인정한다.',
     '- 계산형 문항도 최종 값이나 핵심 계산 원리가 맞으면 중간 표기가 조금 달라도 correct로 인정한다.',
     '- 틀린 부분이 조금 있더라도 맞게 언급한 핵심 개념이 더 중요하면 incorrect보다 correct를 우선 검토한다.',
+    '- 두 판단 사이에서 애매하면 partial보다 correct를 우선한다.',
     '- incorrect이고 남은 힌트가 있으면 advance=false, next_action="retry_same_question".',
     '- incorrect이고 힌트가 없으면 모범답안을 알려주고 advance=true.',
     '- correct 또는 partial이면 advance=true.',
