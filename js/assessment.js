@@ -16,6 +16,7 @@ let openReflection = null;
 let currentChapter = null;
 let state = null;
 let busy = false;
+let advanceTimer = null;
 
 function el(id) { return document.getElementById(id); }
 function trim(text) { return String(text || '').trim(); }
@@ -80,6 +81,7 @@ function serializeState() {
     results: state.results,
     feedback: state.feedback,
     answerDraft: state.answerDraft || '',
+    awaitingNext: Boolean(state.awaitingNext),
   };
 }
 
@@ -149,6 +151,13 @@ function clearState(chapterId) {
   } catch {}
 }
 
+function clearAdvanceTimer() {
+  if (advanceTimer) {
+    clearTimeout(advanceTimer);
+    advanceTimer = null;
+  }
+}
+
 function getAssessmentStatus(chapterId) {
   const saved = loadState(chapterId);
   if (!saved) return 'idle';
@@ -183,6 +192,7 @@ function createInitialState(chapterData) {
     })),
     feedback: '',
     answerDraft: '',
+    awaitingNext: false,
   };
 }
 
@@ -196,23 +206,24 @@ function setBusy(nextBusy) {
   const restartBtn = el('assessment-restart');
   const closeBtn = el('assessment-modal-close');
   const answerEl = el('assessment-answer');
-  const reflectionBtn = el('assessment-open-reflection');
+  const nextBtn = el('assessment-next-question');
   if (submitBtn) submitBtn.disabled = nextBusy;
   if (restartBtn) restartBtn.disabled = nextBusy;
   if (closeBtn) closeBtn.disabled = nextBusy;
-  if (answerEl) answerEl.disabled = nextBusy;
-  if (reflectionBtn) reflectionBtn.disabled = nextBusy;
+  if (answerEl) answerEl.disabled = nextBusy || Boolean(state?.awaitingNext);
+  if (nextBtn) nextBtn.disabled = nextBusy;
 }
 
 function updateButtons() {
   const submitBtn = el('assessment-submit');
-  const reflectionBtn = el('assessment-open-reflection');
+  const nextBtn = el('assessment-next-question');
   if (submitBtn) {
     submitBtn.textContent = state?.status === 'completed' ? '완료됨' : '답안 제출';
-    submitBtn.disabled = busy || state?.status === 'completed';
+    submitBtn.disabled = busy || state?.status === 'completed' || Boolean(state?.awaitingNext);
   }
-  if (reflectionBtn) {
-    reflectionBtn.classList.toggle('hidden', state?.status !== 'completed');
+  if (nextBtn) {
+    nextBtn.classList.toggle('hidden', !state?.awaitingNext || state?.status === 'completed');
+    nextBtn.disabled = busy || !state?.awaitingNext || state?.status === 'completed';
   }
 }
 
@@ -373,7 +384,8 @@ function syncBadge(chapterId = state?.chapterId) {
 }
 
 async function submitCurrentAnswer() {
-  if (!state || state.status === 'completed' || busy) return;
+  if (!state || state.status === 'completed' || state.awaitingNext || busy) return;
+  clearAdvanceTimer();
   const answerEl = el('assessment-answer');
   const answer = trim(answerEl?.value);
   if (!answer) {
@@ -414,6 +426,7 @@ async function submitCurrentAnswer() {
     current.advanced = Boolean(result.advance);
 
     state.answerDraft = '';
+    state.awaitingNext = false;
     state.feedback = current.feedback || '판정이 완료되었습니다.';
 
     if (!current.advanced && current.hint) {
@@ -426,8 +439,7 @@ async function submitCurrentAnswer() {
         state.completedAt = new Date().toISOString();
         state.feedback = '형성평가가 완료되었습니다.';
       } else {
-        state.questionIdx += 1;
-        state.hintCount = 0;
+        state.awaitingNext = true;
         state.feedback = `${current.feedback || '다음 문항으로 이동합니다.'}`;
       }
     }
@@ -447,13 +459,27 @@ async function submitCurrentAnswer() {
 
 function restartAssessment() {
   if (!currentChapter) return;
+  clearAdvanceTimer();
   state = createInitialState(currentChapter);
   saveState();
   syncBadge();
   render();
 }
 
+function goToNextQuestion() {
+  if (!state || !state.awaitingNext || state.status === 'completed') return;
+  state.questionIdx += 1;
+  state.hintCount = 0;
+  state.feedback = '';
+  state.answerDraft = '';
+  state.awaitingNext = false;
+  saveState();
+  syncBadge();
+  render();
+}
+
 function closeModal() {
+  clearAdvanceTimer();
   el('assessment-modal')?.classList.add('hidden');
 }
 
@@ -465,15 +491,10 @@ function bindModalEvents() {
   el('assessment-modal-close')?.addEventListener('click', closeModal);
   el('assessment-modal-cancel')?.addEventListener('click', closeModal);
   el('assessment-submit')?.addEventListener('click', submitCurrentAnswer);
+  el('assessment-next-question')?.addEventListener('click', goToNextQuestion);
   el('assessment-restart')?.addEventListener('click', () => {
     if (!confirm('현재 형성평가 진행 상태를 초기화하고 처음부터 다시 시작할까요?')) return;
     restartAssessment();
-  });
-  el('assessment-open-reflection')?.addEventListener('click', () => {
-    if (typeof openReflection === 'function' && currentChapter) {
-      closeModal();
-      openReflection(currentChapter.id, currentChapter.title);
-    }
   });
   modal.addEventListener('click', (event) => {
     if (event.target === modal) closeModal();
