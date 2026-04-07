@@ -314,6 +314,7 @@ function render() {
   if (answerEl) {
     answerEl.value = state.answerDraft || result?.answer || '';
     answerEl.classList.remove('hidden');
+    answerEl.disabled = busy || Boolean(state?.awaitingNext);
   }
   if (hintEl) {
     hintEl.textContent = displayedHint ? `힌트: ${displayedHint}` : '';
