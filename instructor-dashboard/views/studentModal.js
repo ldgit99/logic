@@ -1,13 +1,13 @@
 /**
  * views/studentModal.js
- * 학생 상세 모달 — 대화 로그 + 피드백 상세
+ * 학생 상세 모달 — 문항별 채점 + 대화 로그 + 피드백 상세
  */
 
 import { escapeHtml, formatDate } from '../utils/format.js';
 import { apiPost, fetchStudentHistory } from '../apiClient.js';
 
 /**
- * @param {object} submission  제출 데이터 (messages[], feedBack, feedForward, weakConcepts 포함)
+ * @param {object} submission  제출 데이터 (assessment_results[], messages[], feedBack 등 포함)
  */
 export async function openStudentModal(submission) {
   const modal = document.getElementById('student-modal');
@@ -19,6 +19,7 @@ export async function openStudentModal(submission) {
   const name = submission.student_name || submission.studentName || '-';
   const id = submission.student_id || submission.studentId || '-';
   const ch = submission.chapter_id || submission.chapterId || '-';
+  const sessionId = submission.session_id || '';
 
   title.textContent = `${name} (${id}) — Ch.${ch}`;
 
@@ -32,11 +33,18 @@ export async function openStudentModal(submission) {
     ? weakConcepts.map((w) => `<span class="weak-tag">${escapeHtml(w)}</span>`).join('')
     : '<span class="empty-msg">없음</span>';
 
+  const gradingStatus = submission.grading_status || submission.gradingStatus || '';
+  const isPending = gradingStatus === 'pending';
   const score = submission.score ?? '-';
   const correct = submission.correctCount ?? submission.correct_count ?? '-';
   const total = submission.totalCount ?? submission.total_count ?? '-';
   const scoreBarWidth = submission.score != null ? Math.min(submission.score, 100) : 0;
   const scoreColorClass = submission.score >= 80 ? 'score-good' : submission.score >= 60 ? 'score-warn' : 'score-bad';
+
+  const assessmentResults = Array.isArray(submission.assessment_results) ? submission.assessment_results : [];
+  const hasResults = assessmentResults.length > 0;
+
+  const gradingHtml = hasResults ? renderGradingPanel(assessmentResults, isPending) : '';
 
   body.innerHTML = `
     <div class="modal-split">
@@ -51,11 +59,15 @@ export async function openStudentModal(submission) {
             <tr><th>챕터</th><td>Ch.${escapeHtml(ch)}</td></tr>
             <tr><th>점수</th><td>
               <div class="modal-score-wrap">
-                <div class="score-bar-wrap modal-score-bar"><div class="score-bar ${scoreColorClass}-bar" style="width:${scoreBarWidth}%"></div></div>
-                <span class="${scoreColorClass}">${score}점 (${correct}/${total})</span>
+                ${isPending
+                  ? `<span class="grading-pending-badge">채점 대기</span>`
+                  : `<div class="score-bar-wrap modal-score-bar"><div class="score-bar ${scoreColorClass}-bar" style="width:${scoreBarWidth}%"></div></div>
+                     <span class="${scoreColorClass}">${score}점 (${correct}/${total})</span>`
+                }
               </div>
             </td></tr>
             <tr><th>제출시간</th><td>${formatDate(submission.submitted_at || submission.submittedAt || submission.timestamp)}</td></tr>
+            ${submission.graded_at ? `<tr><th>채점시간</th><td>${formatDate(submission.graded_at)}</td></tr>` : ''}
           </table>
         </div>
 
@@ -81,6 +93,17 @@ export async function openStudentModal(submission) {
       </div>
 
       <div class="modal-split-right">
+        ${gradingHtml ? `
+          <div class="grading-section">
+            <h3 class="grading-title">문항별 채점 <span class="grading-status-label ${isPending ? 'pending' : 'graded'}">${isPending ? '채점 대기' : '채점 완료'}</span></h3>
+            <div id="grading-panel">${gradingHtml}</div>
+            <div class="grading-actions">
+              <span class="grading-save-status" id="grading-save-status"></span>
+              <button class="btn-primary" id="btn-save-grades">채점 저장</button>
+            </div>
+          </div>
+        ` : ''}
+
         <h3 class="chat-log-title">대화 로그 <span class="chat-count">${messages.length}개</span></h3>
         <div class="chat-log">${chatHtml}</div>
 
@@ -112,7 +135,8 @@ export async function openStudentModal(submission) {
         const rows = subs.map((s) => {
           const sc = s.score ?? '-';
           const cls = s.score >= 80 ? 'score-good' : s.score >= 60 ? 'score-warn' : 'score-bad';
-          return `<span class="hist-item">Ch.${s.chapter_id} <strong class="${cls}">${sc}점</strong></span>`;
+          const pending = (s.grading_status === 'pending') ? ' (대기)' : '';
+          return `<span class="hist-item">Ch.${s.chapter_id} <strong class="${cls}">${sc}점${pending}</strong></span>`;
         }).join('');
         historyPanel.innerHTML = `
           <div class="history-header">점수 추이 (${subs.length}회 제출)</div>
@@ -121,6 +145,34 @@ export async function openStudentModal(submission) {
         `;
       })
       .catch(() => { historyPanel.innerHTML = ''; });
+  }
+
+  // 채점 저장 버튼 이벤트
+  const saveGradesBtn = body.querySelector('#btn-save-grades');
+  if (saveGradesBtn && hasResults) {
+    saveGradesBtn.addEventListener('click', async () => {
+      const statusEl = body.querySelector('#grading-save-status');
+      saveGradesBtn.disabled = true;
+      if (statusEl) { statusEl.textContent = '저장 중...'; statusEl.className = 'grading-save-status'; }
+
+      try {
+        const grades = collectGrades(body, assessmentResults.length);
+        await apiPost('/dashboard/grade', {
+          student_id: id,
+          chapter_id: ch,
+          session_id: sessionId,
+          grades,
+        });
+        if (statusEl) { statusEl.textContent = '채점이 저장되었습니다!'; statusEl.className = 'grading-save-status ok'; }
+        // 상태 라벨 업데이트
+        const label = body.querySelector('.grading-status-label');
+        if (label) { label.textContent = '채점 완료'; label.className = 'grading-status-label graded'; }
+      } catch (err) {
+        if (statusEl) { statusEl.textContent = `저장 실패: ${err?.message || '오류'}`; statusEl.className = 'grading-save-status error'; }
+      } finally {
+        saveGradesBtn.disabled = false;
+      }
+    });
   }
 
   // 교수 메시지 발송 버튼 이벤트
@@ -149,6 +201,70 @@ export async function openStudentModal(submission) {
     });
   }
 }
+
+// ── 채점 패널 렌더링 ─────────────────────────────────────────
+
+function renderGradingPanel(results, isPending) {
+  return results.map((item, idx) => {
+    const questionText = item.question_text || item.questionText || `문항 ${idx + 1}`;
+    const concept = item.concept || '';
+    const keyAnswer = item.key_answer || item.keyAnswer || '';
+    const answer = item.answer || '';
+    const submitted = item.submitted !== false;
+    const hintsUsed = item.hints_used ?? item.hintsUsed ?? 0;
+    const currentJudgment = item.judgment || '';
+    const instructorFeedback = item.instructor_feedback || item.instructorFeedback || '';
+
+    return `
+      <div class="grading-item" data-idx="${idx}">
+        <div class="grading-item-header">
+          <span class="grading-q-num">Q${idx + 1}</span>
+          ${concept ? `<span class="grading-concept">${escapeHtml(concept)}</span>` : ''}
+          ${hintsUsed > 0 ? `<span class="grading-hints">힌트 ${hintsUsed}회</span>` : ''}
+        </div>
+        <div class="grading-question">${escapeHtml(questionText)}</div>
+        ${keyAnswer ? `<div class="grading-key-answer"><strong>모범답안:</strong> ${escapeHtml(keyAnswer)}</div>` : ''}
+        <div class="grading-student-answer">
+          <strong>학생 답안:</strong>
+          ${submitted ? escapeHtml(answer) : '<em class="empty-msg">미응시</em>'}
+        </div>
+        ${submitted ? `
+          <div class="grading-controls">
+            <label class="grading-radio">
+              <input type="radio" name="grade-${idx}" value="correct" ${currentJudgment === 'correct' ? 'checked' : ''} />
+              <span class="grade-label grade-correct">정답</span>
+            </label>
+            <label class="grading-radio">
+              <input type="radio" name="grade-${idx}" value="partial" ${currentJudgment === 'partial' ? 'checked' : ''} />
+              <span class="grade-label grade-partial">부분정답</span>
+            </label>
+            <label class="grading-radio">
+              <input type="radio" name="grade-${idx}" value="incorrect" ${currentJudgment === 'incorrect' ? 'checked' : ''} />
+              <span class="grade-label grade-incorrect">오답</span>
+            </label>
+          </div>
+          <textarea class="grading-feedback dash-input" data-idx="${idx}" rows="2" placeholder="피드백 (선택사항)">${escapeHtml(instructorFeedback)}</textarea>
+        ` : ''}
+      </div>
+    `;
+  }).join('');
+}
+
+function collectGrades(container, count) {
+  const grades = [];
+  for (let i = 0; i < count; i++) {
+    const selected = container.querySelector(`input[name="grade-${i}"]:checked`);
+    const feedbackEl = container.querySelector(`.grading-feedback[data-idx="${i}"]`);
+    grades.push({
+      index: i,
+      judgment: selected ? selected.value : '',
+      instructor_feedback: feedbackEl ? feedbackEl.value.trim() : '',
+    });
+  }
+  return grades;
+}
+
+// ── 기존 유틸리티 ────────────────────────────────────────────
 
 function buildSparkline(scores) {
   if (scores.length < 2) return '';

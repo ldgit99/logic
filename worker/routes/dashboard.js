@@ -51,6 +51,9 @@ export async function handleDashboard(request, env, pathname) {
   if (request.method === 'POST' && pathname === '/dashboard/reflections/restore') {
     return handleRestoreReflection(request, env);
   }
+  if (request.method === 'POST' && pathname === '/dashboard/grade') {
+    return handleGradeAssessment(request, env);
+  }
   if (pathname === '/dashboard/locks') {
     if (request.method === 'GET') return handleGetLocks(env);
     if (request.method === 'POST') return handleSetLock(request, env);
@@ -457,6 +460,77 @@ async function handleRestoreReflection(request, env) {
   await env.SUBMISSIONS.put(key, JSON.stringify(parsed), { expirationTtl: 60 * 60 * 24 * 180 });
 
   return jsonResponse({ ok: true });
+}
+
+async function handleGradeAssessment(request, env) {
+  const actor = resolveDashboardActor(request, env);
+  if (actor !== 'professor' && actor !== 'admin') {
+    return jsonResponse({ error: 'forbidden' }, 403);
+  }
+
+  let body;
+  try { body = await request.json(); } catch { return jsonResponse({ error: 'invalid JSON' }, 400); }
+
+  const studentId = String(body.student_id || '').trim();
+  const chapterId = String(body.chapter_id || '').trim();
+  const sessionId = String(body.session_id || '').trim();
+  if (!studentId || !chapterId || !sessionId) {
+    return jsonResponse({ error: 'missing student_id, chapter_id, or session_id' }, 400);
+  }
+
+  const grades = body.grades;
+  if (!Array.isArray(grades)) {
+    return jsonResponse({ error: 'grades must be an array' }, 400);
+  }
+
+  const key = `assessment:${studentId}:${chapterId}:${sessionId}`;
+  const raw = await env.SUBMISSIONS.get(key);
+  if (!raw) return jsonResponse({ error: 'assessment not found' }, 404);
+
+  let assessment;
+  try { assessment = JSON.parse(raw); } catch { return jsonResponse({ error: 'invalid assessment data' }, 500); }
+
+  // 문항별 채점 결과 반영
+  const results = Array.isArray(assessment.assessment_results) ? assessment.assessment_results : [];
+  for (const grade of grades) {
+    const idx = typeof grade.index === 'number' ? grade.index : -1;
+    if (idx < 0 || idx >= results.length) continue;
+    if (grade.judgment) results[idx].judgment = String(grade.judgment);
+    if (grade.instructor_feedback !== undefined) results[idx].instructor_feedback = String(grade.instructor_feedback || '');
+  }
+
+  // 점수 재계산
+  const total = results.length || 1;
+  const correct = results.filter((r) => r.judgment === 'correct').length;
+  const partial = results.filter((r) => r.judgment === 'partial').length;
+  const score = Math.round(((correct + partial * 0.5) / total) * 100);
+
+  // 취약개념 추출
+  const weakConcepts = [...new Set(
+    results
+      .filter((r) => r.judgment === 'incorrect' || r.judgment === 'partial')
+      .map((r) => r.concept)
+      .filter(Boolean),
+  )];
+
+  assessment.assessment_results = results;
+  assessment.score = score;
+  assessment.correct_count = correct;
+  assessment.weak_concepts = weakConcepts;
+  assessment.grading_status = 'graded';
+  assessment.graded_at = new Date().toISOString();
+  assessment.graded_by = actor;
+
+  await env.SUBMISSIONS.put(key, JSON.stringify(assessment), { expirationTtl: 15552000 });
+
+  return jsonResponse({
+    ok: true,
+    score,
+    correct_count: correct,
+    total_count: total,
+    weak_concepts: weakConcepts,
+    grading_status: 'graded',
+  });
 }
 
 function resolveDashboardActor(request, env) {

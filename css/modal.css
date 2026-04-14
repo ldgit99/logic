@@ -706,7 +706,35 @@
   border: 1px solid rgba(245, 158, 11, 0.24);
   color: var(--text-secondary);
   line-height: 1.6;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
+
+.assessment-hint-step {
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.btn-show-hint {
+  align-self: flex-start;
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  background: rgba(245, 158, 11, 0.08);
+  color: var(--text-primary, #374151);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background .15s, border-color .15s;
+}
+.btn-show-hint:hover:not(:disabled) {
+  background: rgba(245, 158, 11, 0.18);
+  border-color: rgba(245, 158, 11, 0.5);
+}
+.btn-show-hint:disabled { opacity: .4; cursor: not-allowed; }
+
+.assessment-chip.submitted { background: #dbeafe; color: #1e40af; }
+.assessment-chip.idle { background: var(--bg-tertiary, #f3f4f6); color: var(--text-secondary, #6b7280); }
 
 .assessment-summary-card {
   display: flex;
@@ -923,6 +951,7 @@ button.nav-dot:hover { transform: scale(1.12); box-shadow: 0 2px 8px rgba(0,0,0,
 .nd-ok       { background: #d1fae5; color: #065f46; border-color: #6ee7b7; }
 .nd-partial  { background: #fef3c7; color: #92400e; border-color: #fcd34d; }
 .nd-incorrect{ background: #fee2e2; color: #991b1b; border-color: #fca5a5; }
+.nd-submitted{ background: #dbeafe; color: #1e40af; border-color: #93c5fd; }
 
 /* ── 최종 제출 버튼 ─────────────────────────────────────────── */
 .btn-final-submit {

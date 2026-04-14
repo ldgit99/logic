@@ -15,10 +15,35 @@
     "correct_count": { "type": "integer", "minimum": 0 },
     "total_count": { "type": "integer", "minimum": 1 },
     "score": { "type": "number", "minimum": 0, "maximum": 100 },
+    "grading_status": {
+      "type": "string",
+      "enum": ["pending", "graded"],
+      "description": "pending=교수 채점 대기, graded=채점 완료"
+    },
+    "graded_at": { "type": "string", "format": "date-time" },
+    "graded_by": { "type": "string", "maxLength": 50 },
     "weak_concepts": {
       "type": "array",
       "items": { "type": "string", "maxLength": 100 },
       "maxItems": 20
+    },
+    "assessment_results": {
+      "type": "array",
+      "description": "문항별 답안 및 채점 결과",
+      "items": {
+        "type": "object",
+        "properties": {
+          "question_id": { "type": "string" },
+          "question_text": { "type": "string" },
+          "concept": { "type": "string" },
+          "key_answer": { "type": "string" },
+          "answer": { "type": "string" },
+          "submitted": { "type": "boolean" },
+          "hints_used": { "type": "integer", "minimum": 0 },
+          "judgment": { "type": "string", "enum": ["correct", "partial", "incorrect", ""] },
+          "instructor_feedback": { "type": "string" }
+        }
+      }
     },
     "bloom_breakdown": {
       "type": "object",

@@ -63,12 +63,22 @@ export function validateAssessment(body) {
   }
 
   const total = Number(body.total_count);
-  if (!Number.isInteger(total) || total < 1) {
-    return 'total_count must be an integer >= 1';
+  if (!Number.isInteger(total) || total < 0) {
+    return 'total_count must be an integer >= 0';
   }
 
   if (!Array.isArray(body.weak_concepts)) {
     return 'weak_concepts must be an array';
+  }
+
+  // grading_status 유효성 검사 (선택 필드)
+  if (body.grading_status && !['pending', 'graded'].includes(body.grading_status)) {
+    return 'grading_status must be "pending" or "graded"';
+  }
+
+  // assessment_results 유효성 검사 (선택 필드)
+  if (body.assessment_results && !Array.isArray(body.assessment_results)) {
+    return 'assessment_results must be an array';
   }
 
   return null;

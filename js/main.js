@@ -306,7 +306,7 @@ async function loadRuntimeModules() {
   }
 
   try {
-    const exportMod = await import('./export.js?v=20260326b');
+    const exportMod = await import('./export.js?v=20260407c');
     if (typeof exportMod.initExport === 'function') {
       initExport = exportMod.initExport;
     }
@@ -327,7 +327,7 @@ async function loadRuntimeModules() {
   }
 
   try {
-    const assessmentMod = await import('./assessment.js?v=20260402b');
+    const assessmentMod = await import('./assessment.js?v=20260414a');
     if (typeof assessmentMod.initAssessmentFeature === 'function') {
       initAssessmentFeature = assessmentMod.initAssessmentFeature;
     }

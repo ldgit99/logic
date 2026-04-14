@@ -2,6 +2,7 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
+  <link rel="icon" href="data:,">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>디지털 논리회로 인터랙티브 교재</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -285,6 +286,7 @@
         <div id="assessment-question" class="assessment-question"></div>
         <div id="assessment-feedback" class="assessment-feedback"></div>
         <textarea id="assessment-answer" class="assessment-textarea" rows="5" placeholder="답안을 입력하세요..."></textarea>
+        <button id="assessment-show-hint" class="btn-show-hint hidden" type="button">단계별 힌트 보기 (0/3)</button>
         <div id="assessment-hint" class="assessment-hint hidden"></div>
         <div id="assessment-summary" class="assessment-summary hidden"></div>
         <div id="assessment-results" class="assessment-results hidden"></div>
@@ -311,7 +313,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
   <!-- ─── 앱 진입점 (ES Module) ─── -->
-  <script type="module" src="js/main.js?v=20260402b"></script>
+  <script type="module" src="js/main.js?v=20260414a"></script>
 
   <!-- ─── 테마 토글 로직 ─── -->
   <script>

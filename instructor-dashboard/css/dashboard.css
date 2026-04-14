@@ -2765,7 +2765,11 @@ details[open] .la-tb-summary::after { transform: rotate(90deg); }
   font-size: 12px; color: var(--color-muted); font-weight: 600;
 }
 .st-refl-close:hover { color: var(--color-danger); }
-.st-refl-body  { font-size: 13px; line-height: 1.65; white-space: pre-wrap; color: var(--color-text); }
+.st-refl-body  { font-size: 13px; line-height: 1.65; color: var(--color-text); }
+.st-refl-qa    { margin-bottom: 10px; }
+.st-refl-q     { font-size: 11px; font-weight: 700; color: var(--color-muted); margin-bottom: 3px; }
+.st-refl-a     { font-size: 13px; white-space: pre-wrap; line-height: 1.6; color: var(--color-text); }
+.st-refl-empty { font-size: 13px; color: var(--color-muted); margin: 0; }
 
 /* 점수 바 */
 .score-bar-wrap {
@@ -2788,3 +2792,153 @@ details[open] .la-tb-summary::after { transform: rotate(90deg); }
 .dark .st-pill--warn { background: #451a03; color: #fcd34d; }
 .dark .st-pill--miss { background: #450a0a; color: #fca5a5; }
 .dark .st-refl-panel { background: #1c1a05; border-color: #854d0e; border-left-color: #d97706; }
+
+/* ── 채점 UI ──────────────────────────────────────────────── */
+
+.grading-section {
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--color-border, #e5e7eb);
+}
+
+.grading-title {
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.grading-status-label {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+.grading-status-label.pending { background: #fef3c7; color: #92400e; }
+.grading-status-label.graded  { background: #d1fae5; color: #065f46; }
+
+.grading-pending-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.grading-item {
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid var(--color-border, #e5e7eb);
+  margin-bottom: 10px;
+  background: var(--color-bg-secondary, #f9fafb);
+}
+.dark .grading-item { background: #1e293b; border-color: #334155; }
+
+.grading-item-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.grading-q-num {
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--color-primary, #2563eb);
+}
+
+.grading-concept {
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: rgba(37, 99, 235, 0.1);
+  color: var(--color-primary, #2563eb);
+}
+
+.grading-hints {
+  font-size: 11px;
+  color: var(--color-muted, #6b7280);
+}
+
+.grading-question {
+  font-size: 13px;
+  line-height: 1.5;
+  margin-bottom: 6px;
+  color: var(--color-text, #111827);
+}
+
+.grading-key-answer {
+  font-size: 12px;
+  line-height: 1.5;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  margin-bottom: 6px;
+  color: var(--color-text, #111827);
+}
+
+.grading-student-answer {
+  font-size: 13px;
+  line-height: 1.5;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: rgba(37, 99, 235, 0.06);
+  border: 1px solid rgba(37, 99, 235, 0.15);
+  margin-bottom: 8px;
+  color: var(--color-text, #111827);
+}
+
+.grading-controls {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.grading-radio {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
+.grading-radio input[type="radio"] {
+  margin: 0;
+  accent-color: var(--color-primary, #2563eb);
+}
+
+.grade-label {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+.grade-correct   { background: #d1fae5; color: #065f46; }
+.grade-partial   { background: #fef3c7; color: #92400e; }
+.grade-incorrect { background: #fee2e2; color: #991b1b; }
+
+.grading-feedback {
+  width: 100%;
+  font-size: 12px;
+  resize: vertical;
+  border-radius: 6px;
+}
+
+.grading-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.grading-save-status {
+  font-size: 12px;
+  color: var(--color-muted, #6b7280);
+}
+.grading-save-status.ok { color: #059669; }
+.grading-save-status.error { color: #dc2626; }
