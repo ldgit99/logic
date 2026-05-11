@@ -2942,3 +2942,158 @@ details[open] .la-tb-summary::after { transform: rotate(90deg); }
 }
 .grading-save-status.ok { color: #059669; }
 .grading-save-status.error { color: #dc2626; }
+
+/* ─── 제출 매트릭스(학생 × 챕터 × 형성/대화/성찰) ─────────────────── */
+.summary-matrix-panel {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 20px 24px;
+  margin: 16px 0;
+}
+
+.ss-page { display: flex; flex-direction: column; gap: 16px; }
+
+.ss-summary-row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+}
+.ss-summary-card {
+  background: #f9fafb;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.ss-summary-label { font-size: 12px; color: var(--color-muted); }
+.ss-summary-value { font-size: 22px; font-weight: 700; }
+
+.ss-legend {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 14px;
+  font-size: 12px; color: var(--color-muted);
+  padding: 8px 0;
+}
+.ss-legend-item { display: inline-flex; align-items: center; gap: 6px; }
+.ss-legend-sep { padding-left: 8px; border-left: 1px solid var(--color-border); margin-left: 4px; }
+.ss-dot {
+  display: inline-block; width: 10px; height: 10px; border-radius: 50%;
+}
+.ss-dot--ok   { background: var(--color-ok); }
+.ss-dot--warn { background: var(--color-warn); }
+.ss-dot--miss { background: #d1d5db; }
+
+.ss-matrix-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+.ss-matrix-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  min-width: 900px;
+}
+.ss-matrix-table thead th {
+  position: sticky; top: 0;
+  background: #f9fafb;
+  border-bottom: 1px solid var(--color-border);
+  padding: 8px 6px;
+  font-weight: 600;
+  color: var(--color-text);
+  text-align: center;
+  white-space: nowrap;
+}
+.ss-th-student { text-align: left !important; min-width: 140px; padding-left: 12px !important; }
+.ss-th-total   { min-width: 70px; }
+.ss-th-ch      { min-width: 76px; }
+.ss-ch-num     { display: block; font-weight: 700; }
+.ss-ch-name    { display: block; font-size: 10px; color: var(--color-muted); font-weight: 400; margin-top: 2px; }
+
+.ss-matrix-table tbody td {
+  border-bottom: 1px solid var(--color-border);
+  padding: 6px;
+  text-align: center;
+  vertical-align: middle;
+}
+.ss-student-row { cursor: pointer; transition: background 0.12s; }
+.ss-student-row:hover { background: #f3f4f6; }
+.ss-student-row.ss-row-open { background: #eff6ff; }
+
+.ss-td-student { text-align: left !important; padding-left: 12px !important; }
+.ss-student-name { font-weight: 600; }
+.ss-student-id { font-size: 11px; color: var(--color-muted); margin-top: 2px; }
+
+.ss-td-total { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 6px; }
+.ss-total-badge {
+  display: inline-block; padding: 3px 8px; border-radius: 12px;
+  font-weight: 700; font-size: 12px;
+}
+.ss-total--full    { background: #d1fae5; color: #065f46; }
+.ss-total--partial { background: #fef3c7; color: #92400e; }
+.ss-total--miss    { background: #f3f4f6; color: var(--color-muted); }
+.ss-avg-score { font-size: 11px; }
+
+.ss-cell {
+  padding: 4px;
+  min-width: 60px;
+}
+.ss-cell--full    { background: #ecfdf5; }
+.ss-cell--partial { background: #fffbeb; }
+.ss-cell--miss    { background: #fff; }
+.ss-cell--empty   { background: #fafafa; }
+.ss-cell-empty    { color: #d1d5db; }
+
+.ss-cell-icons {
+  display: inline-flex; gap: 2px;
+}
+.ss-icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; border-radius: 4px;
+  font-size: 10px; font-weight: 700;
+}
+.ss-icon--ok   { background: var(--color-ok); color: #fff; }
+.ss-icon--miss { background: #e5e7eb; color: #9ca3af; }
+.ss-cell-score { font-size: 10px; margin-top: 2px; }
+
+/* 상세 행 */
+.ss-detail-row td { background: #f9fafb; padding: 16px 20px; }
+.ss-detail-wrap { display: flex; flex-direction: column; gap: 12px; }
+.ss-detail-title { font-size: 14px; font-weight: 600; }
+.ss-detail-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px;
+}
+.ss-detail-card {
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 10px 12px;
+}
+.ss-detail-card--full { border-color: var(--color-ok); background: #ecfdf5; }
+.ss-detail-card-head {
+  display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px;
+}
+.ss-detail-ch { font-weight: 700; }
+.ss-detail-ch-name { font-size: 11px; color: var(--color-muted); flex: 1; }
+.ss-detail-score { font-size: 11px; font-weight: 600; }
+.ss-detail-items { display: flex; flex-direction: column; gap: 3px; }
+.ss-detail-item {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 12px;
+}
+.ss-detail-item--ok   .ss-detail-item-icon { color: var(--color-ok); font-weight: 700; }
+.ss-detail-item--miss .ss-detail-item-icon { color: #d1d5db; }
+.ss-detail-item--miss .ss-detail-item-label { color: var(--color-muted); }
+.ss-detail-item-meta { color: var(--color-muted); font-size: 11px; margin-left: auto; }
+
+/* 챕터별 요약 섹션 */
+.ss-ch-summary { margin-top: 8px; }
+.ss-section-title { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+.rate-good { color: #059669; font-weight: 600; }
+.rate-warn { color: var(--color-warn); }
+.rate-bad  { color: var(--color-danger); }

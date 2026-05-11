@@ -22,7 +22,8 @@ import {
   ApiError,
 } from './apiClient.js?v=20260326a';
 
-import { renderSummaryCards, renderSummaryTable } from './views/summary.js?v=20260407d';
+import { renderSummaryCards, renderSummaryTable } from './views/summary.js?v=20260407e';
+import { renderSubmissionStatus } from './views/submissionStatus.js?v=20260511a';
 import { renderInterventions } from './views/interventions.js?v=20260326a';
 import { renderAchievement } from './views/achievement.js?v=20260326a';
 import { renderConcepts } from './views/concepts.js?v=20260326a';
@@ -324,6 +325,7 @@ async function loadView(view) {
         lastKnownCount = summary?.totalSubmissions ?? allSubmissions.length;
         clearNewBadge();
         renderSummaryCards(summary, document.getElementById('summary-cards'), allSubmissions, reflections.reflections || []);
+        renderSubmissionStatus(allSubmissions, document.getElementById('submission-status-wrap'), reflections.reflections || []);
         renderSummaryTable(allSubmissions, document.getElementById('summary-table-body'), {
           onRowClick: (submission) => openStudentModal(submission),
           onDelete: async (submission) => {

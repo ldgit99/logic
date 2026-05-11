@@ -2,6 +2,7 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
+  <link rel="icon" href="data:,">
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>교수용 대시보드 — 디지털 논리회로</title>
   <link rel="stylesheet" href="css/dashboard.css" />
@@ -181,6 +182,18 @@
             <div class="summary-cards" id="summary-cards">
               <!-- JS로 렌더링 -->
             </div>
+            <section class="summary-matrix-panel">
+              <div class="summary-table-header">
+                <div>
+                  <p class="summary-table-kicker">Submission Matrix</p>
+                  <h2>학생 × 챕터 제출 현황</h2>
+                </div>
+                <p>각 셀에서 형성평가(평) · 대화(대) · 성찰일지(성) 제출 상태를 한눈에 확인합니다. 학생 행을 클릭하면 챕터별 상세가 펼쳐집니다.</p>
+              </div>
+              <div id="submission-status-wrap">
+                <!-- JS로 렌더링 -->
+              </div>
+            </section>
             <section class="summary-table-panel">
               <div class="summary-table-header">
                 <div>
@@ -297,6 +310,6 @@
     </div>
   </div>
 
-  <script type="module" src="main.js?v=20260407d"></script>
+  <script type="module" src="main.js?v=20260511a"></script>
 </body>
 </html>
