@@ -19,7 +19,7 @@ const CH_LABELS = {
 
 // ── 진입점 ────────────────────────────────────────────────────────
 
-export function renderSubmissionStatus(submissions, container, reflections = []) {
+export function renderSubmissionStatus(submissions, container, reflections = [], handlers = {}) {
   if (!container) return;
 
   const rows = Array.isArray(submissions) ? submissions : [];
@@ -29,6 +29,7 @@ export function renderSubmissionStatus(submissions, container, reflections = [])
   }
 
   const matrix = buildMatrix(rows, reflections);
+  const cellLookup = buildCellLookup(matrix);
   const stats = calcStats(matrix);
 
   container.innerHTML = `
@@ -98,9 +99,10 @@ export function renderSubmissionStatus(submissions, container, reflections = [])
     </div>
   `;
 
-  // 행 클릭 → 상세 토글
+  // 행 클릭 → 상세 토글 (아이콘 클릭은 stopPropagation으로 제외)
   container.querySelectorAll('.ss-student-row[data-sid]').forEach((row) => {
-    row.addEventListener('click', () => {
+    row.addEventListener('click', (e) => {
+      if (e.target.closest('.ss-icon')) return;
       const sid = row.dataset.sid;
       const detail = container.querySelector(`.ss-detail-row[data-sid="${sid}"]`);
       if (!detail) return;
@@ -114,16 +116,54 @@ export function renderSubmissionStatus(submissions, container, reflections = [])
       }
     });
   });
+
+  // 평/대/성 아이콘 클릭 → 팝업
+  container.querySelectorAll('.ss-icon[data-action]').forEach((icon) => {
+    icon.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const action = icon.dataset.action;
+      const sid = icon.dataset.sid;
+      const ch = icon.dataset.ch;
+      const cell = cellLookup.get(`${sid}::${ch}`);
+      if (!cell) return;
+
+      if (action === 'assessment' && cell.submission) {
+        if (!cell.data.assessment) return;
+        handlers.onAssessmentClick?.(cell.submission);
+      } else if (action === 'conversation' && cell.submission) {
+        if (!cell.data.conversation) return;
+        handlers.onConversationClick?.(cell.submission);
+      } else if (action === 'reflection' && cell.reflection) {
+        if (!cell.data.reflection) return;
+        handlers.onReflectionClick?.(cell.reflection, cell.submission);
+      }
+    });
+  });
+}
+
+function buildCellLookup(matrix) {
+  const map = new Map();
+  matrix.forEach((student) => {
+    Object.entries(student.chapters).forEach(([ch, data]) => {
+      map.set(`${student.studentId}::${ch}`, {
+        data,
+        submission: data.submission,
+        reflection: data.reflection_obj,
+      });
+    });
+  });
+  return map;
 }
 
 // ── 매트릭스 구축 ─────────────────────────────────────────────────
 
 function buildMatrix(submissions, reflections) {
-  const reflMap = new Set(
-    (Array.isArray(reflections) ? reflections : [])
-      .filter((r) => !r?.is_deleted)
-      .map((r) => `${r?.student_id}::${r?.chapter_id}`),
-  );
+  const reflObjMap = new Map();
+  (Array.isArray(reflections) ? reflections : [])
+    .filter((r) => !r?.is_deleted)
+    .forEach((r) => {
+      reflObjMap.set(`${r?.student_id}::${r?.chapter_id}`, r);
+    });
 
   const studentMap = new Map();
   submissions.forEach((s) => {
@@ -139,14 +179,16 @@ function buildMatrix(submissions, reflections) {
     const ch = String(s?.chapter_id || s?.chapterId || '').trim();
     if (!ch) return;
     const hasConv = hasConversation(s);
-    const hasRefl = reflMap.has(`${sid}::${ch}`);
+    const reflObj = reflObjMap.get(`${sid}::${ch}`) || null;
     studentMap.get(sid).chapters[ch] = {
       assessment: true,
       conversation: hasConv,
-      reflection: hasRefl,
+      reflection: Boolean(reflObj),
       score: s?.score != null ? Number(s.score) : null,
       submittedAt: s?.submitted_at || s?.submittedAt || '',
       turnCount: countTurns(s),
+      submission: s,
+      reflection_obj: reflObj,
     };
   });
 
@@ -201,12 +243,13 @@ function renderStudentRow(student) {
     const anyOk = d.assessment || d.conversation || d.reflection;
     const cellClass = allOk ? 'ss-cell--full' : anyOk ? 'ss-cell--partial' : 'ss-cell--miss';
 
+    const sid = student.studentId;
     return `
       <td class="ss-cell ${cellClass}">
         <div class="ss-cell-icons">
-          <span class="ss-icon ${d.assessment ? 'ss-icon--ok' : 'ss-icon--miss'}" title="형성평가">평</span>
-          <span class="ss-icon ${d.conversation ? 'ss-icon--ok' : 'ss-icon--miss'}" title="대화(${d.turnCount}턴)">대</span>
-          <span class="ss-icon ${d.reflection ? 'ss-icon--ok' : 'ss-icon--miss'}" title="성찰일지">성</span>
+          <span class="ss-icon ${d.assessment ? 'ss-icon--ok ss-icon--clickable' : 'ss-icon--miss'}" ${d.assessment ? `data-action="assessment" data-sid="${escapeHtml(sid)}" data-ch="${ch}"` : ''} title="형성평가${d.assessment ? ' (클릭하여 보기)' : ' 미제출'}">평</span>
+          <span class="ss-icon ${d.conversation ? 'ss-icon--ok ss-icon--clickable' : 'ss-icon--miss'}" ${d.conversation ? `data-action="conversation" data-sid="${escapeHtml(sid)}" data-ch="${ch}"` : ''} title="대화 ${d.turnCount}턴${d.conversation ? ' (클릭하여 보기)' : ''}">대</span>
+          <span class="ss-icon ${d.reflection ? 'ss-icon--ok ss-icon--clickable' : 'ss-icon--miss'}" ${d.reflection ? `data-action="reflection" data-sid="${escapeHtml(sid)}" data-ch="${ch}"` : ''} title="성찰일지${d.reflection ? ' (클릭하여 보기)' : ' 미제출'}">성</span>
         </div>
         ${d.score != null ? `<div class="ss-cell-score ${scoreColor(d.score)}">${d.score}점</div>` : ''}
       </td>

@@ -3057,6 +3057,8 @@ details[open] .la-tb-summary::after { transform: rotate(90deg); }
 }
 .ss-icon--ok   { background: var(--color-ok); color: #fff; }
 .ss-icon--miss { background: #e5e7eb; color: #9ca3af; }
+.ss-icon--clickable { cursor: pointer; transition: transform 0.1s, box-shadow 0.1s; }
+.ss-icon--clickable:hover { transform: scale(1.15); box-shadow: 0 0 0 2px rgba(37,99,235,0.4); }
 .ss-cell-score { font-size: 10px; margin-top: 2px; }
 
 /* 상세 행 */
@@ -3097,3 +3099,26 @@ details[open] .la-tb-summary::after { transform: rotate(90deg); }
 .rate-good { color: #059669; font-weight: 600; }
 .rate-warn { color: var(--color-warn); }
 .rate-bad  { color: var(--color-danger); }
+
+/* 성찰일지 팝업 */
+.refl-modal-wrap { display: flex; flex-direction: column; gap: 12px; padding: 4px; }
+.refl-modal-date { font-size: 12px; color: var(--color-muted); }
+.refl-modal-body { display: flex; flex-direction: column; gap: 14px; }
+.refl-modal-qa {
+  background: #f9fafb;
+  border-left: 3px solid var(--color-primary);
+  border-radius: 6px;
+  padding: 12px 14px;
+}
+.refl-modal-q {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--color-primary);
+  margin-bottom: 6px;
+}
+.refl-modal-a {
+  font-size: 14px;
+  white-space: pre-wrap;
+  line-height: 1.55;
+  color: var(--color-text);
+}

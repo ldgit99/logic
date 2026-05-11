@@ -23,7 +23,7 @@ import {
 } from './apiClient.js?v=20260326a';
 
 import { renderSummaryCards, renderSummaryTable } from './views/summary.js?v=20260407e';
-import { renderSubmissionStatus } from './views/submissionStatus.js?v=20260511a';
+import { renderSubmissionStatus } from './views/submissionStatus.js?v=20260511b';
 import { renderInterventions } from './views/interventions.js?v=20260326a';
 import { renderAchievement } from './views/achievement.js?v=20260326a';
 import { renderConcepts } from './views/concepts.js?v=20260326a';
@@ -120,8 +120,12 @@ function startPolling() {
       const data = await fetchSummary({});
       const count = data?.totalSubmissions ?? 0;
       if (lastKnownCount !== null && count > lastKnownCount) {
-        const diff = count - lastKnownCount;
-        showNewSubmissionBadge(diff);
+        if (currentView === 'overall') {
+          // 전체 탭을 보고 있으면 즉시 자동 새로고침 (loadView가 lastKnownCount/뱃지 갱신)
+          await loadView('overall');
+          return;
+        }
+        showNewSubmissionBadge(count - lastKnownCount);
       }
       lastKnownCount = count;
     } catch {
@@ -325,7 +329,16 @@ async function loadView(view) {
         lastKnownCount = summary?.totalSubmissions ?? allSubmissions.length;
         clearNewBadge();
         renderSummaryCards(summary, document.getElementById('summary-cards'), allSubmissions, reflections.reflections || []);
-        renderSubmissionStatus(allSubmissions, document.getElementById('submission-status-wrap'), reflections.reflections || []);
+        renderSubmissionStatus(
+          allSubmissions,
+          document.getElementById('submission-status-wrap'),
+          reflections.reflections || [],
+          {
+            onAssessmentClick: (submission) => openStudentModal(submission),
+            onConversationClick: (submission) => openStudentModal(submission),
+            onReflectionClick: (reflection, submission) => openReflectionModal(reflection, submission),
+          },
+        );
         renderSummaryTable(allSubmissions, document.getElementById('summary-table-body'), {
           onRowClick: (submission) => openStudentModal(submission),
           onDelete: async (submission) => {
@@ -521,6 +534,45 @@ function bindLogout() {
     clearToken();
     showAuthScreen();
   });
+}
+
+// ── 성찰일지 팝업 ─────────────────────────────────────────────────
+
+const REFL_QUESTIONS = ['무엇을 배웠나요?', '어떤 점이 어려웠나요?', '앞으로 어떻게 할 건가요?'];
+
+function openReflectionModal(reflection, submission) {
+  const modal = document.getElementById('student-modal');
+  const title = document.getElementById('modal-student-title');
+  const body = document.getElementById('modal-body');
+  if (!modal || !body) return;
+
+  const name = reflection?.student_name || submission?.student_name || submission?.studentName || '-';
+  const id = reflection?.student_id || submission?.student_id || submission?.studentId || '-';
+  const ch = reflection?.chapter_id || submission?.chapter_id || submission?.chapterId || '-';
+  const submittedAt = reflection?.saved_at || reflection?.submitted_at || reflection?.submittedAt || '';
+  const answers = Array.isArray(reflection?.answers) ? reflection.answers : [];
+
+  title.textContent = `${name} (${id}) — Ch.${ch} 성찰일지`;
+
+  const dateStr = submittedAt
+    ? new Date(submittedAt).toLocaleString('ko-KR')
+    : '';
+
+  const qaHtml = answers.length
+    ? answers.map((ans, i) => `
+        <div class="refl-modal-qa">
+          <div class="refl-modal-q">${escapeHtml(REFL_QUESTIONS[i] || `Q${i + 1}`)}</div>
+          <div class="refl-modal-a">${escapeHtml(String(ans || '(미작성)'))}</div>
+        </div>`).join('')
+    : '<p class="empty-msg">작성된 답변이 없습니다.</p>';
+
+  body.innerHTML = `
+    <div class="refl-modal-wrap">
+      ${dateStr ? `<p class="refl-modal-date">작성일: ${escapeHtml(dateStr)}</p>` : ''}
+      <div class="refl-modal-body">${qaHtml}</div>
+    </div>
+  `;
+  modal.classList.remove('hidden');
 }
 
 // ── 모달 닫기 ─────────────────────────────────────────────────────
