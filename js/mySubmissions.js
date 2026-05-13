@@ -86,6 +86,18 @@ function closePanel() {
   document.getElementById('my-sub-panel')?.classList.add('hidden');
 }
 
+function isPanelOpen() {
+  const panel = document.getElementById('my-sub-panel');
+  return !!(panel && !panel.classList.contains('hidden'));
+}
+
+// KV 전파 지연 대비: 제출 직후 즉시 + 2초 후 1회 추가 조회
+function refreshAfterSubmission() {
+  if (!isPanelOpen()) return;
+  loadAndRender();
+  setTimeout(() => { if (isPanelOpen()) loadAndRender(); }, 2000);
+}
+
 async function loadAndRender() {
   const body = document.getElementById('my-sub-body');
   if (!body) return;
@@ -237,4 +249,6 @@ export function initMySubmissions() {
     header.insertBefore(btn, header.firstChild);
     btn.addEventListener('click', openPanel);
   }
+
+  document.addEventListener('submission:saved', refreshAfterSubmission);
 }

@@ -2,21 +2,10 @@ import { getConversationMessages, getChapterRef, getSessionId, getChatSessionSna
 import { getStudentProfile } from './auth.js?v=20260311c';
 import { sendAssessment } from './instrumentation.js?v=20260407b';
 
-const WORKER_BASE = 'https://logic-proxy.dongkuklee99.workers.dev';
-
 let exportEventsBound = false;
 
 function getEl(id) {
   return document.getElementById(id);
-}
-
-function escapeHtml(text) {
-  return String(text || '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
 }
 
 function showToast(message, type = 'info') {
@@ -121,70 +110,6 @@ function closeModal() {
   getEl('student-modal')?.classList.add('hidden');
 }
 
-function openFeedbackModal(feedback, chapterData) {
-  const modal = getEl('feedback-result-modal');
-  const chapterEl = getEl('feedback-result-chapter');
-  const weakEl = getEl('feedback-result-weak');
-  const sectionsEl = getEl('feedback-result-sections');
-  if (!modal || !chapterEl || !weakEl || !sectionsEl) return;
-
-  const normalized = normalizeFeedback(feedback);
-  chapterEl.textContent = chapterData?.title || `Ch.${chapterData?.id || ''}`;
-  weakEl.innerHTML = normalized.weakConcepts.length
-    ? normalized.weakConcepts.map((item) => `<span class="feedback-chip">${escapeHtml(item)}</span>`).join('')
-    : '<span class="feedback-chip feedback-chip--muted">취약 개념 없음</span>';
-
-  sectionsEl.innerHTML = [
-    { title: 'Feed Up', body: normalized.feedUp, tone: 'up' },
-    { title: 'Feed Back', body: normalized.feedBack, tone: 'back' },
-    { title: 'Feed Forward', body: normalized.feedForward, tone: 'forward' },
-  ].map((section) => `
-    <section class="feedback-result-section feedback-result-section--${section.tone}">
-      <h3>${section.title}</h3>
-      <p>${escapeHtml(section.body || '제공된 피드백이 없습니다.').replace(/\n/g, '<br>')}</p>
-    </section>
-  `).join('');
-
-  modal.classList.remove('hidden');
-}
-
-function closeFeedbackModal() {
-  getEl('feedback-result-modal')?.classList.add('hidden');
-}
-
-function normalizeFeedback(feedback = {}) {
-  return {
-    correctCount: Number(feedback.correctCount || 0),
-    totalCount: Number(feedback.totalCount || 0),
-    score: Number(feedback.score || 0),
-    weakConcepts: Array.isArray(feedback.weakConcepts) ? feedback.weakConcepts : [],
-    feedUp: String(feedback.feedUp || ''),
-    feedBack: String(feedback.feedBack || ''),
-    feedForward: String(feedback.feedForward || ''),
-  };
-}
-
-async function generateFeedback(chapterData, messages, chatSnapshot) {
-  try {
-    const res = await fetch(`${WORKER_BASE}/chat/feedback`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chapter: chapterData,
-        messages: messages.filter((item) => item.role !== 'system'),
-        memorySummary: chatSnapshot.memorySummary || {},
-        chatMetrics: chatSnapshot.qualityMetrics || {},
-        assessmentTrace: chatSnapshot.assessmentTrace || [],
-      }),
-    });
-    if (!res.ok) return null;
-    const data = await res.json();
-    return data.result || null;
-  } catch {
-    return null;
-  }
-}
-
 async function handleConfirmSubmit() {
   const profile = getStudentProfile() || {};
   const studentName = String(profile.studentName || '').trim();
@@ -213,40 +138,44 @@ async function handleConfirmSubmit() {
     ? crypto.randomUUID()
     : `${chapterData.id}_${studentId}_${Date.now()}`);
 
-  setLoading(true, 'AI 피드백을 생성하는 중입니다...');
-  const draftFeedback = normalizeFeedback(await generateFeedback(chapterData, messages, chatSnapshot));
-
   setLoading(true, '대화 내용을 제출하는 중입니다...');
+  const cleanMessages = messages.filter((item) => item.role !== 'system');
+
   try {
-    const result = await sendAssessment({
+    await sendAssessment({
       session_id: reportSessionId,
       student_id: studentId,
       student_name: studentName,
       chapter_id: chapterData.id,
       chapter_title: chapterData.title || '',
       submitted_at: submittedAt,
-      score: draftFeedback.score,
-      correct_count: draftFeedback.correctCount,
-      total_count: draftFeedback.totalCount,
-      weak_concepts: draftFeedback.weakConcepts,
+      grading_status: 'pending',
+      score: 0,
+      correct_count: 0,
+      total_count: chapterData.formativeAssessment?.totalQuestions ?? 0,
+      weak_concepts: [],
       has_conversation: true,
-      messages_count: messages.filter((item) => item.role !== 'system').length,
-      feed_up: draftFeedback.feedUp,
-      feed_back: draftFeedback.feedBack,
-      feed_forward: draftFeedback.feedForward,
+      messages_count: cleanMessages.length,
       chat_summary: chatSnapshot.memorySummary || {},
       chat_metrics: chatSnapshot.qualityMetrics || {},
       assessment_trace: chatSnapshot.assessmentTrace || [],
-      messages: messages.filter((item) => item.role !== 'system'),
+      messages: cleanMessages,
     });
-    const savedFeedback = normalizeFeedback(result?.feedback || draftFeedback);
+
     setLoading(false);
-    showToast('대화 내용이 교수 대시보드에 제출되었습니다.', 'success');
-    openFeedbackModal(savedFeedback, chapterData);
+    showToast('대화 내용이 제출되었습니다.', 'success');
+    document.dispatchEvent(new CustomEvent('submission:saved', {
+      detail: {
+        type: 'conversation',
+        chapter_id: chapterData.id,
+        student_id: studentId,
+        submitted_at: submittedAt,
+      },
+    }));
   } catch (error) {
     console.error('[sendAssessment] failed:', error);
     setLoading(false);
-    showToast('교수 대시보드 제출에 실패했습니다. 네트워크를 확인해 주세요.', 'error');
+    showToast('제출에 실패했습니다. 네트워크를 확인해 주세요.', 'error');
   }
 }
 
@@ -257,9 +186,6 @@ export function initExport() {
   const submitBtn = getEl('btn-submit-pdf');
   const modalCancel = getEl('modal-cancel');
   const modalConfirm = getEl('modal-confirm');
-  const feedbackClose = getEl('feedback-result-close');
-  const feedbackDone = getEl('feedback-result-done');
-  const feedbackModal = getEl('feedback-result-modal');
 
   submitBtn?.addEventListener('click', () => {
     if (submitBtn.disabled) return;
@@ -269,16 +195,10 @@ export function initExport() {
 
   modalCancel?.addEventListener('click', closeModal);
   modalConfirm?.addEventListener('click', handleConfirmSubmit);
-  feedbackClose?.addEventListener('click', closeFeedbackModal);
-  feedbackDone?.addEventListener('click', closeFeedbackModal);
-  feedbackModal?.addEventListener('click', (event) => {
-    if (event.target === feedbackModal) closeFeedbackModal();
-  });
 
   document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape') {
       closeModal();
-      closeFeedbackModal();
     }
     if (event.key === 'Enter' && !getEl('student-modal')?.classList.contains('hidden')) {
       event.preventDefault();
