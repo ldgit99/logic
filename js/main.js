@@ -306,7 +306,7 @@ async function loadRuntimeModules() {
   }
 
   try {
-    const exportMod = await import('./export.js?v=20260407c');
+    const exportMod = await import('./export.js?v=20260514a');
     if (typeof exportMod.initExport === 'function') {
       initExport = exportMod.initExport;
     }

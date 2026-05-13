@@ -8,7 +8,7 @@
  *
  * ⚠️ 배포할 때마다 아래 날짜를 갱신하세요.
  */
-const CACHE_VERSION = '20260309e';
+const CACHE_VERSION = '20260514a';
 const CACHE_NAME = `logic-circuit-v${CACHE_VERSION}`;
 
 const PRECACHE_URLS = [
